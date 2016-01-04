@@ -78,7 +78,7 @@ func (repo *MySQLRepo) FormatLocationToTreeByPid(pid uint, content []map[string]
 	return content, nil
 }
 
-func (repo *MySQLRepo) GetLocationIdByName(name string) (uint, error) {
+func (repo *MySQLRepo) GetParentLocationIdByName(name string) (uint, error) {
 	list := strings.Split(name, "-")
 	pid := uint(0)
 	for _, location := range list {
@@ -232,7 +232,7 @@ func (repo *MySQLRepo) GetLocationByNameAndPid(name string, pid uint) (*model.Lo
 	return &mod, err
 }
 
-func (repo *MySQLRepo) GetLocationIdByByName(name string) (uint, error) {
+func (repo *MySQLRepo) GetLocationIdByName(name string) (uint, error) {
 	mod := model.Location{Name: name}
 	err := repo.db.Where("name = ?", name).Find(&mod).Error
 	return mod.ID, err

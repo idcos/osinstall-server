@@ -113,7 +113,7 @@ type Network struct {
 // INetwork 网络操作接口
 type INetwork interface {
 	CountNetworkByNetwork(Network string) (uint, error)
-	GetNetworkIdByByNetwork(Network string) (uint, error)
+	GetNetworkIdByNetwork(Network string) (uint, error)
 	CountNetworkByNetworkAndId(Network string, ID uint) (uint, error)
 	CountNetwork() (uint, error)
 	GetNetworkListWithPage(Limit uint, Offset uint) ([]Network, error)
@@ -252,7 +252,7 @@ type Location struct {
 // ILocation 位置操作接口
 type ILocation interface {
 	CountLocationByName(Name string) (uint, error)
-	GetLocationIdByByName(Name string) (uint, error)
+	GetLocationIdByName(Name string) (uint, error)
 	CountLocation() (uint, error)
 	GetLocationListWithPage(Limit uint, Offset uint) ([]Location, error)
 	//FormatLocationToTreeByPid(Pid uint, Content string, Floor uint, SelectPid uint) (string, error)
@@ -267,7 +267,6 @@ type ILocation interface {
 	DeleteLocationById(Id uint) (*Location, error)
 	AddLocation(Pid uint, Name string) (*Location, error)
 	GetLocationByNameAndPid(Name string, Pid uint) (*Location, error)
-	GetLocationIdByName(Name string) (uint, error)
 	ImportLocation(Name string) (uint, error)
 	FormatChildLocationIdById(id uint, content string, separator string) (string, error)
 }

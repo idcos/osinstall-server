@@ -25,7 +25,6 @@ func (repo *MySQLRepo) AddOsConfig(name string, pxe string) (*model.OsConfig, er
 
 func (repo *MySQLRepo) UpdateOsConfigById(id uint, name string, pxe string) (*model.OsConfig, error) {
 	osConfig := model.OsConfig{Name: name, Pxe: pxe}
-	//err := errors.New("test")
 	err := repo.db.First(&osConfig, id).Update("name", name).Update("pxe", pxe).Error
 	return &osConfig, err
 }

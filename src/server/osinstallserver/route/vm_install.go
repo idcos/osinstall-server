@@ -1,9 +1,6 @@
 package route
 
 import (
-	//"encoding/base64"
-	//"crypto/md5"
-	//"encoding/hex"
 	"fmt"
 	"github.com/AlexanderChen1989/go-json-rest/rest"
 	"golang.org/x/net/context"
@@ -16,7 +13,6 @@ import (
 	"strings"
 	"time"
 	"utils"
-	//"net/http"
 )
 
 func CreateVmDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
@@ -233,37 +229,8 @@ func CreateNewMacAddress(ctx context.Context, w rest.ResponseWriter, r *rest.Req
 		return
 	}
 	fmt.Println(repo)
-	/*
-		var info struct {
-			ID uint
-		}
-		if err := r.DecodeJSONPayload(&info); err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
-			return
-		}
-	*/
-	/*
-		mod, err := repo.DeleteLocationById(info.ID)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-			return
-		}
-	*/
 
 	mac := util.CreateNewMacAddress()
-	/*
-		buf := make([]byte, 6)
-		_, err := rand.Read(buf)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-			return
-		}
-		buf[0] |= 2
-		//fmt.Printf("Random MAC address: %02x:%02x:%02x:%02x:%02x:%02x\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5])
-		mac += ":" + fmt.Sprintf("%02x", buf[3])
-		mac += ":" + fmt.Sprintf("%02x", buf[4])
-		mac += ":" + fmt.Sprintf("%02x", buf[5])
-	*/
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": mac})
 }
 
@@ -504,39 +471,6 @@ func BatchAddVmDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reques
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
 		return
 	}
-
-	/*
-		type VmDevice struct {
-			gorm.Model
-			DeviceID              uint
-			Hostname              string
-			Mac                   string
-			Ip                    string
-			NetworkID             uint
-			OsID                  uint
-			CpuCoresNumber        uint
-			CpuHotPlug            string
-			CpuPassthrough        string
-			CpuTopSockets         uint
-			CpuTopCores           uint
-			CpuTopThreads         uint
-			CpuPinning            string
-			MemoryCurrent         uint
-			MemoryMax             uint
-			MemoryKsm             string
-			DiskType              string
-			DiskSize              uint
-			DiskBusType           string
-			DiskCacheMode         string
-			DiskIoMode            string
-			NetworkType           string
-			NetworkDeviceType     string
-			DisplayType           string
-			DisplayPassword       string
-			DisplayUpdatePassword string
-			Status                string
-		}
-	*/
 
 	//先批量检测传入数据是否有问题
 	for _, info := range infos {

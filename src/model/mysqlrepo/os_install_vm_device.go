@@ -78,12 +78,6 @@ func (repo *MySQLRepo) CountVmDeviceByIpAndId(ip string, id uint) (uint, error) 
 }
 
 func (repo *MySQLRepo) CountVmDevice(where string) (int, error) {
-	/*
-		mod := model.VmDevice{}
-		var count uint
-		err := repo.db.Model(mod).Count(&count).Error
-		return count, err
-	*/
 	row := repo.db.DB().QueryRow("SELECT count(t1.id) as count FROM vm_devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join devices t4 on t1.device_id = t4.id " + where)
 	var count = -1
 	if err := row.Scan(&count); err != nil {
@@ -93,11 +87,6 @@ func (repo *MySQLRepo) CountVmDevice(where string) (int, error) {
 }
 
 func (repo *MySQLRepo) GetVmDeviceListWithPage(limit uint, offset uint, where string) ([]model.VmDeviceFull, error) {
-	/*
-		var VmDevice []model.VmDevice
-		err := repo.db.Limit(limit).Offset(offset).Find(&VmDevice).Error
-		return VmDevice, err
-	*/
 	var result []model.VmDeviceFull
 	sql := "SELECT t1.*,t2.network as network_name,t3.name as os_name,t4.sn as device_sn FROM vm_devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join devices t4 on t1.device_id = t4.id " + where + " limit " + fmt.Sprintf("%d", limit)
 	if offset > 0 {

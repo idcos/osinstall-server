@@ -56,7 +56,7 @@ func (repo *MySQLRepo) GetNetworkById(id uint) (*model.Network, error) {
 	return &mod, err
 }
 
-func (repo *MySQLRepo) GetNetworkIdByByNetwork(network string) (uint, error) {
+func (repo *MySQLRepo) GetNetworkIdByNetwork(network string) (uint, error) {
 	mod := model.Network{Network: network}
 	err := repo.db.Where("network = ?", network).Find(&mod).Error
 	return mod.ID, err

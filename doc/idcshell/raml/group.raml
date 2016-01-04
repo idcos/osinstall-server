@@ -1,0 +1,114 @@
+#%RAML 1.0
+title: 用户组
+baseUri: /api/cli/{version}
+version: v1
+mediaType: application/json
+
+/group/view:
+  post:
+    description: 根据条件查询当前调用者权限范围内的用户组列表
+    headers:
+      Authorization:
+        required: true
+        type: string
+
+    queryParameters:
+      ids:
+        description: 用户组ID列表
+        type: string[]
+        required: false
+      name:
+        description: 用户组名称
+        type: string
+        required: false
+      pageNo:
+        description: 分页起始页码
+        required: false
+        default: 1
+      pageSize:
+        description: 单个分页记录数
+        required: false
+        default: 10
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "status": "success",
+                "message": "成功",
+                "content":
+                {
+                  "pageNo": 1,
+                  "pageSize": 10,
+                  "totalRows": 1000,
+                  "totalPages": 100,
+                  "rows":
+                  [
+                    {
+                      "id": "xxxx",
+                      "name": "dev-group",
+                      "showName": "开发组",
+                      "dept": {}
+                    }
+                  ]
+                }
+              }
+
+
+
+/group/view/{groupID}:
+  post:
+    description: 根据用户组ID查询当前调用者权限范围内的用户组信息
+    headers:
+      Authorization:
+        required: true
+        type: string
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "status": "success",
+                "message": "成功",
+                "content":
+                {
+                  "id": "xxxx",
+                  "name": "dev-group",
+                  "showName": "开发组",
+                  "dept": {}
+                }
+              }
+
+
+
+/group/add:
+  post:
+    description: 批量新增用户组
+    headers:
+      Authorization:
+        required: true
+        type: string
+
+
+
+/group/del:
+  post:
+    description: 批量删除用户组
+    headers:
+      Authorization:
+        required: true
+        type: string
+
+
+
+/group/mod:
+  post:
+    description: 修改用户组
+    headers:
+      Authorization:
+        required: true
+        type: string

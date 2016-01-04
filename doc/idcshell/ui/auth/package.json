@@ -1,0 +1,20 @@
+{
+    "name": "idcos",
+    "version": "1.0.0",
+    "main": "gulpfile.js",
+    "scripts": {
+        "gulp": "node_modules/gulp/bin/gulp.js"
+    },
+    "dependencies": {
+        "gulp": "latest",
+        "gulp-concat": "latest",
+        "gulp-embedlr": "latest",
+        "gulp-connect": "latest",
+        "gulp-livereload": "latest",
+        "gulp-print": "latest",
+        "gulp-less": "latest",
+        "gulp-util": "latest",
+        "gulp-watch": "latest"
+    }
+}
+

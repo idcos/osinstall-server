@@ -1,0 +1,236 @@
+#%RAML 1.0
+title: 部署单元管理
+baseUri: /api/cli/{version}
+version: v1
+mediaType: application/json
+
+
+types:
+  Unit4Add:
+    description: 新增用户模型定义
+    type: object
+    properties:
+      name:
+        description: 部署单元名称
+        type: string
+      showName:
+        description: 用于显示的部署单元名称
+        type: string
+      execUsers:
+        description: 主机执行帐号列表
+        type: string
+        required: false
+      nodes:
+        description: 部署单元下主机节点列表
+        required: false
+      app:
+        description: 部署单元所属应用
+        required: true 
+      dc:
+        description: 部署单元所属数据中心
+        required: true
+
+
+/unit/view:
+  post:
+    description: 根据条件查询当前调用者权限范围内的部署单元列表
+    headers:
+      Authorization:
+        required: true
+        type: string
+
+    queryParameters:
+      ids:
+        description: 部署单元ID列表
+        required: true
+        type: int[]
+      name:
+        description: 部署单元名
+        required: false
+        type: string
+      showName:
+        description: 用于显示的部署单元名
+        required: false
+        type: string
+      pageNo:
+        description: 分页起始页码
+        required: false
+        default: 1
+      pageSize:
+        description: 单个分页记录数
+        required: false
+        default: 10
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "status": "success",
+                "message": "成功",
+                "content":
+                {
+                  "pageNo": 1,
+                  "pageSize": 10,
+                  "totalRows": 1000,
+                  "totalPages": 100,
+                  "rows":
+                  [
+                    {
+                      "id": "xxxxxx",
+                      "name": "unit01",
+                      "showName": "部署单元01",
+                      "ConfLastChanged": "2015-11-11 01:01:01",
+                      "confLastApplied": "2015-11-11 01:30:01",
+                      "execUsers": ["root","idcos"],
+                      "app": {},
+                      "dc": {}
+                    }
+                  ]
+                }
+              }
+
+
+/unit/view/{unitID}:
+  post:
+    description: 查询当前调用者权限范围内的指定部署单元信息
+    headers:
+      Authorization:
+        required: true
+        type: string
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "status": "success",
+                "message": "成功",
+                "content":
+                {
+                  "id": "xxxxxx",
+                  "name": "unit01",
+                  "showName": "部署单元01",
+                  "ConfLastChanged": "2015-11-11 01:01:01",
+                  "confLastApplied": "2015-11-11 01:30:01",
+                  "execUsers": ["root","idcos"],
+                  "nodes": [{}],
+                  "app": {},
+                  "dc": {}
+                }
+              }
+
+
+
+
+/unit/add:
+  post:
+    description: 批量新增部署单元
+    headers:
+      Authorization:
+        required: true
+        type: string
+
+    queryParameters:
+      units:
+        description: 部署单元列表
+        type: Unit4Add[]
+        required: true
+
+    responses:
+      200:
+       body:
+         application/json:
+           example: |
+            {
+              "status": "success",
+              "message": "成功"
+            }
+
+
+
+/unit/del:
+  post:
+    description: 批量删除部署单元
+    headers:
+      Authorization:
+        required: true
+        type: string
+
+    queryParameters:
+      unitIDs:
+        description: 部署单元ID列表
+        required: true
+        type: string[]
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "status": "success",
+                "message": "成功",
+                "content":
+                {
+                  "removed": 3
+                }
+              }
+
+/unit/mod:
+  post:
+    description: 修改部署单元
+    headers:
+      Authorization:
+        required: true
+        type: string
+
+
+    queryParameters:
+      id:
+        description: 部署单元ID 
+        type: string 
+        required: true 
+      name:
+        description: 主机节点名
+        required: false
+        type: string
+      showName:
+        description: 用于显示的主机节点名
+        required: false
+        type: string
+      confLastChanged:
+        description: 最近一次配置修改时间
+        required: false
+        type: date
+      confLastApplied:
+        description: 最近一次配置实施时间
+        required: false
+        type: date
+      execUsers:
+        description: 主机执行帐号列表
+        required: false
+        type: string[]
+      nodes:
+        description: 部署单元下主机节点列表
+        required: false 
+      app:
+        description: 部署单元所属应用
+        required: false 
+      dc:
+        description: 部署单元所属数据中心
+        required: false 
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "status": "success",
+                "message": "成功"
+              }
+
+

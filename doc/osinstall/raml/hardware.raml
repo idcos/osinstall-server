@@ -1,0 +1,154 @@
+#%RAML 1.0
+title: hardware相关
+baseUri: /api/osinstall/{version}
+version: v1
+mediaType: application/json
+
+/hardware/add:
+  post:
+    description: 增加
+    queryParameters:
+      Company:
+        description: 企业
+        type: string
+        required: true
+      Product:
+        description: 产品名
+        type: string
+        required: true
+      ModelName:
+        description: 型号
+        type: string
+        required: true
+      Raid:
+        description: raid
+        type: string
+        required: false
+      Oob:
+        description: oob
+        type: string
+        required: false
+      Bios:
+        description: bios
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+
+/hardware/list:
+  post:
+    description: 获取列表
+    queryParameters:
+      Limit:
+        description: 页容量
+        type: number
+        required: true
+      Offset:
+        description: 从第几行开始
+        type: number
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":{
+                  "list":{}
+                  "recordCount":100
+                },
+              }
+
+
+/hardware/view:
+  post:
+    description: 获取详情
+    queryParameters:
+      ID:
+        description: ID
+        type: number
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":{
+                  ...
+                },
+              }
+
+
+/hardware/update:
+  post:
+    description: 修改
+    queryParameters:
+      ID:
+        description: ID
+        type: number
+        required: true
+      Company:
+        description: 企业
+        type: string
+        required: true
+      Product:
+        description: 产品名
+        type: string
+        required: true
+      ModelName:
+        description: 型号
+        type: string
+        required: true
+      Raid:
+        description: raid
+        type: string
+        required: false
+      Oob:
+        description: oob
+        type: string
+        required: false
+      Bios:
+        description: bios
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+
+
+/hardware/delete:
+  post:
+    description: 删除
+    queryParameters:
+      ID:
+        description: ID
+        type: number
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+

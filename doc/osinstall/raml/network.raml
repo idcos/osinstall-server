@@ -1,0 +1,154 @@
+#%RAML 1.0
+title: network相关
+baseUri: /api/network/{version}
+version: v1
+mediaType: application/json
+
+/network/add:
+  post:
+    description: 增加
+    queryParameters:
+      Network:
+        description: 网段
+        type: string
+        required: true
+      Netmask:
+        description: 掩码
+        type: string
+        required: true
+      Gateway:
+        description: 网关
+        type: string
+        required: true
+      Vlan:
+        description: Vlan
+        type: string
+        required: false
+      Trunk:
+        description: Trunk
+        type: string
+        required: false
+      Bonding:
+        description: Bonding
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+
+/network/list:
+  post:
+    description: 获取列表
+    queryParameters:
+      Limit:
+        description: 页容量
+        type: number
+        required: true
+      Offset:
+        description: 从第几行开始
+        type: number
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":{
+                  "list":{}
+                  "recordCount":100
+                },
+              }
+
+
+/network/view:
+  post:
+    description: 获取详情
+    queryParameters:
+      ID:
+        description: ID
+        type: number
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":{
+                  ...
+                },
+              }
+
+
+/network/update:
+  post:
+    description: 修改
+    queryParameters:
+      ID:
+        description: ID
+        type: number
+        required: true
+      Network:
+        description: 网段
+        type: string
+        required: true
+      Netmask:
+        description: 掩码
+        type: string
+        required: true
+      Gateway:
+        description: 网关
+        type: string
+        required: true
+      Vlan:
+        description: Vlan
+        type: string
+        required: false
+      Trunk:
+        description: Trunk
+        type: string
+        required: false
+      Bonding:
+        description: Bonding
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+
+
+/network/delete:
+  post:
+    description: 删除
+    queryParameters:
+      ID:
+        description: ID
+        type: number
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+

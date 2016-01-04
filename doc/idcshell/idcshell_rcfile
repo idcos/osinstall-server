@@ -1,0 +1,19 @@
+#! /bin/bash
+#. /usr/share/bash-completion/bash_completion
+. /usr/local/etc/bash_completion
+
+_cli_bash_autocomplete() {
+     local cur prev opts base
+     COMPREPLY=()
+     cur="${COMP_WORDS[COMP_CWORD]}"
+     _get_comp_words_by_ref -n @ -c cur
+
+     prev="${COMP_WORDS[COMP_CWORD-1]}"
+     opts=$( ${COMP_WORDS[@]:0:$COMP_CWORD} --generate-bash-completion )
+     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+     __ltrim_colon_completions "$cur"
+     return 0
+}
+
+complete -F _cli_bash_autocomplete idcshell
+PS1="$LOGINUSER@idcos-cli: / > "

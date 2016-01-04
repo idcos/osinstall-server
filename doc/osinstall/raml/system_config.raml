@@ -1,0 +1,122 @@
+#%RAML 1.0
+title: 系统相关
+baseUri: /api/osinstall/{version}
+version: v1
+mediaType: application/json
+
+/systemConfig/add:
+  post:
+    description: 增加
+    queryParameters:
+      Name:
+        description: 名称
+        type: string
+        required: true
+      Content:
+        description: 详细信息
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+
+/systemConfig/list:
+  post:
+    description: 获取列表
+    queryParameters:
+      Limit:
+        description: 页容量
+        type: number
+        required: true
+      Offset:
+        description: 从第几行开始
+        type: number
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":{
+                  "list":{}
+                  "recordCount":100
+                },
+              }
+
+
+/systemConfig/view:
+  post:
+    description: 获取详情
+    queryParameters:
+      ID:
+        description: ID
+        type: number
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":{
+                  ...
+                },
+              }
+
+
+/systemConfig/update:
+  post:
+    description: 修改
+    queryParameters:
+      ID:
+        description: ID
+        type: number
+        required: true
+      Name:
+        description: 名称
+        type: string
+        required: true
+      Content:
+        description: 详细信息
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+
+
+/systemConfig/delete:
+  post:
+    description: 删除
+    queryParameters:
+      ID:
+        description: ID
+        type: number
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+

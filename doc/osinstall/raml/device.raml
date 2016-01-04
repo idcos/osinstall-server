@@ -1,0 +1,249 @@
+#%RAML 1.0
+title: 设备相关
+baseUri: /api/osinstall/{version}
+version: v1
+mediaType: application/json
+
+
+/device/add:
+  post:
+    description: 录入设备(SN存在的情况下，会覆盖原有信息)
+    queryParameters:
+      Sn:
+        description: SN
+        type: string
+        required: true
+      Hostname:
+        description: hostname
+        type: string
+        required: true
+      Ip:
+        description: IP
+        type: string
+        required: true
+      NetworkID:
+        description: network表ID
+        type: number
+        required: true
+      OsID:
+        description: os_config表ID
+        type: number
+        required: true
+      HardwareID:
+        description: hardware表ID
+        type: number
+        required: false
+      SystemID:
+        description: system表ID
+        type: number
+        required: true
+      LocationID:
+        description: location表ID，如果没有位置，则传0
+        type: string
+        required: true
+      AssetNumber:
+        description: 财编
+        type: string
+        required: false
+      
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+
+/device/batchAdd:
+  post:
+    description: 批量录入设备(SN存在的情况下，会覆盖原有信息)
+    queryParameters:
+      Sn:
+        description: SN
+        type: string
+        required: true
+      Hostname:
+        description: hostname
+        type: string
+        required: true
+      Ip:
+        description: IP
+        type: string
+        required: true
+      NetworkID:
+        description: network表ID
+        type: number
+        required: true
+      OsID:
+        description: os_config表ID
+        type: number
+        required: true
+      HardwareID:
+        description: hardware表ID
+        type: number
+        required: false
+      SystemID:
+        description: system表ID
+        type: number
+        required: true
+      LocationID:
+        description: location表ID，如果没有位置，则传0
+        type: string
+        required: true
+      AssetNumber:
+        description: 财编
+        type: string
+        required: false
+      
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+
+
+/device/list:
+  post:
+    description: 获取列表
+    queryParameters:
+      Limit:
+        description: 页容量
+        type: number
+        required: true
+      Offset:
+        description: 从第几行开始
+        type: number
+        required: true
+      Keyword:
+        description: 搜索关键字，可根据sn,hostname,ip,安装批次号搜索；搜索多条信息以\n隔开
+        type: string
+        required: false
+      BatchNumber:
+        description: 批次号
+        type: string
+        required: false
+      OsID:
+        description: os_config表ID
+        type: number
+        required: false
+      HardwareID:
+        description: hardware表ID
+        type: number
+        required: false
+      SystemID:
+        description: system_config表ID
+        type: number
+        required: false
+      Status:
+        description: 状态(pre_install 待安装,installing 安装中,success 安装成功,failure 安装失败)
+        type: number
+        required: false
+      StartUpdatedAt:
+        description: 更新时间(开始)
+        type: string
+        required: false
+      EndUpdatedAt:
+        description: 更新时间(结束)
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":{
+                  "list":{}
+                  "recordCount":100
+                },
+              }
+
+
+/device/view:
+  post:
+    description: 获取详情
+    queryParameters:
+      ID:
+        description: ID
+        type: number
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":{
+                  ...
+                },
+              }
+
+
+/device/batchDelete:
+  post:
+    description: 批量删除
+    queryParameters:
+      ID:
+        description: ID
+        type: number
+        required: true
+    
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+
+/device/batchReInstall:
+  post:
+    description: 批量重新安装
+    queryParameters:
+      ID:
+        description: ID
+        type: number
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }
+
+/device/getNumByStatus:
+  post:
+    description: 获取各状态下的设备数量
+    queryParameters:
+      Status:
+        description: 状态
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":{
+                  "count":10
+                },
+              }
+

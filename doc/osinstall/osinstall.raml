@@ -1,0 +1,145 @@
+#%RAML 1.0
+title: 物理机装机平台API
+baseUri: /api/osinstall/{version}
+version: v1
+mediaType: application/json
+
+/hardware/view:
+  get:
+    description: 获取硬件配置信息
+    queryParameters:
+      Sn:
+        description: SN号
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content": {
+        		"company":"Dell",
+       			"product":"PowerEdge",
+       			"model_name":"R420",
+        		"hardware":{
+        			"raid":base64encode("/usr/yunji/osinstall/dell/raid.sh -c=on -d=off -e=on"),
+        			"bios":base64encode("/usr/yunji/osinstall/dell/bios.sh -a=on -f=off -m=on"),
+        			"oob":"base64encode(/usr/yunji/osinstall/dell/oob.sh -a=on -b=off -g=on")
+        		}
+                }
+              }
+
+
+
+/device/isInPreInstallList:
+  get:
+    description: 是否在待安装列表里
+    queryParameters:
+      Sn:
+        description: SN号
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content": {
+                	"Result":"true"
+                }
+              }
+
+
+/report/deviceProductInfo:
+  post:
+    description: 上传服务器厂商、产品名称、设备型号信息
+    queryParameters:
+      Sn:
+        description: SN号
+        type: string
+        required: true
+      Company:
+        description: 厂商
+        type: string
+        required: true
+      Product:
+        description: 产品名称
+        type: string
+        required: true
+      ModelName:
+        description: 服务器型号
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content": {
+                  "Result":"true"
+                }
+              }
+
+
+/report/deviceInstallInfo:
+  post:
+    description: 上传设备安装进度及日志信息
+    queryParameters:
+      Sn:
+        description: SN号
+        type: string
+        required: true
+      InstallProgress:
+        description: 安装进度(常规进度为0 ~ 1之间的小数，如0.1；安装失败传-1，安装成功传1；后端会保存小数点后4位)
+        type: string
+        required: true
+      InstallLog:
+        description: 安装日志
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content": {
+                  "Result":"true"
+                }
+              }
+
+/report/deviceMacInfo:
+  post:
+    description: 上传设备Mac地址信息，后端会根据Mac地址生成PXE文件
+    queryParameters:
+      Sn:
+        description: SN号
+        type: string
+        required: true
+      Mac:
+        description: mac地址
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content": {
+                  "Result":"true"
+                }
+              }

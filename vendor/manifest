@@ -1,0 +1,60 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/AlexanderChen1989/go-json-rest",
+			"repository": "https://github.com/AlexanderChen1989/go-json-rest",
+			"revision": "5d922aa295075f5424461eee373142e1d98b8eef",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/Sirupsen/logrus",
+			"repository": "https://github.com/Sirupsen/logrus",
+			"revision": "fe6f2b03125e4fcafb21406381010e363a072c80",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/didip/tollbooth",
+			"repository": "https://github.com/didip/tollbooth",
+			"revision": "be7d4891cc860c1d3d4004e99b898ddfd419ceb1",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/go-sql-driver/mysql",
+			"repository": "https://github.com/go-sql-driver/mysql",
+			"revision": "d512f204a577a4ab037a1816604c48c9c13210be",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/jinzhu/gorm",
+			"repository": "https://github.com/jinzhu/gorm",
+			"revision": "2f9abdcf0231d7b14d38203efb1708db718e2fa1",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/qiniu/iconv",
+			"repository": "https://github.com/qiniu/iconv",
+			"revision": "7a341d65c7dd46365a04ed9ad55e46c52f317ab2",
+			"branch": "develop"
+		},
+		{
+			"importpath": "github.com/smartystreets/goconvey",
+			"repository": "https://github.com/smartystreets/goconvey",
+			"revision": "530dd3d2cafa09958178e8c557bc4abeea1651a5",
+			"branch": "master"
+		},
+		{
+			"importpath": "golang.org/x/net/context",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "042ba42fa6633b34205efc66ba5719cd3afd8d38",
+			"branch": "master",
+			"path": "/context"
+		},
+		{
+			"importpath": "gopkg.in/ini.v1",
+			"repository": "https://gopkg.in/ini.v1",
+			"revision": "060d7da055ba6ec5ea7a31f116332fe5efa04ce0",
+			"branch": "v1"
+		}
+	]
+}

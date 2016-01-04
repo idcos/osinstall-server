@@ -1,0 +1,95 @@
+#%RAML 0.8
+title: 物理机安装接口
+baseUri: /osinstall
+version: v0.1
+
+/chkInstallQueue:
+  description: 是否在安装队列中
+  get:
+    queryParameters:
+      sn:
+        description: 机器 SN 号
+        type: string
+        
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "status": "",
+                "message": "",
+                "isInQueue": "true" or "false"
+              }
+              
+/hardTemplate:
+  description: 获取硬件配置信息
+  get:
+    queryParameters:
+      sn:
+        description: 机器 SN 号
+        type: string
+        
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                  "status": "",
+                  "message": "",
+                  "manufacturer": "Dell Inc.", 
+                  "productname": "PowerEdge R420", 
+                  "hardware": [
+                      {
+                          "raid": [
+                              {
+                                  "raidlevel": "10"
+                              }
+                          ], 
+                          "oob": [
+                              {
+                                  "username": "root", 
+                                  "password": "calvin", 
+                                  "network": [
+                                      {
+                                          "type": "static", 
+                                          "ip": "192.168.0.120", 
+                                          "netmask": "255.255.255.0", 
+                                          "gateway": "192.168.0.1"
+                                      }
+                                  ]
+                              }
+                          ], 
+                          "bios": [
+                              {
+                                  "vt": "enable", 
+                                  "pxe": "enable"
+                              }
+                          ]
+                      }
+                  ]
+              }     
+              
+/report:
+  description: 上报执行结果
+  post:
+    body:
+      application/json:
+        example: |
+          {
+            "sn": "",
+            "operation": "获取硬件配置...",
+            "status": "success" or "failed"
+          }
+    
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "status": "",
+                "message": "",
+              }
+          

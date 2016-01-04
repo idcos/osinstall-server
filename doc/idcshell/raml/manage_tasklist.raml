@@ -1,0 +1,123 @@
+#%RAML 1.0
+title: 任务列表类API
+baseUri: /api/cli/{version}
+version: v1
+mediaType: application/json
+
+/task/view:
+  post:
+    description: 获取当前的 task 列表
+    headers:
+      access-token:
+        description: token信息
+        type: string
+        required: true
+    queryParameters:
+      ids:
+        description: task id
+        type: array
+        required: true
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "status": "",
+                "message": "",
+                "content": {
+                  "list": [{
+                    "id": "",
+                    "gmtStart": "任务开始时间",
+                    "state": "任务状态",
+                    "cmd": "执行的命令",
+                    "nodeName": "执行对象主机名称",
+                    "userName": "执行命令的用户名称"
+                  }]
+                }
+              }
+
+/task/view/{id}:
+  post:
+    description: 获取指定的 task
+    headers:
+      access-token:
+        description: token信息
+        type: string
+        required: true
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "status": "",
+                "message": "",
+                "content": {
+                  "id": "",
+                  "gmtStart": "任务开始时间",
+                  "state": "任务状态，是否执行完成",
+                  "cmd": "执行的命令",
+                  "nodeName": "执行对象主机名称",
+                  "userName": "执行命令的用户名称"
+                }
+              }
+
+/taskResult/view:
+  post:
+    description: 获取task执行结果
+    headers:
+      access-token:
+        description: token信息
+        type: string
+        required: true
+    queryParameters:
+      ids:
+        description: task id
+        type: array
+        required: true
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "status": "",
+                "message": "",
+                "content": {
+                  "list": [{
+                    "id": "",
+                    "gmtEnd": "任务结束时间",
+                    "state": "命令执行结果，成功或者失败",
+                    "output": "命令输出"
+                  }]
+                }
+              }
+
+/taskResult/view/{id}:
+  post:
+    description: 指定的 task 的执行结果
+    headers:
+      access-token:
+        description: token信息
+        type: string
+        required: true
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "status": "",
+                "message": "",
+                "content": {
+                  "id": "",
+                  "gmtEnd": "任务结束时间",
+                  "state": "命令执行结果，成功或者失败",
+                  "output": "命令输出"
+                }
+              }

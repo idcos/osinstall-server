@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="//cdn.bootcss.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="//cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet" type="text/css">
+
+    <title>
+        组管理
+    </title>
+</head>
+
+<body>
+    <div class="navbar navbar-inverse navbar-primary navbar-static-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-ex-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">
+                    <span>IDC OS</span>
+                </a>
+            </div>
+
+
+            <div class="collapse navbar-collapse" id="navbar-ex-collapse">
+                <ul class="nav navbar-nav">
+                    <li class="active">
+                        <a href="#">控制台</a>
+                    </li>
+                </ul>
+
+                <ul class="nav navbar-nav hidden-sm hidden-md hidden-lg">
+                    <li>
+                        <a href="resource.html">资源管理</a>
+                    </li>
+                    <li>
+                        <a href="permission.html">权限管理</a>
+                    </li>
+                </ul>
+
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            Timothy
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="profile.html"><i class="fa fa-user"></i> 个人资料</a></li>
+                            <li><a href="settings.html"><i class="fa fa-cog"></i> 设置</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="login.html"><i class="fa fa-sign-out"></i> 注销</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="section">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-3 col-md-3">
+                    <div class="panel panel-default hidden-xs">
+                        <div class="panel-heading">
+                            菜单
+                        </div>
+                        <div class="panel-body">
+                            <ul class="nav nav-pills nav-stacked nav-menu">
+                                <li><a href="resource.html"><i class="fa fa-server"></i> 资源管理</a></li>
+                                <li class="active"><a href="permission.html"><i class="fa fa-user"></i> 权限管理</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-9 col-md-9">
+                    <ol class="breadcrumb">
+                        <li><a href="#">控制台</a></li>
+                        <li><a href="permission.html">权限管理</a></li>
+                        <li class="active">组管理</li>
+                    </ol>
+                    <form>
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <span class="pull-right">
+                                    <a class="btn btn-default btn-sm" href="group_add.html">
+                                        <i class="fa fa-plus"></i> 
+                                        创建组
+                                    </a>
+                                </span>
+                                <div class="clearfix"></div>
+                            </div>
+                            <div class="panel-body">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th class="table_checkbox">
+                                                <input type="checkbox">
+                                            </th>
+                                            <th class="table_id">ID</th>
+                                            <th>名称</th>
+                                            <th>描述</th>
+                                            <th class="table_edit">编辑</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>1</td>
+                                        <td><a href="group_edit.html">组1</a></td>
+                                        <td>描述1</td>
+                                        <td><a href="group_edit.html"><i class="fa fa-edit"></i></a></td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>2</td>
+                                        <td><a href="group_edit.html">组2</a></td>
+                                        <td>描述2</td>
+                                        <td><a href="group_edit.html"><i class="fa fa-edit"></i></a></td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>3</td>
+                                        <td><a href="group_edit.html">组3</a></td>
+                                        <td>描述3</td>
+                                        <td><a href="group_edit.html"><i class="fa fa-edit"></i></a></td>
+                                    </tr>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>4</td>
+                                        <td><a href="group_edit.html">组4</a></td>
+                                        <td>描述4</td>
+                                        <td><a href="group_edit.html"><i class="fa fa-edit"></i></a></td>
+                                    </tr>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="panel-footer">
+                                <span>
+                                    <strong>
+                                        总数: 4
+                                    </strong>
+                                </span>
+                                <nav class="pull-right">
+                                    <ul class="pagination pagination-sm">
+                                        <li>
+                                        <a href="#" aria-label="First">
+                                            <span aria-hidden="true"><i class="fa fa-angle-double-left"></i></span>
+                                        </a>
+                                        </li>
+                                        <li>
+                                        <a href="#" aria-label="Previous">
+                                            <span aria-hidden="true"><i class="fa fa-angle-left"></i></span>
+                                        </a>
+                                        </li>
+                                        <li class="active"><a href="#">1</a></li>
+                                        <li><a href="#">2</a></li>
+                                        <li><a href="#">3</a></li>
+                                        <li><a href="#">4</a></li>
+                                        <li><a href="#">5</a></li>
+                                        <li>
+                                        <a href="#" aria-label="Next">
+                                            <span aria-hidden="true"><i class="fa fa-angle-right"></i></span>
+                                        </a>
+                                        </li>
+                                        <li>
+                                        <a href="#" aria-label="Last">
+                                            <span aria-hidden="true"><i class="fa fa-angle-double-right"></i></span>
+                                        </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                                <div class="clearfix"></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="//cdn.bootcss.com/jquery/2.1.4/jquery.min.js"></script>
+    <script src="//cdn.bootcss.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    </body>
+    </html>

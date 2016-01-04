@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="//cdn.bootcss.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="//cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet" type="text/css">
+
+    <title>
+        修改资源
+    </title>
+</head>
+
+<body>
+    <div class="navbar navbar-inverse navbar-primary navbar-static-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-ex-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">
+                    <span>IDC OS</span>
+                </a>
+            </div>
+
+
+            <div class="collapse navbar-collapse" id="navbar-ex-collapse">
+                <ul class="nav navbar-nav">
+                    <li class="active">
+                        <a href="#">控制台</a>
+                    </li>
+                </ul>
+
+                <ul class="nav navbar-nav hidden-sm hidden-md hidden-lg">
+                    <li>
+                        <a href="resource.html">资源管理</a>
+                    </li>
+                    <li>
+                        <a href="permission.html">权限管理</a>
+                    </li>
+                </ul>
+
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            Timothy
+                            <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="profile.html"><i class="fa fa-user"></i> 个人资料</a></li>
+                            <li><a href="settings.html"><i class="fa fa-cog"></i> 设置</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="login.html"><i class="fa fa-sign-out"></i> 注销</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="section">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-3 col-md-3">
+                    <div class="panel panel-default hidden-xs">
+                        <div class="panel-heading">
+                            菜单
+                        </div>
+                        <div class="panel-body">
+                            <ul class="nav nav-pills nav-stacked nav-menu">
+                                <li class="active"><a href="resource.html"><i class="fa fa-server"></i> 资源管理</a></li>
+                                <li><a href="permission.html"><i class="fa fa-user"></i> 权限管理</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-9 col-md-9">
+                    <ol class="breadcrumb">
+                        <li><a href="#">控制台</a></li>
+                        <li><a href="resource.html">资源管理</a></li>
+                        <li class="active">修改资源</li>
+                    </ol>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            修改资源
+                        </div>
+                        <div class="panel-body">
+                            <form class="form-horizontal" method="GET" action="permission.html">
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">名称</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" class="form-control" placeholder="资源名称" value="资源1">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">描述</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" class="form-control" placeholder="资源描述" value="描述1">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">类型</label>
+                                    <div class="col-sm-10">
+                                        <select class="form-control">
+                                            <option>------选择资源类型------</option>
+                                            <option selected>类型1</option>
+                                            <option>类型2</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-sm-offset-2 col-sm-10">
+                                        <button type="submit" class="btn btn-success">更新资源</button>
+                                        <button type="button" class="btn btn-danger pull-right">删除资源</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="//cdn.bootcss.com/jquery/2.1.4/jquery.min.js"></script>
+    <script src="//cdn.bootcss.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    
+<script type="text/javascript">document.write('<script src="' + (location.protocol || 'http:') + '//' + (location.hostname || 'localhost') + ':35701/livereload.js?snipver=1" type="text/javascript"><\/script>')</script>
+</body>
+    </html>

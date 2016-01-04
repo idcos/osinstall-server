@@ -1,0 +1,29 @@
+#!/bin/bash
+
+go env > tempgoenv
+source tempgoenv
+rm tempgoenv
+
+activate_local() {
+    export OLD_PS1=$PS1
+    export OLD_GOPATH=$GOPATH
+    export OLD_PATH=$PATH
+    export PATH=$PWD/bin:$PATH
+    export GOPATH=$GOPATH:$PWD:$PWD/vendor
+    export PS1="(${PWD##*/}) $PS1"
+    gocode set lib-path "$PWD/pkg/$GOOS-$GOARCH"
+}
+
+deactivate() {
+    export PS1=$OLD_PS1
+    export GOPATH=$OLD_GOPATH
+    export PATH=$OLD_PATH
+    unset OLD_PS1
+    unset OLD_GOPATH
+    unset OLD_PATH
+    unset -f deactivate
+    gocode set lib-path ""
+}
+
+activate_local
+unset -f activate_local

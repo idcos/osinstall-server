@@ -1,0 +1,63 @@
+#%RAML 1.0
+title: 虚拟机装机相关
+baseUri: /api/osinstall/{version}
+version: v1
+mediaType: application/json
+
+
+/vm/create:
+  post:
+    description: 批量创建虚拟机，执行成功后返回成功状态及创建的虚拟机列表；执行失败返回失败状态及失败原因
+    queryParameters:
+      Devices:
+        description: 物理宿主机信息，如：[{Sn:"testsn1"},{Sn:"testsn2"}]
+        type: array
+        required: true
+      VmNumber:
+        description: 要安装的虚拟机个数
+        type: number
+        required: true
+      OsID:
+        description: 操作系统表(os_config)ID
+        type: number
+        required: true
+      CpuCoresNumber:
+        description: CPU核数，默认为1
+        type: number
+        required: false
+      MemoryCurrent:
+        description: 内存大小，单位为MB，默认为1024
+        type: number
+        required: false
+      DiskSize:
+        description: 磁盘大小，单位为GB，默认为60
+        type: number
+        required: false
+      
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":[
+                  {
+                    Hostname:"vm1",
+                    Mac:"52:54:00:b9:f2:c0",
+                    Ip:"192.168.0.1",
+                    .
+                    .
+                    .
+                  },
+                  {
+                    Hostname:"vm2",
+                    Mac:"52:54:00:a7:38:54",
+                    Ip:"192.168.0.2",
+                    .
+                    .
+                    .
+                  }
+                ],
+              }

@@ -88,9 +88,11 @@ func (repo *MySQLRepo) CountVmDevice(where string) (int, error) {
 
 func (repo *MySQLRepo) GetVmDeviceListWithPage(limit uint, offset uint, where string) ([]model.VmDeviceFull, error) {
 	var result []model.VmDeviceFull
-	sql := "SELECT t1.*,t2.network as network_name,t3.name as os_name,t4.sn as device_sn FROM vm_devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join devices t4 on t1.device_id = t4.id " + where + " limit " + fmt.Sprintf("%d", limit)
+	sql := "SELECT t1.*,t2.network as network_name,t3.name as os_name,t4.sn as device_sn FROM vm_devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join devices t4 on t1.device_id = t4.id " + where
 	if offset > 0 {
-		sql += "," + fmt.Sprintf("%d", offset)
+		sql += " limit " + fmt.Sprintf("%d", offset) + "," + fmt.Sprintf("%d", limit)
+	} else {
+		sql += " limit " + fmt.Sprintf("%d", limit)
 	}
 
 	err := repo.db.Raw(sql).Scan(&result).Error

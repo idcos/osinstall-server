@@ -40,27 +40,27 @@ func (repo *MySQLRepo) UpdateDeviceLogTypeByDeviceIdAndType(deviceId uint, logTy
 func (repo *MySQLRepo) CountDeviceLogByDeviceID(deviceID uint) (uint, error) {
 	mod := model.DeviceLog{DeviceID: deviceID}
 	var count uint
-	err := repo.db.Model(mod).Where("device_id = ?", deviceID).Count(&count).Error
+	err := repo.db.Unscoped().Model(mod).Where("device_id = ?", deviceID).Count(&count).Error
 	return count, err
 }
 
 func (repo *MySQLRepo) CountDeviceLogByDeviceIDAndType(deviceID uint, logType string) (uint, error) {
 	mod := model.DeviceLog{}
 	var count uint
-	err := repo.db.Model(mod).Where("device_id = ? and type = ?", deviceID, logType).Count(&count).Error
+	err := repo.db.Unscoped().Model(mod).Where("device_id = ? and type = ?", deviceID, logType).Count(&count).Error
 	return count, err
 }
 
 func (repo *MySQLRepo) CountDeviceLog() (uint, error) {
 	mod := model.DeviceLog{}
 	var count uint
-	err := repo.db.Model(mod).Count(&count).Error
+	err := repo.db.Unscoped().Model(mod).Count(&count).Error
 	return count, err
 }
 
 func (repo *MySQLRepo) GetDeviceLogListByDeviceID(deviceID uint, order string) ([]model.DeviceLog, error) {
 	var mod []model.DeviceLog
-	err := repo.db.Where("device_id = ?", deviceID).Order(order).Find(&mod).Error
+	err := repo.db.Unscoped().Where("device_id = ?", deviceID).Order(order).Find(&mod).Error
 	return mod, err
 }
 
@@ -72,12 +72,12 @@ func (repo *MySQLRepo) GetDeviceLogListByDeviceIDAndType(deviceID uint, logType 
 
 func (repo *MySQLRepo) GetDeviceLogById(id uint) (*model.DeviceLog, error) {
 	var mod model.DeviceLog
-	err := repo.db.Where("id = ?", id).Find(&mod).Error
+	err := repo.db.Unscoped().Where("id = ?", id).Find(&mod).Error
 	return &mod, err
 }
 
 func (repo *MySQLRepo) GetLastDeviceLogByDeviceID(deviceID uint) (model.DeviceLog, error) {
 	var mod model.DeviceLog
-	err := repo.db.Limit(1).Where("device_id = ?", deviceID).Order("id DESC").Find(&mod).Error
+	err := repo.db.Unscoped().Limit(1).Where("device_id = ?", deviceID).Order("id DESC").Find(&mod).Error
 	return mod, err
 }

@@ -4,5 +4,8 @@
   },
   "osInstall":{
     "pxeConfigDir":"/var/lib/tftpboot/pxelinux.cfg"
-   }
+   },
+  "logger":{
+  	"level":"debug"
+  }
 }

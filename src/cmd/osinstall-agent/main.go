@@ -21,7 +21,7 @@ func main() {
 		}
 		// 配置查询（15%）
 		if agent.HaveHardWareConf() == false {
-			agent.ReportProgress(-1, "配置查询失败", "没有此服务器型号对应的硬件配置")
+			agent.ReportProgress(-1, "配置查询失败", "该硬件型号不存在，请打开开发者模式再尝试")
 			continue
 		} else {
 			agent.ReportProgress(0.15, "配置查询", "存在对应的硬件配置")

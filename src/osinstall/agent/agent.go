@@ -27,6 +27,7 @@ const (
 	GetCmdlineArgs     = `cat /proc/cmdline`
 	RegexpServerAddr   = `SERVER_ADDR=([^ ]+)`
 	RegexpLoopInterval = `LOOP_INTERVAL=([^ ]+)`
+	RegexpDeveloper    = `DEVELOPER=([^ ]+)`
 	RebootScript       = `ipmitool chassis bootdev pxe; ipmitool power reset`
 	InstallHWTools     = `rpm --quiet -q %s-hw-tools || yum -y install %s-hw-tools`
 	PingIp             = `ping -c 4 -w 3 %s`
@@ -66,6 +67,7 @@ type OSInstallAgent struct {
 	MacAddr       string
 	ServerAddr    string
 	LoopInterval  int
+	DevelopeMode  string
 	Vendor        string         // 厂商
 	ModelName     string         // 产品型号
 	Product       string         // 产品名称
@@ -119,6 +121,14 @@ func New() (*OSInstallAgent, error) {
 	} else {
 		agent.LoopInterval = parseInterval(interval)
 	}
+
+	var developMode = ""
+	if developMode, err = getCmdlineArgs(RegexpDeveloper); err != nil {
+		log.Error(err)
+		agent.DevelopeMode = ""
+	}
+	agent.DevelopeMode = developMode
+	agent.DevelopeMode = strings.Trim(agent.DevelopeMode, "\n")
 
 	// get Vendor
 	if data, err = execScript(GetVendorScript); err != nil {
@@ -257,7 +267,7 @@ func (agent *OSInstallAgent) HaveHardWareConf() bool {
 		Status  string
 		Message string
 		Content struct {
-			Result string
+			IsVerify string
 		}
 	}
 
@@ -273,9 +283,11 @@ func (agent *OSInstallAgent) HaveHardWareConf() bool {
 		return false
 	}
 
-	if jsonResp.Content.Result == "true" {
-		return true
+	if jsonResp.Content.IsVerify == "false" && agent.DevelopeMode != "1" {
+		agent.Logger.Warn(errors.New("Verify is false AND developMode is not 1"))
+		return false
 	}
+
 	return false
 }
 
@@ -450,7 +462,7 @@ func (agent *OSInstallAgent) Reboot() bool {
 	return true
 }
 
-// getCmdlineArgs 获取服务器地址
+// getCmdlineArgs get options from cmdline
 func getCmdlineArgs(r string) (string, error) {
 	var data, err = execScript(GetCmdlineArgs)
 	if err != nil {
@@ -459,7 +471,7 @@ func getCmdlineArgs(r string) (string, error) {
 	reg := regexp.MustCompile(r)
 	var regResult = reg.FindStringSubmatch(string(data))
 	if regResult == nil || len(regResult) != 2 {
-		return "", errors.New("Can't find SERVER_ADDR")
+		return "", errors.New("Can't find " + r)
 	}
 
 	return regResult[1], nil

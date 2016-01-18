@@ -343,6 +343,10 @@ func (agent *OSInstallAgent) ImplementHardConf() bool {
 		agent.Logger.Error(err)
 		return false
 	}
+	if len(agent.hardwareConfs) == 0 {
+		agent.Logger.Debugf("Not found hardware configurations")
+		return false
+	}
 
 	// 开始硬件配置
 	agent.ReportProgress(0.3, "开始硬件配置", "")

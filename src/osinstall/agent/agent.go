@@ -283,12 +283,17 @@ func (agent *OSInstallAgent) HaveHardWareConf() bool {
 		return false
 	}
 
+	if jsonResp.Status != "success" {
+		agent.Logger.Error(jsonResp.Message)
+		return false
+	}
+
 	if jsonResp.Content.IsVerify == "false" && agent.DevelopeMode != "1" {
 		agent.Logger.Warn(errors.New("Verify is false AND developMode is not 1"))
 		return false
 	}
 
-	return false
+	return true
 }
 
 // GetHardConf 获取硬件配置

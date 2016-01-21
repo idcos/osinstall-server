@@ -346,7 +346,11 @@ func (agent *OSInstallAgent) ImplementHardConf() bool {
 
 	// 开始硬件配置
 	agent.ReportProgress(0.3, "开始硬件配置", "")
-	var progressDelta int = 10 / len(agent.hardwareConfs)
+
+	var progressDelta int
+	if len(agent.hardwareConfs) != 0 {
+		progressDelta = 10 / len(agent.hardwareConfs)
+	}
 
 	var curProgress = 0.3
 	for _, hardwareConf := range agent.hardwareConfs {

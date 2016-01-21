@@ -221,6 +221,9 @@ type Hardware struct {
 	IsSystemAdd string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
 	Tpl         string //厂商提交的JSON信息
 	Data        string //最终要执行的脚本信息
+	Source      string //来源
+	Version     string //版本
+	Status      string `sql:"enum('Pending','Success','Failure');NOT NULL;DEFAULT 'Success'"` //状态
 }
 
 // IHardware 硬件配置操作接口
@@ -233,13 +236,16 @@ type IHardware interface {
 	CountHardware(where string) (uint, error)
 	GetHardwareListWithPage(Limit uint, Offset uint, where string) ([]Hardware, error)
 	GetHardwareById(Id uint) (*Hardware, error)
-	UpdateHardwareById(Id uint, Company string, Product string, ModelName string, Raid string, Oob string, Bios string, Tpl string, Data string) (*Hardware, error)
+	UpdateHardwareById(Id uint, Company string, Product string, ModelName string, Raid string, Oob string, Bios string, Tpl string, Data string, Source string, Version string, Status string) (*Hardware, error)
 	DeleteHardwareById(Id uint) (*Hardware, error)
-	AddHardware(Company string, Product string, ModelName string, Raid string, Oob string, Bios string, IsSystemAdd string, Tpl string, Data string) (*Hardware, error)
+	AddHardware(Company string, Product string, ModelName string, Raid string, Oob string, Bios string, IsSystemAdd string, Tpl string, Data string, Source string, Version string, Status string) (*Hardware, error)
 	GetCompanyByGroup() ([]Hardware, error)
 	GetProductByWhereAndGroup(where string) ([]Hardware, error)
 	GetModelNameByWhereAndGroup(where string) ([]Hardware, error)
 	GetHardwareBySeaprator(Name string) (*Hardware, error)
+	ValidateHardwareProductModel(Company string, Product string, ModelName string) (bool, error)
+	CountHardwareByWhere(Where string) (uint, error)
+	GetHardwareByWhere(Where string) (*Hardware, error)
 }
 
 // Location 位置

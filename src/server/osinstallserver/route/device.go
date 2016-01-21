@@ -1296,13 +1296,11 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	if count > 0 {
 		manufacturer, err := repo.GetManufacturerByDeviceID(device.ID)
 		if err != nil {
-			result["Result"] = "false"
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error(), "Content": result})
 			return
 		}
 		_, errUpdate := repo.UpdateManufacturerById(manufacturer.ID, info.Company, info.Product, info.ModelName)
 		if errUpdate != nil {
-			result["Result"] = "false"
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error(), "Content": result})
 			return
 		}
@@ -1315,7 +1313,18 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		}
 	}
 
-	result["Result"] = "true"
+	//校验是否在配置库
+	isValidate, err := repo.ValidateHardwareProductModel(info.Company, info.Product, info.ModelName)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error(), "Content": result})
+		return
+	}
+	if isValidate == true {
+		result["IsVerify"] = "true"
+	} else {
+		result["IsVerify"] = "false"
+	}
+
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
 }
 

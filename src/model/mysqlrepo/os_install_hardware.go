@@ -24,16 +24,16 @@ func (repo *MySQLRepo) GetModelNameByWhereAndGroup(where string) ([]model.Hardwa
 }
 
 //Hardware
-func (repo *MySQLRepo) AddHardware(company string, product string, modelName string, raid string, oob string, bios string, isSystemAdd string, tpl string, data string) (*model.Hardware, error) {
+func (repo *MySQLRepo) AddHardware(company string, product string, modelName string, raid string, oob string, bios string, isSystemAdd string, tpl string, data string, source string, version string, status string) (*model.Hardware, error) {
 	fmt.Println(isSystemAdd)
-	mod := model.Hardware{Company: company, Product: product, ModelName: modelName, Raid: raid, Oob: oob, Bios: bios, IsSystemAdd: isSystemAdd, Tpl: tpl, Data: data}
+	mod := model.Hardware{Company: company, Product: product, ModelName: modelName, Raid: raid, Oob: oob, Bios: bios, IsSystemAdd: isSystemAdd, Tpl: tpl, Data: data, Source: source, Version: version, Status: status}
 	err := repo.db.Create(&mod).Error
 	return &mod, err
 }
 
-func (repo *MySQLRepo) UpdateHardwareById(id uint, company string, product string, modelName string, raid string, oob string, bios string, tpl string, data string) (*model.Hardware, error) {
+func (repo *MySQLRepo) UpdateHardwareById(id uint, company string, product string, modelName string, raid string, oob string, bios string, tpl string, data string, source string, version string, status string) (*model.Hardware, error) {
 	mod := model.Hardware{Company: company, Product: product, ModelName: modelName, Raid: raid, Oob: oob, Bios: bios}
-	err := repo.db.First(&mod, id).Update("company", company).Update("product", product).Update("model_name", modelName).Update("raid", raid).Update("oob", oob).Update("bios", bios).Update("tpl", tpl).Update("data", data).Error
+	err := repo.db.First(&mod, id).Update("company", company).Update("product", product).Update("model_name", modelName).Update("raid", raid).Update("oob", oob).Update("bios", bios).Update("tpl", tpl).Update("data", data).Update("source", source).Update("version", version).Update("status", status).Error
 	return &mod, err
 }
 
@@ -93,4 +93,31 @@ func (repo *MySQLRepo) GetHardwareIdByCompanyAndProductAndName(company string, p
 	mod := model.Hardware{}
 	err := repo.db.Where("company = ? and product = ? and model_name = ?", company, product, modelName).Find(&mod).Error
 	return mod.ID, err
+}
+
+func (repo *MySQLRepo) GetHardwareByWhere(where string) (*model.Hardware, error) {
+	mod := model.Hardware{}
+	err := repo.db.Where(where).Find(&mod).Error
+	return &mod, err
+}
+
+func (repo *MySQLRepo) CountHardwareByWhere(where string) (uint, error) {
+	mod := model.Hardware{}
+	var count uint
+	err := repo.db.Model(mod).Where(where).Count(&count).Error
+	return count, err
+}
+
+func (repo *MySQLRepo) ValidateHardwareProductModel(company string, product string, modelName string) (bool, error) {
+	sql := "select count(*) from hardwares where (company = '" + company + "' or '" + company + "' like concat(\"%\",company,\"%\")) and model_name = '" + modelName + "'"
+	row := repo.db.DB().QueryRow(sql)
+	var count = -1
+	if err := row.Scan(&count); err != nil {
+		return false, err
+	}
+	if count > 0 {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }

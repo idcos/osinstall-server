@@ -64,7 +64,9 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/hardware/getCompanyByGroup", route.GetCompanyByGroup))
 	routes = append(routes, rest.Post("/api/osinstall/v1/hardware/getProductByWhereAndGroup", route.GetProductByWhereAndGroup))
 	routes = append(routes, rest.Post("/api/osinstall/v1/hardware/getModelNameByWhereAndGroup", route.GetModelNameByWhereAndGroup))
-
+	routes = append(routes, rest.Get("/api/osinstall/v1/hardware/export", route.ExportHardware))
+	routes = append(routes, rest.Post("/api/osinstall/v1/hardware/uploadCompanyHardware", route.UploadCompanyHardware))
+	routes = append(routes, rest.Post("/api/osinstall/v1/hardware/uploadHardware", route.UploadHardware))
 	//DeviceLog
 	routes = append(routes, rest.Post("/api/osinstall/v1/deviceLog/list", route.GetDeviceLogByDeviceIdAndType))
 

@@ -22,6 +22,8 @@ func main() {
 		return
 	}
 
+	fmt.Println("The server is running.")
+
 	if err := http.Serve(l4, srvr); err != nil {
 		fmt.Println(err)
 		return

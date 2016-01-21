@@ -162,8 +162,11 @@ CREATE TABLE `hardwares` (
   `is_system_add` enum('Yes','No') NOT NULL DEFAULT 'Yes' COMMENT '是否是系统添加的配置',
   `tpl` text COMMENT '厂商提交的JSON信息',
   `data` text COMMENT '最终要执行的信息',
+  `source` varchar(255) DEFAULT NULL,
+  `version` varchar(255) DEFAULT NULL,
+  `status` enum('Pending','Success','Failure') DEFAULT 'Success',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172,7 +175,7 @@ CREATE TABLE `hardwares` (
 
 LOCK TABLES `hardwares` WRITE;
 /*!40000 ALTER TABLE `hardwares` DISABLE KEYS */;
-INSERT INTO `hardwares` VALUES (1,'2015-11-20 11:41:50','2015-12-11 01:41:40',NULL,'Dell','PowerEdge','R420','/opt/yunji/osinstall/dell/raid/raid.sh','/opt/yunji/osinstall/dell/oob/oob.sh','/opt/yunji/osinstall/dell/bios/bios.sh','Yes','[{\"name\":\"RAID\",\"data\":[{\"name\":\"RAID\",\"type\":\"select\",\"data\":[{\"name\":\"RAID0\",\"value\":\"/opt/yunji/osinstall/dell/raid.sh -c -l 0\",\"checked\":false},{\"name\":\"RAID1\",\"value\":\"/opt/yunji/osinstall/dell/raid.sh -c -l 1\",\"checked\":false},{\"name\":\"RAID5\",\"value\":\"/opt/yunji/osinstall/dell/raid.sh -c -l 5\",\"checked\":false},{\"name\":\"RAID10\",\"value\":\"/opt/yunji/osinstall/dell/raid.sh -c -l 10\",\"checked\":true}],\"default\":\"/opt/yunji/osinstall/dell/raid.sh -c -l 10\"}]},{\"name\":\"OOB\",\"data\":[{\"name\":\"网络类型\",\"type\":\"select\",\"data\":[{\"name\":\"DHCP\",\"value\":\"/opt/yunji/osinstall/dell/oob.sh -n dhcp\",\"checked\":false},{\"name\":\"静态IP\",\"value\":\"/opt/yunji/osinstall/dell/oob.sh -n static\",\"checked\":true}],\"default\":\"/opt/yunji/osinstall/dell/oob.sh -n dhcp\"},{\"name\":\"用户名\",\"type\":\"input\",\"tpl\":\"/opt/yunji/osinstall/dell/oob.sh -u <{##}>\",\"default\":\"/opt/yunji/osinstall/dell/oob.sh -u root\",\"input\":\"root\"},{\"name\":\"密码\",\"type\":\"input\",\"tpl\":\"/opt/yunji/osinstall/dell/oob.sh -p <{##}>\",\"default\":\"/opt/yunji/osinstall/dell/oob.sh -p calvin\",\"input\":\"calvin\"}]},{\"name\":\"BIOS\",\"data\":[{\"name\":\"VT\",\"type\":\"select\",\"data\":[{\"name\":\"ON\",\"value\":\"/opt/yunji/osinstall/dell/bios.sh -t enable\",\"checked\":false},{\"name\":\"OFF\",\"value\":\"/opt/yunji/osinstall/dell/bios.sh -t disable\",\"checked\":true}],\"default\":\"/opt/yunji/osinstall/dell/bios.sh -t enable\"},{\"name\":\"C-States\",\"type\":\"select\",\"data\":[{\"name\":\"ON\",\"value\":\"/opt/yunji/osinstall/dell/bios.sh -c enable\",\"checked\":false},{\"name\":\"OFF\",\"value\":\"/opt/yunji/osinstall/dell/bios.sh -c disable\",\"checked\":true}],\"default\":\"/opt/yunji/osinstall/dell/bios.sh -c disable\"}]}]','[{\"Name\":\"RAID\",\"Data\":[{\"Name\":\"RAID\",\"Value\":\"/opt/yunji/osinstall/dell/raid.sh -c -l 10\"}]},{\"Name\":\"OOB\",\"Data\":[{\"Name\":\"网络类型\",\"Value\":\"/opt/yunji/osinstall/dell/oob.sh -n dhcp\"},{\"Name\":\"用户名\",\"Value\":\"/opt/yunji/osinstall/dell/oob.sh -u root\"},{\"Name\":\"密码\",\"Value\":\"/opt/yunji/osinstall/dell/oob.sh -p calvin\"}]},{\"Name\":\"BIOS\",\"Data\":[{\"Name\":\"VT\",\"Value\":\"/opt/yunji/osinstall/dell/bios.sh -t enable\"},{\"Name\":\"C-States\",\"Value\":\"/opt/yunji/osinstall/dell/bios.sh -c disable\"}]}]');
+INSERT INTO `hardwares` VALUES (1,'2015-11-20 11:41:50','2015-12-11 01:41:40',NULL,'Dell','PowerEdge','R420','/opt/yunji/osinstall/dell/raid/raid.sh','/opt/yunji/osinstall/dell/oob/oob.sh','/opt/yunji/osinstall/dell/bios/bios.sh','Yes','[{\"name\":\"RAID\",\"data\":[{\"name\":\"RAID\",\"type\":\"select\",\"data\":[{\"name\":\"RAID0\",\"value\":\"/opt/yunji/osinstall/dell/raid.sh -c -l 0\",\"checked\":false},{\"name\":\"RAID1\",\"value\":\"/opt/yunji/osinstall/dell/raid.sh -c -l 1\",\"checked\":false},{\"name\":\"RAID5\",\"value\":\"/opt/yunji/osinstall/dell/raid.sh -c -l 5\",\"checked\":false},{\"name\":\"RAID10\",\"value\":\"/opt/yunji/osinstall/dell/raid.sh -c -l 10\",\"checked\":true}],\"default\":\"/opt/yunji/osinstall/dell/raid.sh -c -l 10\"}]},{\"name\":\"OOB\",\"data\":[{\"name\":\"网络类型\",\"type\":\"select\",\"data\":[{\"name\":\"DHCP\",\"value\":\"/opt/yunji/osinstall/dell/oob.sh -n dhcp\",\"checked\":false},{\"name\":\"静态IP\",\"value\":\"/opt/yunji/osinstall/dell/oob.sh -n static\",\"checked\":true}],\"default\":\"/opt/yunji/osinstall/dell/oob.sh -n dhcp\"},{\"name\":\"用户名\",\"type\":\"input\",\"tpl\":\"/opt/yunji/osinstall/dell/oob.sh -u <{##}>\",\"default\":\"/opt/yunji/osinstall/dell/oob.sh -u root\",\"input\":\"root\"},{\"name\":\"密码\",\"type\":\"input\",\"tpl\":\"/opt/yunji/osinstall/dell/oob.sh -p <{##}>\",\"default\":\"/opt/yunji/osinstall/dell/oob.sh -p calvin\",\"input\":\"calvin\"}]},{\"name\":\"BIOS\",\"data\":[{\"name\":\"VT\",\"type\":\"select\",\"data\":[{\"name\":\"ON\",\"value\":\"/opt/yunji/osinstall/dell/bios.sh -t enable\",\"checked\":false},{\"name\":\"OFF\",\"value\":\"/opt/yunji/osinstall/dell/bios.sh -t disable\",\"checked\":true}],\"default\":\"/opt/yunji/osinstall/dell/bios.sh -t enable\"},{\"name\":\"C-States\",\"type\":\"select\",\"data\":[{\"name\":\"ON\",\"value\":\"/opt/yunji/osinstall/dell/bios.sh -c enable\",\"checked\":false},{\"name\":\"OFF\",\"value\":\"/opt/yunji/osinstall/dell/bios.sh -c disable\",\"checked\":true}],\"default\":\"/opt/yunji/osinstall/dell/bios.sh -c disable\"}]}]','[{\"Name\":\"RAID\",\"Data\":[{\"Name\":\"RAID\",\"Value\":\"/opt/yunji/osinstall/dell/raid.sh -c -l 10\"}]},{\"Name\":\"OOB\",\"Data\":[{\"Name\":\"网络类型\",\"Value\":\"/opt/yunji/osinstall/dell/oob.sh -n dhcp\"},{\"Name\":\"用户名\",\"Value\":\"/opt/yunji/osinstall/dell/oob.sh -u root\"},{\"Name\":\"密码\",\"Value\":\"/opt/yunji/osinstall/dell/oob.sh -p calvin\"}]},{\"Name\":\"BIOS\",\"Data\":[{\"Name\":\"VT\",\"Value\":\"/opt/yunji/osinstall/dell/bios.sh -t enable\"},{\"Name\":\"C-States\",\"Value\":\"/opt/yunji/osinstall/dell/bios.sh -c disable\"}]}]',NULL,NULL,'Success');
 /*!40000 ALTER TABLE `hardwares` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -340,7 +343,7 @@ CREATE TABLE `os_configs` (
   `pxe` text NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -369,7 +372,7 @@ CREATE TABLE `system_configs` (
   `content` text NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -447,4 +450,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-01-05 16:01:41
+-- Dump completed on 2016-01-21 16:02:25

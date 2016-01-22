@@ -14,6 +14,12 @@ var osInstallTables = []interface{}{
 	&model.SystemConfig{},
 	&model.Hardware{},
 	&model.Location{},
+	&model.Ip{},
+	&model.DeviceLog{},
+	&model.DeviceHistory{},
+	&model.Mac{},
+	&model.Manufacturer{},
+	&model.VmDevice{},
 }
 
 func InitOsInstallTables(db *gorm.DB, conf *config.Config) error {

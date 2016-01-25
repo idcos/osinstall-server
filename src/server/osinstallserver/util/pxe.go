@@ -23,7 +23,7 @@ func CreatePxeFile(dir string, file string, content string) error {
 	}
 
 	bytes := []byte(content)
-	err := ioutil.WriteFile(dir+"/"+file, bytes, 0x644)
+	err := ioutil.WriteFile(dir+"/"+file, bytes, 0644)
 	if err != nil {
 		return err
 	}

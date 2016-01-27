@@ -1,8 +1,28 @@
 package main
 
-import "osinstall/agent"
+import (
+	"os"
+	"osinstall/agent"
+
+	"github.com/codegangsta/cli"
+)
+
+var Version = "v1.1 (2016-01-26)"
 
 func main() {
+	app := cli.NewApp()
+	app.Name = "osinstall agent"
+	app.Version = Version
+
+	app.Action = func(c *cli.Context) {
+		runAgent(c)
+	}
+
+	app.Run(os.Args)
+
+}
+
+func runAgent(c *cli.Context) {
 	var agent, err = agent.New()
 	if err != nil {
 		agent.Logger.Error(err.Error())

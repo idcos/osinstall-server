@@ -14,6 +14,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/codegangsta/cli",
+			"repository": "https://github.com/codegangsta/cli",
+			"revision": "f9cc3001e04f9783cb4ad08ca6791aa07134787c",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/didip/tollbooth",
 			"repository": "https://github.com/didip/tollbooth",
 			"revision": "be7d4891cc860c1d3d4004e99b898ddfd419ceb1",

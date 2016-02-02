@@ -117,6 +117,73 @@ func BatchReInstall(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
 }
 
+//取消安装
+func BatchCancelInstall(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+	var infos []struct {
+		ID uint
+	}
+
+	if err := r.DecodeJSONPayload(&infos); err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
+		return
+	}
+
+	for _, info := range infos {
+		device, err := repo.GetDeviceById(info.ID)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+			return
+		}
+
+		//安装成功的设备不允许取消安装
+		if device.Status == "success" {
+			continue
+		}
+
+		_, errCancel := repo.CancelInstallDeviceById(info.ID)
+		if errCancel != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCancel.Error()})
+			return
+		}
+
+		logContent := make(map[string]interface{})
+		logContent["data"] = device
+		json, err := json.Marshal(logContent)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+			return
+		}
+
+		_, errAddLog := repo.AddDeviceLog(info.ID, "取消安装设备", "operate", string(json))
+		if errAddLog != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+			return
+		}
+
+		_, errLog := repo.UpdateDeviceLogTypeByDeviceIdAndType(info.ID, "install", "install_history")
+		if errLog != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
+			return
+		}
+
+		/*
+			//删除LOG
+			_, errLog := repo.DeleteDeviceLogByDeviceID(info.ID)
+			if errLog != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
+				return
+			}
+		*/
+	}
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
+}
+
 func BatchDelete(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	repo, ok := middleware.RepoFromContext(ctx)
 	if !ok {

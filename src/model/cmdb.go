@@ -63,6 +63,7 @@ type IDevice interface {
 	GetDeviceById(Id uint) (*Device, error)
 	DeleteDeviceById(Id uint) (*Device, error)
 	ReInstallDeviceById(Id uint) (*Device, error)
+	CancelInstallDeviceById(Id uint) (*Device, error)
 	CreateBatchNumber() (string, error)
 	AddDevice(BatchNumber string, Sn string, Hostname string, Ip string, NetworkID uint, OsID uint, HardwareID uint, SystemID uint, Location string, LocationID uint, AssetNumber string, Status string, IsSupportVm string) (*Device, error)
 	UpdateDeviceById(ID uint, BatchNumber string, Sn string, Hostname string, Ip string, NetworkID uint, OsID uint, HardwareID uint, SystemID uint, Location string, LocationID uint, AssetNumber string, Status string, IsSupportVm string) (*Device, error)

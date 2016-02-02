@@ -34,6 +34,12 @@ func (repo *MySQLRepo) ReInstallDeviceById(id uint) (*model.Device, error) {
 	return &mod, err
 }
 
+func (repo *MySQLRepo) CancelInstallDeviceById(id uint) (*model.Device, error) {
+	mod := model.Device{}
+	err := repo.db.First(&mod, id).Update("status", "failure").Update("install_progress", 0.0000).Update("install_log", "").Error
+	return &mod, err
+}
+
 //device相关
 func (repo *MySQLRepo) CreateBatchNumber() (string, error) {
 	date := time.Now().Format("2006-01-02")

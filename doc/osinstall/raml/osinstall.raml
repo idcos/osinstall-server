@@ -133,7 +133,6 @@ mediaType: application/json
                 }
               }
 
-
 /report/deviceProductInfo:
   post:
     description: 上传服务器厂商、产品名称、设备型号信息
@@ -154,6 +153,47 @@ mediaType: application/json
         description: 服务器型号
         type: string
         required: false
+      Sn:
+        description: 序列号
+        type: string
+        required: true
+      Ip:
+        description: 当前使用的IP
+        type: string
+        required: false
+      Mac:
+        description: Mac地址
+        type: string
+        required: false
+      Nic:
+        description: 网卡信息
+        type: string
+        required: false
+      Cpu:
+        description: CPU核数
+        type: string
+        required: false
+      Memory:
+        description: 内存大小(GB)
+        type: string
+        required: false
+      Disk:
+        description: 硬盘大小(GB)
+        type: string
+        required: false
+      Motherboard:
+        description: 主板
+        type: string
+        required: false
+      Raid:
+        description: Raid
+        type: string
+        required: false
+      Oob:
+        description: Oob
+        type: string
+        required: false
+
     responses:
       200:
         body:

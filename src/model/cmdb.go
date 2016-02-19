@@ -297,10 +297,20 @@ type IMac interface {
 
 type Manufacturer struct {
 	gorm.Model
-	DeviceID  uint   `sql:"not null;"`
-	Company   string `sql:"not null;"`
-	Product   string
-	ModelName string
+	DeviceID    uint   `sql:"not null;"`
+	Company     string `sql:"not null;"`
+	Product     string
+	ModelName   string
+	Sn          string
+	Ip          string
+	Mac         string
+	Nic         string
+	Cpu         string
+	Memory      string
+	Disk        string
+	Motherboard string
+	Raid        string
+	Oob         string
 }
 
 type IManufacturer interface {
@@ -308,8 +318,15 @@ type IManufacturer interface {
 	GetManufacturerById(Id uint) (*Manufacturer, error)
 	GetManufacturerByDeviceID(DeviceID uint) (*Manufacturer, error)
 	DeleteManufacturerById(Id uint) (*Manufacturer, error)
-	AddManufacturer(DeviceID uint, Company string, Product string, ModelName string) (*Manufacturer, error)
-	UpdateManufacturerById(Id uint, Company string, Product string, ModelName string) (*Manufacturer, error)
+	AddManufacturer(DeviceID uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, Memory string, Disk string, Motherboard string, Raid string, Oob string) (*Manufacturer, error)
+	UpdateManufacturerById(Id uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, Memory string, Disk string, Motherboard string, Raid string, Oob string) (*Manufacturer, error)
+	GetManufacturerListWithPage(Limit uint, Offset uint, Where string) ([]Manufacturer, error)
+	CountManufacturerByWhere(Where string) (uint, error)
+	GetManufacturerCompanyByGroup(Where string) ([]Manufacturer, error)
+	GetManufacturerProductByGroup(Where string) ([]Manufacturer, error)
+	GetManufacturerModelNameByGroup(Where string) ([]Manufacturer, error)
+	CountManufacturerBySn(Sn string) (uint, error)
+	GetManufacturerIdBySn(Sn string) (uint, error)
 }
 
 type VmDevice struct {

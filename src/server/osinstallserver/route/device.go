@@ -1147,6 +1147,11 @@ func ReportInstallInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		return
 	}
 
+	if device.Status != "pre_install" && device.Status != "installing" {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备不在安装列表里!"})
+		return
+	}
+
 	var status string
 	var logTitle string
 
@@ -1308,90 +1313,6 @@ func ReportMacInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 
 	result := make(map[string]string)
 	result["Result"] = "true"
-	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
-}
-
-//上报厂商信息
-func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
-	w.Header().Add("Content-type", "application/json; charset=utf-8")
-	repo, ok := middleware.RepoFromContext(ctx)
-	if !ok {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
-		return
-	}
-	var info struct {
-		Sn        string
-		Company   string
-		Product   string
-		ModelName string
-	}
-
-	if err := r.DecodeJSONPayload(&info); err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
-		return
-	}
-
-	info.Sn = strings.TrimSpace(info.Sn)
-	info.Company = strings.TrimSpace(info.Company)
-	info.Product = strings.TrimSpace(info.Product)
-	info.ModelName = strings.TrimSpace(info.ModelName)
-
-	if info.Sn == "" || info.Company == "" {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})
-		return
-	}
-
-	deviceId, err := repo.GetDeviceIdBySn(info.Sn)
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备不存在!"})
-		return
-	}
-
-	device, err := repo.GetDeviceById(deviceId)
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-		return
-	}
-
-	count, err := repo.CountManufacturerByDeviceID(device.ID)
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-		return
-	}
-
-	result := make(map[string]string)
-	if count > 0 {
-		manufacturer, err := repo.GetManufacturerByDeviceID(device.ID)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error(), "Content": result})
-			return
-		}
-		_, errUpdate := repo.UpdateManufacturerById(manufacturer.ID, info.Company, info.Product, info.ModelName)
-		if errUpdate != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error(), "Content": result})
-			return
-		}
-
-	} else {
-		_, err := repo.AddManufacturer(device.ID, info.Company, info.Product, info.ModelName)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error(), "Content": result})
-			return
-		}
-	}
-
-	//校验是否在配置库
-	isValidate, err := repo.ValidateHardwareProductModel(info.Company, info.Product, info.ModelName)
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error(), "Content": result})
-		return
-	}
-	if isValidate == true {
-		result["IsVerify"] = "true"
-	} else {
-		result["IsVerify"] = "false"
-	}
-
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
 }
 

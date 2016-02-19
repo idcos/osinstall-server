@@ -96,4 +96,12 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchReInstallVm", route.BatchReInstallVm))
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchDeleteVm", route.BatchDeleteVm))
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/create", route.CreateVmDevice))
+
+	//Scan device
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/list", route.GetScanDeviceList))
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/view", route.GetScanDeviceById))
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/company/list", route.GetScanDeviceCompany))
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/product/list", route.GetScanDeviceProduct))
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/modelName/list", route.GetScanDeviceModelName))
+	routes = append(routes, rest.Get("/api/osinstall/v1/device/scan/export", route.ExportScanDeviceList))
 }

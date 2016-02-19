@@ -96,6 +96,7 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchReInstallVm", route.BatchReInstallVm))
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchDeleteVm", route.BatchDeleteVm))
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/create", route.CreateVmDevice))
+	routes = append(routes, rest.Get("/api/osinstall/v1/vm/getListByHostSn", route.GetVmDeviceListByHostSn))
 
 	//Scan device
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/list", route.GetScanDeviceList))

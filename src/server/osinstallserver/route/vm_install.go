@@ -458,6 +458,55 @@ func GetVmDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
 }
 
+func GetVmDeviceListByHostSn(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	w.Header().Add("Content-type", "application/json; charset=utf-8")
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	var sn string
+	sn = r.FormValue("sn")
+	sn = strings.TrimSpace(sn)
+	if sn == "" {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "宿主机SN不能为空!"})
+		return
+	}
+
+	countDevice, err := repo.CountDeviceBySn(sn)
+	if countDevice <= 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "宿主机不存在!"})
+		return
+	}
+	deviceId, err := repo.GetDeviceIdBySn(sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	var where string
+	where = fmt.Sprintf("where device_id = %d", deviceId)
+
+	mods, err := repo.GetVmDeviceListWithPage(1000000, 0, where)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	result := make(map[string]interface{})
+	result["list"] = mods
+
+	//总条数
+	count, err := repo.CountVmDevice(where)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	result["recordCount"] = count
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
+}
+
 func BatchAddVmDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	repo, ok := middleware.RepoFromContext(ctx)
 	fmt.Println(repo)

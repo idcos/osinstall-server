@@ -376,6 +376,7 @@ func GetDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		BatchNumber    string
 		StartUpdatedAt string
 		EndUpdatedAt   string
+		UserID         int
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
@@ -410,6 +411,10 @@ func GetDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 
 	if info.EndUpdatedAt != "" {
 		where += " and t1.updated_at <= '" + info.EndUpdatedAt + "'"
+	}
+
+	if info.UserID > 0 {
+		where += " and t1.user_id = " + strconv.Itoa(info.UserID)
 	}
 
 	if info.Keyword != "" {
@@ -522,6 +527,7 @@ func GetDeviceNumByStatus(ctx context.Context, w rest.ResponseWriter, r *rest.Re
 	}
 	var info struct {
 		Status string
+		UserID int
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
@@ -533,6 +539,9 @@ func GetDeviceNumByStatus(ctx context.Context, w rest.ResponseWriter, r *rest.Re
 	var where string
 	where = " where t1.id > 0 "
 	where += " and t1.status = '" + info.Status + "'"
+	if info.UserID > 0 {
+		where += " and t1.user_id = " + strconv.Itoa(info.UserID)
+	}
 
 	//总条数
 	count, err := repo.CountDevice(where)
@@ -553,6 +562,13 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
 	var info struct {
 		BatchNumber string
 		Sn          string
@@ -566,6 +582,7 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		AssetNumber string
 		IsSupportVm string
 		Status      string
+		UserID      uint
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
@@ -579,6 +596,7 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	info.AssetNumber = strings.TrimSpace(info.AssetNumber)
 	info.IsSupportVm = strings.TrimSpace(info.IsSupportVm)
 	info.Status = strings.TrimSpace(info.Status)
+	info.UserID = session.ID
 
 	if info.Sn == "" || info.Hostname == "" || info.Ip == "" || info.NetworkID == uint(0) || info.SystemID == uint(0) || info.OsID == uint(0) {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
@@ -591,6 +609,17 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 
 	countDevice, err := repo.CountDeviceBySn(info.Sn)
 	if countDevice > 0 {
+		device, err := repo.GetDeviceBySn(info.Sn)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+			return
+		}
+
+		if session.Role != "Administrator" && device.UserID != session.ID {
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该设备已被录入，不能重复录入!"})
+			return
+		}
+
 		deviceId, err := repo.GetDeviceIdBySn(info.Sn)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
@@ -705,7 +734,7 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		logContent := make(map[string]interface{})
 		logContent["data_old"] = deviceOld
 
-		device, errUpdate := repo.UpdateDeviceById(id, batchNumber, info.Sn, info.Hostname, info.Ip, info.NetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, status, info.IsSupportVm)
+		device, errUpdate := repo.UpdateDeviceById(id, batchNumber, info.Sn, info.Hostname, info.Ip, info.NetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, status, info.IsSupportVm, info.UserID)
 		if errUpdate != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdate.Error()})
 			return
@@ -725,7 +754,7 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			return
 		}
 	} else {
-		device, err := repo.AddDevice(batchNumber, info.Sn, info.Hostname, info.Ip, info.NetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, status, info.IsSupportVm)
+		device, err := repo.AddDevice(batchNumber, info.Sn, info.Hostname, info.Ip, info.NetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, status, info.IsSupportVm, info.UserID)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
 			return
@@ -757,6 +786,7 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
 	var infos []struct {
 		BatchNumber string
 		Sn          string
@@ -770,10 +800,17 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		AssetNumber string
 		IsSupportVm string
 		Status      string
+		UserID      uint
 	}
 
 	if err := r.DecodeJSONPayload(&infos); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
+		return
+	}
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
 		return
 	}
 
@@ -787,6 +824,7 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		info.Ip = strings.TrimSpace(info.Ip)
 		info.AssetNumber = strings.TrimSpace(info.AssetNumber)
 		info.Status = strings.TrimSpace(info.Status)
+		info.UserID = session.ID
 
 		if info.Sn == "" || info.Hostname == "" || info.Ip == "" || info.NetworkID == uint(0) || info.OsID == uint(0) {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
@@ -795,6 +833,17 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 
 		count, err := repo.CountDeviceBySn(info.Sn)
 		if count > 0 {
+			device, err := repo.GetDeviceBySn(info.Sn)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+				return
+			}
+
+			if session.Role != "Administrator" && device.UserID != session.ID {
+				w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该设备已被录入，不能重复录入!"})
+				return
+			}
+
 			deviceId, err := repo.GetDeviceIdBySn(info.Sn)
 			if err != nil {
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
@@ -880,6 +929,7 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 	}
 	status := "pre_install"
 	for _, info := range infos {
+		info.UserID = session.ID
 		location := ""
 
 		info.IsSupportVm = strings.TrimSpace(info.IsSupportVm)
@@ -918,7 +968,7 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 			logContent := make(map[string]interface{})
 			logContent["data_old"] = deviceOld
 
-			device, errUpdate := repo.UpdateDeviceById(id, batchNumber, info.Sn, info.Hostname, info.Ip, info.NetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, status, info.IsSupportVm)
+			device, errUpdate := repo.UpdateDeviceById(id, batchNumber, info.Sn, info.Hostname, info.Ip, info.NetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, status, info.IsSupportVm, info.UserID)
 			if errUpdate != nil {
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdate.Error()})
 				return
@@ -937,7 +987,7 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 				return
 			}
 		} else {
-			device, err := repo.AddDevice(batchNumber, info.Sn, info.Hostname, info.Ip, info.NetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, status, info.IsSupportVm)
+			device, err := repo.AddDevice(batchNumber, info.Sn, info.Hostname, info.Ip, info.NetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, status, info.IsSupportVm, info.UserID)
 			if err != nil {
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
 				return
@@ -971,6 +1021,13 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
 	var infos []struct {
 		ID          uint
 		Hostname    string
@@ -982,6 +1039,7 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		LocationID  uint
 		IsSupportVm string
 		AssetNumber string
+		UserID      uint
 	}
 
 	if err := r.DecodeJSONPayload(&infos); err != nil {
@@ -994,9 +1052,21 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		info.Hostname = strings.TrimSpace(info.Hostname)
 		info.Ip = strings.TrimSpace(info.Ip)
 		info.AssetNumber = strings.TrimSpace(info.AssetNumber)
+		info.UserID = session.ID
 
 		if info.Hostname == "" || info.Ip == "" || info.NetworkID == uint(0) || info.OsID == uint(0) {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
+			return
+		}
+
+		device, err := repo.GetDeviceById(info.ID)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+			return
+		}
+
+		if session.Role != "Administrator" && device.UserID != session.ID {
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该设备已被录入，不能重复录入!"})
 			return
 		}
 
@@ -1050,6 +1120,7 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 
 	for _, info := range infos {
 		location := ""
+		info.UserID = session.ID
 
 		info.IsSupportVm = strings.TrimSpace(info.IsSupportVm)
 		if info.IsSupportVm == "" {
@@ -1066,7 +1137,7 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		logContent := make(map[string]interface{})
 		logContent["data_old"] = device
 
-		deviceNew, errUpdate := repo.UpdateDeviceById(info.ID, device.BatchNumber, device.Sn, info.Hostname, info.Ip, info.NetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, device.Status, info.IsSupportVm)
+		deviceNew, errUpdate := repo.UpdateDeviceById(info.ID, device.BatchNumber, device.Sn, info.Hostname, info.Ip, info.NetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, device.Status, info.IsSupportVm, info.UserID)
 		if errUpdate != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdate.Error()})
 			return
@@ -1290,7 +1361,7 @@ func ReportMacInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		}
 
 		if count > 0 {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该MAC地址已被其他机器录入"})
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该MAC地址已被其他设备录入"})
 			return
 		}
 
@@ -1631,9 +1702,36 @@ func ValidateSn(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	if count > 0 {
+		session, err := GetSession(w, r)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+			return
+		}
+
+		device, err := repo.GetDeviceBySn(info.Sn)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+			return
+		}
+
+		if session.Role != "Administrator" {
+			if device.UserID != session.ID {
+				w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该设备已被录入，不能重复录入!"})
+				return
+			}
+		}
+
+		if device.Status == "success" {
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该设备已安装成功，确定要重装？"})
+			return
+		}
+
 		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该SN已存在，继续填写会覆盖旧的数据!"})
+		return
+
 	} else {
 		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "SN填写正确!"})
+		return
 	}
 
 }

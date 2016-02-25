@@ -105,4 +105,14 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/product/list", route.GetScanDeviceProduct))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/modelName/list", route.GetScanDeviceModelName))
 	routes = append(routes, rest.Get("/api/osinstall/v1/device/scan/export", route.ExportScanDeviceList))
+
+	//User
+	routes = append(routes, rest.Post("/api/osinstall/v1/user/add", route.AddUser))
+	routes = append(routes, rest.Post("/api/osinstall/v1/user/list", route.GetUserList))
+	routes = append(routes, rest.Post("/api/osinstall/v1/user/view", route.GetUserById))
+	routes = append(routes, rest.Post("/api/osinstall/v1/user/update", route.UpdateUserById))
+	routes = append(routes, rest.Post("/api/osinstall/v1/user/updateMyInfo", route.UpdateMyInfo))
+	routes = append(routes, rest.Post("/api/osinstall/v1/user/delete", route.DeleteUserById))
+	routes = append(routes, rest.Post("/api/osinstall/v1/user/login", route.Login))
+	routes = append(routes, rest.Post("/api/osinstall/v1/user/logout", route.LoginOut))
 }

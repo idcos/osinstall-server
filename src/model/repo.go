@@ -18,4 +18,5 @@ type Repo interface {
 	IDeviceLog
 	IDeviceHistory
 	IVmDevice
+	IUser
 }

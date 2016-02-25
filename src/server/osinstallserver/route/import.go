@@ -76,6 +76,13 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
 	var info struct {
 		Filename string
 		Limit    uint
@@ -133,6 +140,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		HardwareName    string
 		SystemName      string
 		Content         string
+		UserID          uint
 	}
 	var success []Device
 	var failure []Device
@@ -158,6 +166,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		row.SystemName = strings.TrimSpace(ra[i][5])
 		row.Location = strings.TrimSpace(ra[i][6])
 		row.AssetNumber = strings.TrimSpace(ra[i][7])
+		row.UserID = session.ID
 
 		if len(row.Sn) > 255 {
 			var br string
@@ -251,6 +260,28 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 			if err != nil {
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 				return
+			}
+
+			device, err := repo.GetDeviceBySn(row.Sn)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+				return
+			}
+
+			if session.Role != "Administrator" && device.UserID != session.ID {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "该设备已被录入，不能重复录入!"
+			} else {
+				if device.Status == "success" {
+					var br string
+					if row.Content != "" {
+						br = "<br />"
+					}
+					row.Content += br + "该设备已安装成功，请使用【单个录入】的功能重新录入并安装"
+				}
 			}
 
 			//hostname
@@ -445,6 +476,13 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
 	var info struct {
 		Filename string
 	}
@@ -501,6 +539,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		SystemName      string
 		Content         string
 		IsSupportVm     string
+		UserID          uint
 	}
 
 	batchNumber, err := repo.CreateBatchNumber()
@@ -525,6 +564,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		row.SystemName = strings.TrimSpace(ra[i][5])
 		row.Location = strings.TrimSpace(ra[i][6])
 		row.AssetNumber = strings.TrimSpace(ra[i][7])
+		row.UserID = session.ID
 
 		if len(row.Sn) > 255 {
 			var br string
@@ -618,6 +658,20 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			if err != nil {
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 				return
+			}
+
+			device, err := repo.GetDeviceBySn(row.Sn)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+				return
+			}
+
+			if session.Role != "Administrator" && device.UserID != session.ID {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "SN:" + row.Sn + " 该设备已被录入，不能重复录入!"
 			}
 
 			//hostname
@@ -830,13 +884,13 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 					return
 				}
 
-				_, errUpdate := repo.UpdateDeviceById(id, batchNumber, row.Sn, row.Hostname, row.Ip, row.NetworkID, row.OsID, row.HardwareID, row.SystemID, "", row.LocationID, row.AssetNumber, status, row.IsSupportVm)
+				_, errUpdate := repo.UpdateDeviceById(id, batchNumber, row.Sn, row.Hostname, row.Ip, row.NetworkID, row.OsID, row.HardwareID, row.SystemID, "", row.LocationID, row.AssetNumber, status, row.IsSupportVm, row.UserID)
 				if errUpdate != nil {
 					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdate.Error()})
 					return
 				}
 			} else {
-				_, err := repo.AddDevice(batchNumber, row.Sn, row.Hostname, row.Ip, row.NetworkID, row.OsID, row.HardwareID, row.SystemID, "", row.LocationID, row.AssetNumber, status, row.IsSupportVm)
+				_, err := repo.AddDevice(batchNumber, row.Sn, row.Hostname, row.Ip, row.NetworkID, row.OsID, row.HardwareID, row.SystemID, "", row.LocationID, row.AssetNumber, status, row.IsSupportVm, row.UserID)
 				if err != nil {
 					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
 					return

@@ -47,6 +47,7 @@ type Device struct {
 	InstallProgress float64 `sql:"type:decimal(11,4);default:0;"` //安装进度
 	InstallLog      string  `sql:"type:text;"`                    //安装日志
 	IsSupportVm     string  `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
+	UserID          uint    `sql:"not null;default:0;"`
 }
 
 // IDevice 设备操作接口
@@ -58,6 +59,7 @@ type IDevice interface {
 	CountDeviceByIp(ip string) (uint, error)
 	CountDeviceByIpAndId(ip string, id uint) (uint, error)
 	GetDeviceIdBySn(sn string) (uint, error)
+	GetDeviceBySn(sn string) (*Device, error)
 	CountDevice(where string) (int, error)
 	GetDeviceListWithPage(Limit uint, Offset uint, where string) ([]DeviceFull, error)
 	GetDeviceById(Id uint) (*Device, error)
@@ -65,8 +67,8 @@ type IDevice interface {
 	ReInstallDeviceById(Id uint) (*Device, error)
 	CancelInstallDeviceById(Id uint) (*Device, error)
 	CreateBatchNumber() (string, error)
-	AddDevice(BatchNumber string, Sn string, Hostname string, Ip string, NetworkID uint, OsID uint, HardwareID uint, SystemID uint, Location string, LocationID uint, AssetNumber string, Status string, IsSupportVm string) (*Device, error)
-	UpdateDeviceById(ID uint, BatchNumber string, Sn string, Hostname string, Ip string, NetworkID uint, OsID uint, HardwareID uint, SystemID uint, Location string, LocationID uint, AssetNumber string, Status string, IsSupportVm string) (*Device, error)
+	AddDevice(BatchNumber string, Sn string, Hostname string, Ip string, NetworkID uint, OsID uint, HardwareID uint, SystemID uint, Location string, LocationID uint, AssetNumber string, Status string, IsSupportVm string, UserID uint) (*Device, error)
+	UpdateDeviceById(ID uint, BatchNumber string, Sn string, Hostname string, Ip string, NetworkID uint, OsID uint, HardwareID uint, SystemID uint, Location string, LocationID uint, AssetNumber string, Status string, IsSupportVm string, UserID uint) (*Device, error)
 	UpdateInstallInfoById(ID uint, status string, installProgress float64) (*Device, error)
 	GetSystemBySn(sn string) (*SystemConfig, error)
 	GetNetworkBySn(sn string) (*Network, error)
@@ -464,4 +466,30 @@ type IVmDevice interface {
 		DisplayPassword string,
 		DisplayUpdatePassword string,
 		Status string) (VmDevice, error)
+}
+
+// Mac mac地址
+type User struct {
+	gorm.Model
+	Username    string `sql:"not null;unique;"`
+	Password    string `sql:"not null;"`
+	Name        string
+	PhoneNumber string
+	Permission  string
+	Status      string `sql:"enum('Enable','Disable');NOT NULL;DEFAULT 'Enable'"`
+	Role        string `sql:"enum('Administrator','User');NOT NULL;DEFAULT 'User'"`
+}
+
+type IUser interface {
+	CountUserByUsername(Username string) (uint, error)
+	GetUserByUsername(Username string) (*User, error)
+	GetUserById(Id uint) (*User, error)
+	CountUserById(Id uint) (uint, error)
+	CountUserByWhere(Where string) (uint, error)
+	GetUserByWhere(Where string) (*User, error)
+	CountUser(Where string) (uint, error)
+	DeleteUserById(Id uint) (*User, error)
+	AddUser(Username string, Password string, Name string, PhoneNumber string, Permission string, Status string, Role string) (*User, error)
+	UpdateUserById(Id uint, Password string, Name string, PhoneNumber string, Permission string, Status string, Role string) (*User, error)
+	GetUserListWithPage(Limit uint, Offset uint, Where string) ([]User, error)
 }

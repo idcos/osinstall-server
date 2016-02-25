@@ -211,7 +211,6 @@ func ExportScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Re
 		str += ","
 		str += "\n"
 	}
-	fmt.Println(str)
 
 	cd, err := iconv.Open("gbk", "utf-8") // convert utf-8 to gbk
 	if err != nil {

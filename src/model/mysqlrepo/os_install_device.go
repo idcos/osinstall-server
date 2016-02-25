@@ -10,33 +10,34 @@ import (
 )
 
 //device相关
-func (repo *MySQLRepo) AddDevice(batchNumber string, sn string, hostname string, ip string, networkId uint, osId uint, hardwareId uint, systemId uint, location string, locationId uint, assetNumber string, status string, isSupportVm string) (*model.Device, error) {
-	mod := model.Device{BatchNumber: batchNumber, Sn: sn, Hostname: hostname, Ip: ip, NetworkID: networkId, OsID: osId, HardwareID: hardwareId, SystemID: systemId, Location: location, LocationID: locationId, AssetNumber: assetNumber, Status: status, IsSupportVm: isSupportVm}
+func (repo *MySQLRepo) AddDevice(batchNumber string, sn string, hostname string, ip string, networkId uint, osId uint, hardwareId uint, systemId uint, location string, locationId uint, assetNumber string, status string, isSupportVm string, userID uint) (*model.Device, error) {
+	mod := model.Device{BatchNumber: batchNumber, Sn: sn, Hostname: hostname, Ip: ip, NetworkID: networkId, OsID: osId, HardwareID: hardwareId, SystemID: systemId, Location: location, LocationID: locationId, AssetNumber: assetNumber, Status: status, IsSupportVm: isSupportVm, UserID: userID}
 	err := repo.db.Create(&mod).Error
 	return &mod, err
 }
 
-func (repo *MySQLRepo) UpdateDeviceById(id uint, batchNumber string, sn string, hostname string, ip string, networkId uint, osId uint, hardwareId uint, systemId uint, location string, locationId uint, assetNumber string, status string, isSupportVm string) (*model.Device, error) {
-	mod := model.Device{BatchNumber: batchNumber, Sn: sn, Hostname: hostname, Ip: ip, NetworkID: networkId, OsID: osId, HardwareID: hardwareId, SystemID: systemId, Location: location, LocationID: locationId, AssetNumber: assetNumber, Status: status, IsSupportVm: isSupportVm}
-	err := repo.db.First(&mod, id).Update("batch_number", batchNumber).Update("sn", sn).Update("hostname", hostname).Update("ip", ip).Update("network_id", networkId).Update("os_id", osId).Update("hardware_id", hardwareId).Update("system_id", systemId).Update("location", location).Update("location_id", locationId).Update("asset_number", assetNumber).Update("status", status).Update("install_progress", 0.0000).Update("install_log", "").Update("is_support_vm", isSupportVm).Error
+func (repo *MySQLRepo) UpdateDeviceById(id uint, batchNumber string, sn string, hostname string, ip string, networkId uint, osId uint, hardwareId uint, systemId uint, location string, locationId uint, assetNumber string, status string, isSupportVm string, userID uint) (*model.Device, error) {
+	mod := model.Device{BatchNumber: batchNumber, Sn: sn, Hostname: hostname, Ip: ip, NetworkID: networkId, OsID: osId, HardwareID: hardwareId, SystemID: systemId, Location: location, LocationID: locationId, AssetNumber: assetNumber, Status: status, IsSupportVm: isSupportVm, UserID: userID}
+	//设备信息发生修改，但属主不发生变化
+	err := repo.db.Unscoped().First(&mod, id).Update("batch_number", batchNumber).Update("sn", sn).Update("hostname", hostname).Update("ip", ip).Update("network_id", networkId).Update("os_id", osId).Update("hardware_id", hardwareId).Update("system_id", systemId).Update("location", location).Update("location_id", locationId).Update("asset_number", assetNumber).Update("status", status).Update("install_progress", 0.0000).Update("install_log", "").Update("is_support_vm", isSupportVm).Error
 	return &mod, err
 }
 
 func (repo *MySQLRepo) UpdateInstallInfoById(id uint, status string, installProgress float64) (*model.Device, error) {
 	mod := model.Device{Status: status, InstallProgress: installProgress}
-	err := repo.db.First(&mod, id).Update("status", status).Update("install_progress", installProgress).Error
+	err := repo.db.Unscoped().First(&mod, id).Update("status", status).Update("install_progress", installProgress).Error
 	return &mod, err
 }
 
 func (repo *MySQLRepo) ReInstallDeviceById(id uint) (*model.Device, error) {
 	mod := model.Device{}
-	err := repo.db.First(&mod, id).Update("status", "pre_install").Update("install_progress", 0.0000).Update("install_log", "").Error
+	err := repo.db.Unscoped().First(&mod, id).Update("status", "pre_install").Update("install_progress", 0.0000).Update("install_log", "").Error
 	return &mod, err
 }
 
 func (repo *MySQLRepo) CancelInstallDeviceById(id uint) (*model.Device, error) {
 	mod := model.Device{}
-	err := repo.db.First(&mod, id).Update("status", "failure").Update("install_progress", 0.0000).Update("install_log", "").Error
+	err := repo.db.Unscoped().First(&mod, id).Update("status", "failure").Update("install_progress", 0.0000).Update("install_log", "").Error
 	return &mod, err
 }
 
@@ -165,6 +166,12 @@ func (repo *MySQLRepo) GetFullDeviceById(id uint) (*model.DeviceFull, error) {
 func (repo *MySQLRepo) GetDeviceById(id uint) (*model.Device, error) {
 	var mod model.Device
 	err := repo.db.Unscoped().Where("id = ?", id).Find(&mod).Error
+	return &mod, err
+}
+
+func (repo *MySQLRepo) GetDeviceBySn(sn string) (*model.Device, error) {
+	var mod model.Device
+	err := repo.db.Unscoped().Where("sn = ?", sn).Find(&mod).Error
 	return &mod, err
 }
 

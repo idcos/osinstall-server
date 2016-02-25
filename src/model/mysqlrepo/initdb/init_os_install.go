@@ -20,6 +20,7 @@ var osInstallTables = []interface{}{
 	&model.Mac{},
 	&model.Manufacturer{},
 	&model.VmDevice{},
+	&model.User{},
 }
 
 func InitOsInstallTables(db *gorm.DB, conf *config.Config) error {

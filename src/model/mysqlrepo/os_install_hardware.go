@@ -1,7 +1,6 @@
 package mysqlrepo
 
 import (
-	"fmt"
 	"model"
 )
 
@@ -25,7 +24,6 @@ func (repo *MySQLRepo) GetModelNameByWhereAndGroup(where string) ([]model.Hardwa
 
 //Hardware
 func (repo *MySQLRepo) AddHardware(company string, product string, modelName string, raid string, oob string, bios string, isSystemAdd string, tpl string, data string, source string, version string, status string) (*model.Hardware, error) {
-	fmt.Println(isSystemAdd)
 	mod := model.Hardware{Company: company, Product: product, ModelName: modelName, Raid: raid, Oob: oob, Bios: bios, IsSystemAdd: isSystemAdd, Tpl: tpl, Data: data, Source: source, Version: version, Status: status}
 	err := repo.db.Create(&mod).Error
 	return &mod, err

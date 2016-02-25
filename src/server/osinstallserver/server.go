@@ -3,11 +3,12 @@ package osinstallserver
 import (
 	"config"
 	"config/jsonconf"
-	"github.com/AlexanderChen1989/go-json-rest/rest"
 	"logger"
 	"model"
 	"model/mysqlrepo"
 	"net/http"
+
+	"github.com/AlexanderChen1989/go-json-rest/rest"
 )
 
 type OsInstallServer struct {
@@ -22,7 +23,7 @@ func NewServer(confPath string, setup PipelineSetupFunc) (*OsInstallServer, erro
 	if err != nil {
 		return nil, err
 	}
-	log := logger.NewLogrusLogger(conf)
+	log := logger.NewBeeLogger(conf)
 	repo, err := mysqlrepo.NewRepo(conf, log)
 	if err != nil {
 		return nil, err

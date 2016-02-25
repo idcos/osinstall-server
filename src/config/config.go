@@ -14,10 +14,15 @@ type Config struct {
 		LogFile string `ini:"logFile"`
 	}
 	Repo struct {
-		Connection string `ini:"connection"`
-		Addr       string
+		Connection          string `ini:"connection"`
+		ConnectionIsCrypted string `ini:"connectionIsCrypted"`
+		Addr                string
 	}
 	OsInstall struct {
 		PxeConfigDir string `ini:"pxeConfigDir"`
+	}
+	Rsa struct {
+		PublicKey  string `ini:"publicKey"`
+		PrivateKey string `ini:"privateKey"`
 	}
 }

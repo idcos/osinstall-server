@@ -40,6 +40,7 @@ var (
 [Logger]
 color = true
 level = debug
+logFile = /agent.log
 `
 
 	defaultLoopInterval = 60
@@ -80,7 +81,7 @@ func New() (*OSInstallAgent, error) {
 	if err != nil {
 		return nil, err
 	}
-	var log = logger.NewLogrusLogger(conf)
+	var log = logger.NewBeeLogger(conf)
 	var agent = &OSInstallAgent{
 		Config: conf,
 		Logger: log,
@@ -88,59 +89,68 @@ func New() (*OSInstallAgent, error) {
 
 	var data []byte
 	// get sn
+	agent.Logger.Debug("START to get SN")
 	if data, err = execScript(GetSNScript); err != nil {
-		log.Error(err)
 		return nil, err
 	}
 	agent.Sn = string(data)
 	agent.Sn = strings.Trim(agent.Sn, "\n")
+	agent.Logger.Debugf("SN: %s", agent.Sn)
 
 	// get mac addr
+	agent.Logger.Debug("START to get mac addr")
 	if data, err = execScript(GetMacScript); err != nil {
 		log.Error(err)
 		return nil, err
 	}
 	agent.MacAddr = string(data)
 	agent.MacAddr = strings.Trim(agent.MacAddr, "\n")
+	agent.Logger.Debugf("Mac ADDR: %s", agent.MacAddr)
 
 	var serverAddr = ""
 	// get server addr
+	agent.Logger.Debug("START to get SERVER_ADDR")
 	if serverAddr, err = getCmdlineArgs(RegexpServerAddr); err != nil {
-		log.Error(err)
 		return nil, err
 	}
 	agent.ServerAddr = serverAddr
 	// agent.ServerAddr = "http://10.0.0.135:8083"
 	agent.ServerAddr = strings.Trim(agent.ServerAddr, "\n")
+	agent.Logger.Debugf("SERVER_ADDR: %s", agent.ServerAddr)
 
 	// loop interval
 	var interval string
+	agent.Logger.Debug("START to get LOOP_INTERVAL")
 	if interval, err = getCmdlineArgs(RegexpLoopInterval); err != nil {
-		log.Error(err)
+		agent.Logger.Debug(err)
 		agent.LoopInterval = defaultLoopInterval
 	} else {
 		agent.LoopInterval = parseInterval(interval)
 	}
+	agent.Logger.Debugf("LOOP_INTERVAL: %s", agent.LoopInterval)
 
 	var developMode = ""
+	agent.Logger.Debug("START to get DEVELOPER")
 	if developMode, err = getCmdlineArgs(RegexpDeveloper); err != nil {
-		log.Error(err)
+		agent.Logger.Debug(err)
 		agent.DevelopeMode = ""
 	}
 	agent.DevelopeMode = developMode
 	agent.DevelopeMode = strings.Trim(agent.DevelopeMode, "\n")
+	agent.Logger.Debugf("DEVELOPER: %s", agent.DevelopeMode)
 
 	// get Vendor
+	agent.Logger.Debug("START to get Vendor")
 	if data, err = execScript(GetVendorScript); err != nil {
-		log.Error(err)
 		return nil, err
 	}
 	agent.Vendor = string(data)
 	agent.Vendor = strings.Trim(agent.Vendor, "\n")
+	agent.Logger.Debugf("Vendor: %s", agent.Vendor)
 
 	// get Model number
+	agent.Logger.Debug("START to get Product and Model Name")
 	if data, err = execScript(GetModelNumScript); err != nil {
-		log.Error(err)
 		return nil, err
 	}
 	var productModel = strings.SplitN(string(data), " ", 2)
@@ -152,12 +162,13 @@ func New() (*OSInstallAgent, error) {
 	}
 	agent.Product = strings.Trim(agent.Product, "\n")
 	agent.ModelName = strings.Trim(agent.ModelName, "\n")
+	agent.Logger.Debugf("Product: %s \t ModelName: %s", agent.Product, agent.ModelName)
 
 	return agent, nil
 }
 
 // IsInInstallQueue 检查是否在装机队列中 （定时执行）
-func (agent *OSInstallAgent) IsInInstallQueue() bool {
+func (agent *OSInstallAgent) IsInInstallQueue() {
 	// 轮询是否在装机队列中
 	var t = time.NewTicker(time.Duration(agent.LoopInterval) * time.Second)
 	var url = agent.ServerAddr + installListURL
@@ -179,16 +190,16 @@ LOOP:
 	for {
 		select {
 		case <-t.C:
-
+			agent.Logger.Debugf("IsInPreInstallQueue request body: %v", jsonReq)
 			var ret, err = callRestAPI(url, jsonReq)
 			agent.Logger.Debugf("IsInPreInstallQueue api result:%s\n", string(ret))
 			if err != nil {
-				agent.Logger.Error(err.Error())
+				agent.Logger.Error(err)
 				continue // 继续等待下次轮询
 			}
 
 			if err := json.Unmarshal(ret, &jsonResp); err != nil {
-				agent.Logger.Error(err.Error())
+				agent.Logger.Error(err)
 				continue // 继续等待下次轮询
 			}
 
@@ -198,12 +209,11 @@ LOOP:
 			}
 		}
 	}
-	return true
 }
 
 // IsIPInUse 判断IP是否在使用中
-func (agent *OSInstallAgent) IsIpInUse() bool {
-	var url = agent.ServerAddr + netInfoURL
+func (agent *OSInstallAgent) IsIpInUse() error {
+	var url = fmt.Sprintf("%s?sn=%s&type=json", agent.ServerAddr+netInfoURL, agent.Sn)
 	agent.Logger.Debugf("IsIPInUse url:%s\n", url)
 	var body []byte
 	var err error
@@ -216,40 +226,36 @@ func (agent *OSInstallAgent) IsIpInUse() bool {
 		}
 	}
 
-	resp, err = http.Get(url + "?sn=" + agent.Sn + "&type=json")
+	resp, err = http.Get(url)
 	if err != nil {
-		agent.Logger.Error(err.Error())
-		return false
+		return err
 	}
 	defer resp.Body.Close()
 
 	body, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		agent.Logger.Error(err.Error())
-		return false
+		return err
 	}
 	agent.Logger.Debug(string(body))
 
 	if err = json.Unmarshal(body, &jsonResp); err != nil {
-		agent.Logger.Error(err.Error())
-		return false
+		return err
 	}
 
 	if jsonResp.Status != "success" {
-		return false
+		return fmt.Errorf("Status: %s, Message: %s", jsonResp.Status, jsonResp.Message)
 	}
 
 	var pingScript = fmt.Sprintf(PingIp, jsonResp.Content.Ip)
 	if _, err = execScript(pingScript); err == nil {
-		// agent.Logger.Error(err.Error())
-		return false
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // HaveHardWareConf 检查服务端是否此机器的硬件配置
-func (agent *OSInstallAgent) HaveHardWareConf() bool {
+func (agent *OSInstallAgent) HaveHardWareConf() error {
 	var url = agent.ServerAddr + productInfoURL
 	agent.Logger.Debugf("HaveHardWareConf url:%s\n", url)
 	var jsonReq struct {
@@ -271,33 +277,30 @@ func (agent *OSInstallAgent) HaveHardWareConf() bool {
 		}
 	}
 
+	agent.Logger.Debugf("HaveHardWareConf request body: %v", jsonReq)
 	var ret, err = callRestAPI(url, jsonReq)
 	agent.Logger.Debugf("HaveHardWareConf api result:%s\n", string(ret))
 	if err != nil {
-		agent.Logger.Error(err.Error())
-		return false
+		return err
 	}
 
 	if err := json.Unmarshal(ret, &jsonResp); err != nil {
-		agent.Logger.Error(err.Error())
-		return false
+		return err
 	}
 
 	if jsonResp.Status != "success" {
-		agent.Logger.Error(jsonResp.Message)
-		return false
+		return fmt.Errorf("Status: %s, Message: %s", jsonResp.Status, jsonResp.Message)
 	}
 
 	if jsonResp.Content.IsVerify == "false" && agent.DevelopeMode != "1" {
-		agent.Logger.Warn(errors.New("Verify is false AND developMode is not 1"))
-		return false
+		return errors.New("Verify is false AND developMode is not 1")
 	}
 
-	return true
+	return nil
 }
 
 // GetHardConf 获取硬件配置
-func (agent *OSInstallAgent) GetHardWareConf() bool {
+func (agent *OSInstallAgent) GetHardWareConf() error {
 	var url = agent.ServerAddr + hardwareURL
 	agent.Logger.Debugf("GetHardWareConf url:%s\n", url)
 	var jsonReq struct {
@@ -316,37 +319,34 @@ func (agent *OSInstallAgent) GetHardWareConf() bool {
 		}
 	}
 
+	agent.Logger.Debugf("GetHardWareConf request body: %v", jsonReq)
 	var ret, err = callRestAPI(url, jsonReq)
 	agent.Logger.Debugf("GetHardWareConf api result:%s\n", string(ret))
 	if err != nil {
-		agent.Logger.Error(err.Error())
-		return false
+		return err
 	}
 
 	if err := json.Unmarshal(ret, &jsonResp); err != nil {
-		agent.Logger.Error(err.Error())
-		return false
+		return err
 	}
 
 	if jsonResp.Status != "success" {
-		agent.Logger.Error(jsonResp.Message)
-		return false
+		return fmt.Errorf("Status: %s, Message: %s", jsonResp.Status, jsonResp.Message)
 	}
 
 	agent.hardwareConfs = jsonResp.Content.Hardware
 
-	return true
+	return nil
 }
 
 // ImplementHardConf 实施硬件配置
-func (agent *OSInstallAgent) ImplementHardConf() bool {
+func (agent *OSInstallAgent) ImplementHardConf() error {
 
 	// 安装硬件配置工具包
 	installHWScript := fmt.Sprintf(InstallHWTools, agent.Vendor, agent.Vendor)
 	agent.Logger.Debugf("installScript: %s\n", installHWScript)
 	if _, err := execScript(installHWScript); err != nil {
-		agent.Logger.Error(err)
-		return false
+		return err
 	}
 
 	// 开始硬件配置
@@ -365,20 +365,18 @@ func (agent *OSInstallAgent) ImplementHardConf() bool {
 			script, err := base64.StdEncoding.DecodeString(scriptB64.Script)
 			agent.Logger.Debugf("Script: %s\n", script)
 			if err != nil {
-				agent.Logger.Error(err.Error())
-				return false
+				return err
 			}
 
 			if _, err = execScript(string(script)); err != nil {
-				agent.Logger.Error(err.Error())
-				return false
+				return err
 			}
 			agent.ReportProgress(curProgress, hardwareConf.Name+" - "+scriptB64.Name, "")
 		}
 		agent.ReportProgress(curProgress, hardwareConf.Name+" 配置完成", "")
 	}
 	agent.ReportProgress(0.4, "硬件配置结束", "硬件配置正常结束")
-	return true
+	return nil
 }
 
 // ReportProgress 上报执行结果
@@ -408,6 +406,7 @@ func (agent *OSInstallAgent) ReportProgress(installProgress float64, title, inst
 		}
 	}
 
+	agent.Logger.Debugf("ReportProgress request body: %v", jsonReq)
 	var ret, err = callRestAPI(url, jsonReq)
 	agent.Logger.Debugf("ReportProgress api result:%s\n", string(ret))
 	if err != nil {
@@ -427,7 +426,7 @@ func (agent *OSInstallAgent) ReportProgress(installProgress float64, title, inst
 }
 
 // ReportMacInfo 上报 mac 地址
-func (agent *OSInstallAgent) ReportMacInfo() bool {
+func (agent *OSInstallAgent) ReportMacInfo() error {
 	var url = agent.ServerAddr + macInfoURL
 	agent.Logger.Debugf("ReportMacInfo url:%s\n", url)
 	var jsonReq struct {
@@ -445,30 +444,29 @@ func (agent *OSInstallAgent) ReportMacInfo() bool {
 		}
 	}
 
+	agent.Logger.Debugf("ReportMacInfo request body: %v", jsonReq)
 	var ret, err = callRestAPI(url, jsonReq)
 	agent.Logger.Debugf("ReportMacInfo api result:%s\n", string(ret))
 	if err != nil {
-		agent.Logger.Error(err.Error())
-		return false
+		return err
 	}
 
 	if err := json.Unmarshal(ret, &jsonResp); err != nil {
-		agent.Logger.Error(err.Error())
-		return false
+		return err
 	}
 
 	if jsonResp.Status != "success" {
-		return false
+		return fmt.Errorf("Status: %s, Message: %s", jsonResp.Status, jsonResp.Message)
 	}
-	return true
+	return nil
 }
 
 // Reboot 重启系统
-func (agent *OSInstallAgent) Reboot() bool {
+func (agent *OSInstallAgent) Reboot() error {
 	if _, err := execScript(RebootScript); err != nil {
-		return false
+		return err
 	}
-	return true
+	return nil
 }
 
 // getCmdlineArgs get options from cmdline
@@ -497,7 +495,6 @@ func callRestAPI(url string, jsonReq interface{}) ([]byte, error) {
 		return nil, err
 	}
 
-	fmt.Printf("Request BODY: %s \n", string(reqBody))
 	if req, err = http.NewRequest("POST", url, bytes.NewBuffer(reqBody)); err != nil {
 		return nil, err
 	}

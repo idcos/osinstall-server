@@ -20,7 +20,8 @@ const (
 
 // BeeLogger beego log实现
 type BeeLogger struct {
-	beeLogger *logs.BeeLogger
+	beeFileLogger    *logs.BeeLogger
+	beeConsoleLogger *logs.BeeLogger
 }
 
 func selectLevel(level string) uint {
@@ -68,20 +69,26 @@ func NewBeeLogger(conf *config.Config) *BeeLogger {
 		fmt.Printf("MkdirAll err: %s\n", err)
 	}
 
-	logger := logs.NewLogger(1000)
-	logger.EnableFuncCallDepth(true) // 输出文件名和行号
-	logger.SetLogFuncCallDepth(3)
+	fileLogger := logs.NewLogger(1000)
+	fileLogger.EnableFuncCallDepth(true) // 输出文件名和行号
+	fileLogger.SetLogFuncCallDepth(3)
 
 	logData, _ := json.Marshal(logConf)
 
-	if err := logger.SetLogger("file", string(logData)); err != nil {
+	if err := fileLogger.SetLogger("file", string(logData)); err != nil {
 		fmt.Printf("SetLogger err: %s\n", err)
 	}
 
 	// 尝试重置日志文件权限为0666
 	os.Chmod(filename, 0666) // 不处理error
 
-	return &BeeLogger{logger}
+	// console log
+	consoleLogger := logs.NewLogger(1000)
+	consoleLogger.SetLogger("console", "")
+	consoleLogger.EnableFuncCallDepth(true)
+	consoleLogger.SetLogFuncCallDepth(3)
+
+	return &BeeLogger{fileLogger, consoleLogger}
 }
 
 func (log *BeeLogger) SetField(name string, value interface{}) {
@@ -91,47 +98,55 @@ func (log *BeeLogger) SetField(name string, value interface{}) {
 // Debug logs a debug message. If last parameter is a map[string]string, it's content
 // is added as fields to the message.
 func (log *BeeLogger) Debug(v ...interface{}) {
-	log.beeLogger.Debug("%v", v...)
+	log.beeFileLogger.Debug("%v", v...)
+	log.beeConsoleLogger.Debug("%v", v...)
 }
 
 // Debug logs a debug message with format. If last parameter is a map[string]string,
 // it's content is added as fields to the message.
 func (log *BeeLogger) Debugf(format string, v ...interface{}) {
-	log.beeLogger.Debug(format, v...)
+	log.beeFileLogger.Debug(format, v...)
+	log.beeConsoleLogger.Debug(format, v...)
 }
 
 // Info logs a info message. If last parameter is a map[string]string, it's content
 // is added as fields to the message.
 func (log *BeeLogger) Info(v ...interface{}) {
-	log.beeLogger.Info("%v", v...)
+	log.beeFileLogger.Info("%v", v...)
+	log.beeConsoleLogger.Info("%v", v...)
 }
 
 // Info logs a info message with format. If last parameter is a map[string]string,
 // it's content is added as fields to the message.
 func (log *BeeLogger) Infof(format string, v ...interface{}) {
-	log.beeLogger.Info(format, v...)
+	log.beeFileLogger.Info(format, v...)
+	log.beeConsoleLogger.Info(format, v...)
 }
 
 // Warn logs a warning message. If last parameter is a map[string]string, it's content
 // is added as fields to the message.
 func (log *BeeLogger) Warn(v ...interface{}) {
-	log.beeLogger.Warn("%v", v...)
+	log.beeFileLogger.Warn("%v", v...)
+	log.beeConsoleLogger.Warn("%v", v...)
 }
 
 // Warn logs a warning message with format. If last parameter is a map[string]string,
 // it's content is added as fields to the message.
 func (log *BeeLogger) Warnf(format string, v ...interface{}) {
-	log.beeLogger.Warn(format, v...)
+	log.beeFileLogger.Warn(format, v...)
+	log.beeConsoleLogger.Warn(format, v...)
 }
 
 // Error logs an error message. If last parameter is a map[string]string, it's content
 // is added as fields to the message.
 func (log *BeeLogger) Error(v ...interface{}) {
-	log.beeLogger.Error("%v", v...)
+	log.beeFileLogger.Error("%v", v...)
+	log.beeConsoleLogger.Error("%v", v...)
 }
 
 // Error logs an error message with format. If last parameter is a map[string]string,
 // it's content is added as fields to the message.
 func (log *BeeLogger) Errorf(format string, v ...interface{}) {
-	log.beeLogger.Error(format, v...)
+	log.beeFileLogger.Error(format, v...)
+	log.beeConsoleLogger.Error(format, v...)
 }

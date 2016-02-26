@@ -14,6 +14,19 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/astaxie/beego/logs",
+			"repository": "https://github.com/astaxie/beego",
+			"revision": "fbb98fbe1fe5f6a4209772b44e2547714992340c",
+			"branch": "master",
+			"path": "/logs"
+		},
+		{
+			"importpath": "github.com/belogik/goes",
+			"repository": "https://github.com/belogik/goes",
+			"revision": "e54d722c3aff588e4c737fe11c07359019240824",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/codegangsta/cli",
 			"repository": "https://github.com/codegangsta/cli",
 			"revision": "f9cc3001e04f9783cb4ad08ca6791aa07134787c",

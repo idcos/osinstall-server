@@ -929,6 +929,14 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 	}
 	status := "pre_install"
 	for _, info := range infos {
+		info.BatchNumber = strings.TrimSpace(info.BatchNumber)
+		info.Sn = strings.TrimSpace(info.Sn)
+		info.Sn = strings.Replace(info.Sn, "	", "", -1)
+		info.Sn = strings.Replace(info.Sn, " ", "", -1)
+		info.Hostname = strings.TrimSpace(info.Hostname)
+		info.Ip = strings.TrimSpace(info.Ip)
+		info.AssetNumber = strings.TrimSpace(info.AssetNumber)
+		info.Status = strings.TrimSpace(info.Status)
 		info.UserID = session.ID
 		location := ""
 
@@ -1120,6 +1128,9 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 
 	for _, info := range infos {
 		location := ""
+		info.Hostname = strings.TrimSpace(info.Hostname)
+		info.Ip = strings.TrimSpace(info.Ip)
+		info.AssetNumber = strings.TrimSpace(info.AssetNumber)
 		info.UserID = session.ID
 
 		info.IsSupportVm = strings.TrimSpace(info.IsSupportVm)

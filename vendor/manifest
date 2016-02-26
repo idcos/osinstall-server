@@ -81,6 +81,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/takama/daemon",
+			"repository": "https://github.com/takama/daemon",
+			"revision": "9bef40d68556a337a610e5bcc06c6c99948ec199",
+			"branch": "master"
+		},
+		{
 			"importpath": "golang.org/x/net/context",
 			"repository": "https://go.googlesource.com/net",
 			"revision": "042ba42fa6633b34205efc66ba5719cd3afd8d38",

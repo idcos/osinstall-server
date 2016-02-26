@@ -1,6 +1,7 @@
 package route
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/AlexanderChen1989/go-json-rest/rest"
 	"github.com/qiniu/iconv"
@@ -373,6 +374,46 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
+	type NicInfo struct {
+		Name string
+		Mac  string
+		Ip   string
+	}
+	type CpuInfo struct {
+		Model string
+		Core  string
+	}
+	type DiskInfo struct {
+		Name string
+		Size string
+	}
+	type MemoryInfo struct {
+		Name string
+		Size string
+	}
+	type MotherboardInfo struct {
+		Name  string
+		Model string
+	}
+
+	var infoFull struct {
+		Sn          string
+		Company     string
+		Product     string
+		ModelName   string
+		Ip          string
+		Mac         string
+		Nic         []NicInfo
+		Cpu         CpuInfo
+		Memory      []MemoryInfo
+		Disk        []DiskInfo
+		Motherboard MotherboardInfo
+		Raid        string
+		Oob         string
+		DeviceID    uint
+	}
+
 	var info struct {
 		Sn          string
 		Company     string
@@ -390,15 +431,64 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		DeviceID    uint
 	}
 
-	if err := r.DecodeJSONPayload(&info); err != nil {
+	if err := r.DecodeJSONPayload(&infoFull); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
 		return
 	}
 
-	info.Sn = strings.TrimSpace(info.Sn)
-	info.Company = strings.TrimSpace(info.Company)
-	info.Product = strings.TrimSpace(info.Product)
-	info.ModelName = strings.TrimSpace(info.ModelName)
+	infoFull.Sn = strings.TrimSpace(infoFull.Sn)
+	infoFull.Company = strings.TrimSpace(infoFull.Company)
+	infoFull.Product = strings.TrimSpace(infoFull.Product)
+	infoFull.ModelName = strings.TrimSpace(infoFull.ModelName)
+
+	info.Sn = infoFull.Sn
+	info.Company = infoFull.Company
+	info.Product = infoFull.Product
+	info.ModelName = infoFull.ModelName
+	info.Ip = infoFull.Ip
+	info.Mac = infoFull.Mac
+	info.Raid = infoFull.Raid
+	info.Oob = infoFull.Oob
+	info.DeviceID = infoFull.DeviceID
+	//nic
+	nic, err := json.Marshal(infoFull.Nic)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	info.Nic = string(nic)
+
+	//cpu
+	cpu, err := json.Marshal(infoFull.Cpu)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	info.Cpu = string(cpu)
+
+	//memory
+	memory, err := json.Marshal(infoFull.Memory)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	info.Memory = string(memory)
+
+	//disk
+	disk, err := json.Marshal(infoFull.Disk)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	info.Disk = string(disk)
+
+	//motherboard
+	motherboard, err := json.Marshal(infoFull.Motherboard)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	info.Motherboard = string(motherboard)
 
 	if info.Sn == "" || info.Company == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})

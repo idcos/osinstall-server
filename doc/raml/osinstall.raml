@@ -4,6 +4,77 @@ baseUri: /api/osinstall/{version}
 version: v1
 mediaType: application/json
 
+types:
+  Nic:
+    description: 网卡信息
+    type: object
+    properties:
+      Name:
+        description: 名称
+        type: string
+        required: true
+      Mac:
+        description: Mac地址
+        type: string
+        required: true
+      Ip:
+        description: IP
+        type: string
+        required: true
+
+  Cpu:
+    description: CPU信息
+    type: object
+    properties:
+      Model:
+        description: 型号
+        type: string
+        required: true
+      Core:
+        description: 核数
+        type: string
+        required: true
+
+  Memory:
+    description: 内存信息
+    type: object
+    properties:
+      Name:
+        description: 名称,如1,2,3,4等
+        type: string
+        required: true
+      Size:
+        description: 大小
+        type: string
+        required: true
+
+  Disk:
+    description: 硬盘信息
+    type: object
+    properties:
+      Name:
+        description: 名称,如1,2,3,4等
+        type: string
+        required: true
+      Size:
+        description: 大小
+        type: string
+        required: true
+
+  Motherboard:
+    description: 主板信息
+    type: object
+    properties:
+      Name:
+        description: 名称
+        type: string
+        required: true
+      Model:
+        description: 型号
+        type: string
+        required: true
+
+
 /device/getHardwareBySn:
   post:
     description: 获取硬件配置信息(执行脚本做了base64encode处理，需要decode后再去调用执行)
@@ -163,23 +234,23 @@ mediaType: application/json
         required: false
       Nic:
         description: 网卡信息
-        type: string
+        type: []Nic
         required: false
       Cpu:
-        description: CPU核数
-        type: string
+        description: CPU信息
+        type: Cpu
         required: false
       Memory:
-        description: 内存大小(GB)
-        type: string
+        description: 内存信息
+        type: Memory[]
         required: false
       Disk:
-        description: 硬盘大小(GB)
-        type: string
+        description: 硬盘信息
+        type: Disk[]
         required: false
       Motherboard:
-        description: 主板
-        type: string
+        description: 主板信息
+        type: Motherboard
         required: false
       Raid:
         description: Raid

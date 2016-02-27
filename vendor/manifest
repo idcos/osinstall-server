@@ -21,6 +21,12 @@
 			"path": "/logs"
 		},
 		{
+			"importpath": "github.com/axgle/mahonia",
+			"repository": "https://github.com/axgle/mahonia",
+			"revision": "c528b747d92d41ca581a7acf3e604c396fc7c034",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/belogik/goes",
 			"repository": "https://github.com/belogik/goes",
 			"revision": "e54d722c3aff588e4c737fe11c07359019240824",

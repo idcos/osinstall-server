@@ -42,13 +42,22 @@ func main() {
 
 var rootPath = "c:/firstboot"
 var scriptFile = path.Join(rootPath, "temp-script.cmd")
+var preInstallScript = path.Join(rootPath, "preInstall.cmd")
+var postInstallScript = path.Join(rootPath, "postInstall.cmd")
 
 func run(c *cli.Context) error {
+	// init log
+	utils.InitFileLog()
+
+	if utils.CheckFileIsExist(preInstallScript) {
+		if _, err := utils.ExecScript(preInstallScript); err != nil {
+			utils.Logger.Error("preinstall error: %s", err.Error())
+		}
+	}
+
 	if !utils.PingLoop("osinstall.", 30, 2) {
 		return errors.New("ping timeout")
 	}
-	// init log
-	utils.InitFileLog()
 
 	var sn = getSN()
 	// sn = "214245856"
@@ -89,7 +98,7 @@ func run(c *cli.Context) error {
 	if err = changeDNS(nic, dns); err != nil {
 		utils.Logger.Error(err.Error())
 	}
-	time.Sleep(15 * time.Second)
+	time.Sleep(30 * time.Second)
 	if !utils.PingLoop("osinstall.", 30, 2) {
 		return errors.New("ping timeout")
 	}
@@ -101,6 +110,13 @@ func run(c *cli.Context) error {
 	utils.ReportProgress(0.9, sn, "修改注册表", "change reg")
 
 	utils.ReportProgress(1.0, sn, "安装完成", "finish")
+
+	if utils.CheckFileIsExist(postInstallScript) {
+		if _, err := utils.ExecScript(postInstallScript); err != nil {
+			utils.Logger.Error("postInstall error: %s", err.Error())
+		}
+	}
+
 	reboot()
 
 	return nil
@@ -112,7 +128,7 @@ func getSN() string {
 	var r = `SerialNumber=(.+)`
 	var output string
 	utils.Logger.Debug(cmd)
-	if outputBytes, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if outputBytes, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 	} else {
 		output = string(outputBytes)
@@ -136,7 +152,7 @@ func getNicName() string {
 	var r = `NetConnectionID=(.*[\p{Han}| |]+.*)`
 	var output string
 	utils.Logger.Debug(cmd)
-	if outputBytes, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if outputBytes, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 	} else {
 		enc := mahonia.NewDecoder("gbk")
@@ -229,7 +245,7 @@ func getDNS() string {
 	var r = `Address:[:blank:]*(.+)`
 	var output string
 	utils.Logger.Debug(cmd)
-	if outputBytes, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if outputBytes, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 	} else {
 		enc := mahonia.NewDecoder("gbk")
@@ -253,7 +269,7 @@ func changeHostname(hostname string) error {
 	var cmd = `wmic ntdomain get Caption  /value`
 	var r = `Caption=(.*)`
 	var oldname string
-	if output, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if output, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 		return nil
 	} else {
@@ -271,7 +287,7 @@ func changeHostname(hostname string) error {
 	cmd = fmt.Sprintf(`netdom renamecomputer %s /newname:%s /force`, strings.Trim(oldname, "\r\n"), hostname)
 	utils.Logger.Debug(cmd)
 
-	if output, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if output, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 		return nil
 	} else {
@@ -287,7 +303,7 @@ func changeIP(nic, ip, netmask, gateway string) error {
 	enc := mahonia.NewEncoder("gbk")
 	cmd = enc.ConvertString(cmd)
 	utils.Logger.Debug(cmd)
-	if output, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if output, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 		return nil
 	} else {
@@ -303,7 +319,7 @@ func changeDNS(nic, dns string) error {
 	enc := mahonia.NewEncoder("gbk")
 	cmd = enc.ConvertString(cmd)
 	utils.Logger.Debug(cmd)
-	if output, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if output, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 		return nil
 	} else {
@@ -317,7 +333,7 @@ func changeDNS(nic, dns string) error {
 func changeReg() error {
 	var cmd1 = `reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoAdminLogon /t reg_sz /d 0 /f`
 	utils.Logger.Debug(cmd1)
-	if output, err := utils.ExecScript(scriptFile, cmd1); err != nil {
+	if output, err := utils.ExecCmd(scriptFile, cmd1); err != nil {
 		utils.Logger.Error(err.Error())
 		return nil
 	} else {
@@ -326,7 +342,7 @@ func changeReg() error {
 
 	var cmd2 = `reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v Defaultpassword /t reg_sz /d "" /f`
 	utils.Logger.Debug(cmd2)
-	if output, err := utils.ExecScript(scriptFile, cmd2); err != nil {
+	if output, err := utils.ExecCmd(scriptFile, cmd2); err != nil {
 		utils.Logger.Error(err.Error())
 		return nil
 	} else {
@@ -339,7 +355,7 @@ func changeReg() error {
 func reboot() error {
 	var cmd = fmt.Sprintf(`shutdown -f -r -t 10`)
 	utils.Logger.Debug(cmd)
-	if output, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if output, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 		return nil
 	} else {

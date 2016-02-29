@@ -76,6 +76,28 @@ type OSInstallAgent struct {
 	hardwareConfs []HardWareConf // base64 编码的硬件配置脚本
 }
 
+type nicInfo struct {
+	Name string
+	Mac  string
+	Ip   string
+}
+type cpuInfo struct {
+	Model string
+	Core  string
+}
+type diskInfo struct {
+	Name string
+	Size string
+}
+type memoryInfo struct {
+	Name string
+	Size string
+}
+type motherboardInfo struct {
+	Name  string
+	Model string
+}
+
 // New create agent
 func New() (*OSInstallAgent, error) {
 	// get config
@@ -261,15 +283,23 @@ func (agent *OSInstallAgent) HaveHardWareConf() error {
 	var url = agent.ServerAddr + productInfoURL
 	agent.Logger.Debugf("HaveHardWareConf url:%s\n", url)
 	var jsonReq struct {
-		Sn        string
-		Company   string
-		Product   string
-		ModelName string
+		Sn          string
+		Company     string
+		Product     string
+		ModelName   string
+		Ip          string
+		Mac         string
+		Nic         []nicInfo
+		Cpu         cpuInfo
+		Memory      []memoryInfo
+		Disk        []diskInfo
+		Motherboard motherboardInfo
+		Raid        string
+		Oob         string
+		DeviceID    uint
 	}
-	jsonReq.Sn = agent.Sn
-	jsonReq.Company = agent.Vendor
-	jsonReq.Product = agent.Product
-	jsonReq.ModelName = agent.ModelName
+
+	// TODO get infoFull from script
 
 	var jsonResp struct {
 		Status  string

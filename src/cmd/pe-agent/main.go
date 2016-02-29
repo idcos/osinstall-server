@@ -75,7 +75,7 @@ func getSN() string {
 	var r = `SerialNumber=(.+)`
 	var output string
 	utils.Logger.Debug(cmd)
-	if outputBytes, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if outputBytes, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 	} else {
 		output = string(outputBytes)
@@ -118,7 +118,7 @@ func getXmlFile(sn string) error {
 func mountSamba() error {
 	var cmd = `net use Z:`
 	utils.Logger.Debug(cmd)
-	if _, err := utils.ExecScript(scriptFile, cmd); err == nil {
+	if _, err := utils.ExecCmd(scriptFile, cmd); err == nil {
 		return nil
 	} else {
 		utils.Logger.Debug(err.Error())
@@ -126,7 +126,7 @@ func mountSamba() error {
 
 	cmd = `net use Z: \\osinstall.\image`
 	utils.Logger.Debug(cmd)
-	if _, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if _, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 		return err
 	}
@@ -153,7 +153,7 @@ func installWindows() error {
 
 	var cmd = fmt.Sprintf(`%s\\setup.exe /unattend:unattended.xml /noreboot`, regResult[1])
 	utils.Logger.Debug(cmd)
-	if _, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if _, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 		return err
 	}
@@ -164,7 +164,7 @@ func installWindows() error {
 func copyFirstBoot() error {
 	var cmd = `xcopy /s /e /y /i Z:\windows\firstboot C:\firstboot`
 	utils.Logger.Debug(cmd)
-	if _, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if _, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 		return err
 	}
@@ -175,7 +175,7 @@ func copyFirstBoot() error {
 func reboot() error {
 	var cmd = `wpeutil reboot`
 	utils.Logger.Debug(cmd)
-	if _, err := utils.ExecScript(scriptFile, cmd); err != nil {
+	if _, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
 		return err
 	}

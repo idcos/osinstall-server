@@ -44,13 +44,29 @@ func run(c *cli.Context) error {
 		return errors.New("ping timeout")
 	}
 
+	// get xml for install windows
 	if err := getXmlFile(sn); err != nil {
 		return err
 	}
 
-	utils.ReportProgress(0.6, sn, "开始安装", "start install")
+	// mount samba
+	if err := mountSamba(); err != nil {
+		return err
+	}
 
-	return nil
+	utils.ReportProgress(0.6, sn, "开始安装", "start install")
+	// install windows
+	if err := installWindows(); err != nil {
+		return err
+	}
+
+	// xcopy firstboot
+	if err := copyFirstBoot(); err != nil {
+		return err
+	}
+
+	// reboot
+	return reboot()
 }
 
 // 查看本机 SN
@@ -97,4 +113,64 @@ func getXmlFile(sn string) error {
 	}
 
 	return ioutil.WriteFile(xmlPath, body, 0666)
+}
+
+func mountSamba() error {
+	var cmd = `net use Z: \\osinstall.\image`
+	utils.Logger.Debug(cmd)
+	if _, err := utils.ExecScript(scriptFile, cmd); err != nil {
+		utils.Logger.Error(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func installWindows() error {
+	// get setup.exe path from xmlPath
+	var output []byte
+	var err error
+	if output, err = ioutil.ReadFile(xmlPath); err != nil {
+		utils.Logger.Error(err.Error())
+		return err
+	}
+
+	var r = `<Path>(.*)\install.wim</Path>`
+	reg := regexp.MustCompile(r)
+	var regResult = reg.FindStringSubmatch(string(output))
+	if regResult == nil || len(regResult) != 2 {
+		return fmt.Errorf("Can't found %s", "install.wim")
+	}
+	utils.Logger.Debug("setup path: %s", regResult[1])
+
+	var cmd = fmt.Sprintf(`%s\setup.exe /unattend:unattended.xml /noreboot`, regResult[1])
+	utils.Logger.Debug(cmd)
+	if _, err := utils.ExecScript(scriptFile, cmd); err != nil {
+		utils.Logger.Error(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func copyFirstBoot() error {
+	var cmd = `xcopy /s /e /y /i Z:\windows\firstboot C:\firstboot`
+	utils.Logger.Debug(cmd)
+	if _, err := utils.ExecScript(scriptFile, cmd); err != nil {
+		utils.Logger.Error(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func reboot() error {
+	var cmd = `wpeutil reboot`
+	utils.Logger.Debug(cmd)
+	if _, err := utils.ExecScript(scriptFile, cmd); err != nil {
+		utils.Logger.Error(err.Error())
+		return err
+	}
+
+	return nil
 }

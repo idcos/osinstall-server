@@ -61,6 +61,7 @@ type HardWareConf struct {
 	}
 }
 
+// OSInstallAgent agent data struct
 type OSInstallAgent struct {
 	Logger        logger.Logger
 	Config        *config.Config
@@ -75,6 +76,7 @@ type OSInstallAgent struct {
 	hardwareConfs []HardWareConf // base64 编码的硬件配置脚本
 }
 
+// New create agent
 func New() (*OSInstallAgent, error) {
 	// get config
 	var conf, err = iniconf.NewContent([]byte(confContent)).Load()

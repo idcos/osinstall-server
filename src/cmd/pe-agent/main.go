@@ -116,7 +116,15 @@ func getXmlFile(sn string) error {
 }
 
 func mountSamba() error {
-	var cmd = `net use Z: \\osinstall.\image`
+	var cmd = `net use Z:`
+	utils.Logger.Debug(cmd)
+	if _, err := utils.ExecScript(scriptFile, cmd); err == nil {
+		return nil
+	} else {
+		utils.Logger.Debug(err.Error())
+	}
+
+	cmd = `net use Z: \\osinstall.\image`
 	utils.Logger.Debug(cmd)
 	if _, err := utils.ExecScript(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())
@@ -135,7 +143,7 @@ func installWindows() error {
 		return err
 	}
 
-	var r = `<Path>(.*)\install.wim</Path>`
+	var r = `<Path>(.*)\\install.wim</Path>`
 	reg := regexp.MustCompile(r)
 	var regResult = reg.FindStringSubmatch(string(output))
 	if regResult == nil || len(regResult) != 2 {
@@ -143,7 +151,7 @@ func installWindows() error {
 	}
 	utils.Logger.Debug("setup path: %s", regResult[1])
 
-	var cmd = fmt.Sprintf(`%s\setup.exe /unattend:unattended.xml /noreboot`, regResult[1])
+	var cmd = fmt.Sprintf(`%s\\setup.exe /unattend:unattended.xml /noreboot`, regResult[1])
 	utils.Logger.Debug(cmd)
 	if _, err := utils.ExecScript(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())

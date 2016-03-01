@@ -1,0 +1,11 @@
+{
+  "repo": {
+    "connection": "user:password@tcp(localhost:3306)/idcos-osinstall?charset=utf8&parseTime=True&loc=Local"
+  },
+  "osInstall":{
+    "pxeConfigDir":"/var/lib/tftpboot/pxelinux.cfg"
+   },
+  "logger":{
+  	"level":"debug"
+  }
+}

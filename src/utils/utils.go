@@ -39,8 +39,8 @@ func InitConsoleLog() {
 	Logger.SetLogger("console", "")
 }
 
-// ExecScript 执行脚本
-func ExecScript(scriptFile, script string) ([]byte, error) {
+// ExecCmd 执行 command
+func ExecCmd(scriptFile, cmdString string) ([]byte, error) {
 
 	// 生成临时文件
 	if CheckFileIsExist(scriptFile) {
@@ -53,12 +53,18 @@ func ExecScript(scriptFile, script string) ([]byte, error) {
 	defer os.Remove(file.Name())
 	defer file.Close()
 
-	if _, err = file.WriteString(script); err != nil {
+	if _, err = file.WriteString(cmdString); err != nil {
 		return nil, err
 	}
 	file.Close()
 
-	var cmd = exec.Command("cmd", "/c", file.Name())
+	return ExecScript(scriptFile)
+}
+
+// ExecScript exec script
+func ExecScript(scriptPath string) ([]byte, error) {
+
+	var cmd = exec.Command("cmd", "/c", scriptPath)
 	return cmd.Output()
 }
 

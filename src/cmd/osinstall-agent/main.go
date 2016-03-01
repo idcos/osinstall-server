@@ -74,9 +74,14 @@ func main() {
 func runAgent(c *cli.Context) {
 	var agent, err = agent.New()
 	if err != nil {
-		agent.Logger.Error(err.Error())
+		agent.Logger.Error(err)
 		return
 	}
+
+	if err = agent.ReportProductInfo(); err != nil {
+		agent.Logger.Error(err)
+	}
+
 	agent.ReportProgress(0.1, "进入bootos", "正常进入bootos")
 	for {
 		// 状态查询（是否在装机队列中）

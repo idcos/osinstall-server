@@ -90,7 +90,7 @@ func runAgent(c *cli.Context) {
 		}
 
 		// 配置查询（15%）
-		if err := agent.HaveHardWareConf(); err != nil {
+		if err := agent.IsHaveHardWareConf(); err != nil {
 			agent.ReportProgress(-1, "配置查询失败", "该硬件型号不存在，请打开开发者模式再尝试，错误信息："+err.Error())
 			continue
 		} else {

@@ -33,6 +33,8 @@ const (
 	APIVersion = "v1"
 
 	ProductInfoScript = `/usr/local/bin/sysinfo.sh`
+	On                = "1"
+	Off               = "0"
 )
 
 var (
@@ -252,8 +254,9 @@ func (agent *OSInstallAgent) IsIpInUse() error {
 }
 
 // IsHaveHardWareConf 检查服务端是否此机器的硬件配置
-func (agent *OSInstallAgent) IsHaveHardWareConf() error {
+func (agent *OSInstallAgent) IsHaveHardWareConf() (bool, error) {
 	var url = agent.ServerAddr + productInfoURL
+	var skipHWConf = false
 	agent.Logger.Debugf("HaveHardWareConf url:%s\n", url)
 	var jsonReq struct {
 		Sn          string
@@ -275,9 +278,9 @@ func (agent *OSInstallAgent) IsHaveHardWareConf() error {
 
 	// get infoFull from script
 	if output, err := execScript(ProductInfoScript); err != nil {
-		return err
+		return skipHWConf, err
 	} else if err = json.Unmarshal(output, &jsonReq); err != nil {
-		return err
+		return skipHWConf, err
 	}
 
 	// set vendor to agent
@@ -287,7 +290,8 @@ func (agent *OSInstallAgent) IsHaveHardWareConf() error {
 		Status  string
 		Message string
 		Content struct {
-			IsVerify string
+			IsVerify             string
+			IsSkipHardwareConfig string
 		}
 	}
 
@@ -295,22 +299,27 @@ func (agent *OSInstallAgent) IsHaveHardWareConf() error {
 	var ret, err = callRestAPI(url, jsonReq)
 	agent.Logger.Debugf("HaveHardWareConf api result:%s\n", string(ret))
 	if err != nil {
-		return err
+		return skipHWConf, err
 	}
 
 	if err := json.Unmarshal(ret, &jsonResp); err != nil {
-		return err
+		return skipHWConf, err
 	}
 
 	if jsonResp.Status != "success" {
-		return fmt.Errorf("Status: %s, Message: %s", jsonResp.Status, jsonResp.Message)
+		return skipHWConf, fmt.Errorf("Status: %s, Message: %s", jsonResp.Status, jsonResp.Message)
 	}
 
-	if jsonResp.Content.IsVerify == "false" && agent.DevelopeMode != "1" {
-		return errors.New("Verify is false AND developMode is not 1")
+	// is skip hardware configuration
+	if jsonResp.Content.IsSkipHardwareConfig == "true" {
+		return true, nil
 	}
 
-	return nil
+	if jsonResp.Content.IsVerify == "false" && agent.DevelopeMode != On {
+		return skipHWConf, errors.New("Verify is false AND developMode is not On")
+	}
+
+	return false, nil
 }
 
 // GetHardConf 获取硬件配置

@@ -5,64 +5,63 @@ import (
 	"osinstall/agent"
 
 	"github.com/codegangsta/cli"
-	"github.com/takama/daemon"
 )
 
-var version = "v1.1 (2016-01-26)"
+var version = "v1.1 (2016-03-02)"
 var name = "osinstall-agent"
 var description = "osinstall agent"
 
 //  dependencies that are NOT required by the service, but might be used
-var dependencies = []string{"dummy.service"}
+// var dependencies = []string{"dummy.service"}
 
 func main() {
 	app := cli.NewApp()
 	app.Name = name
 	app.Version = version
-	app.Commands = []cli.Command{
-		{
-			Name:  "start",
-			Usage: "start agent asynchronous",
-			Action: func(c *cli.Context) {
-				srv, err := daemon.New(name, description, dependencies...)
-				if err != nil {
-					os.Exit(1)
-				}
-				service := &Service{srv}
-				if err := service.StartDaemon(); err != nil {
-					os.Exit(1)
-				}
-			},
-		},
-		{
-			Name:  "stop",
-			Usage: "stop agent asynchronous",
-			Action: func(c *cli.Context) {
-				srv, err := daemon.New(name, description, dependencies...)
-				if err != nil {
-					os.Exit(1)
-				}
-				service := &Service{srv}
-				if err := service.StopDaemon(); err != nil {
-					os.Exit(1)
-				}
-			},
-		},
-		{
-			Name:  "status",
-			Usage: "agent status",
-			Action: func(c *cli.Context) {
-				srv, err := daemon.New(name, description, dependencies...)
-				if err != nil {
-					os.Exit(1)
-				}
-				service := &Service{srv}
-				if err := service.StatusDaemon(); err != nil {
-					os.Exit(1)
-				}
-			},
-		},
-	}
+	// app.Commands = []cli.Command{
+	// 	{
+	// 		Name:  "start",
+	// 		Usage: "start agent asynchronous",
+	// 		Action: func(c *cli.Context) {
+	// 			srv, err := daemon.New(name, description, dependencies...)
+	// 			if err != nil {
+	// 				os.Exit(1)
+	// 			}
+	// 			service := &Service{srv}
+	// 			if err := service.StartDaemon(); err != nil {
+	// 				os.Exit(1)
+	// 			}
+	// 		},
+	// 	},
+	// 	{
+	// 		Name:  "stop",
+	// 		Usage: "stop agent asynchronous",
+	// 		Action: func(c *cli.Context) {
+	// 			srv, err := daemon.New(name, description, dependencies...)
+	// 			if err != nil {
+	// 				os.Exit(1)
+	// 			}
+	// 			service := &Service{srv}
+	// 			if err := service.StopDaemon(); err != nil {
+	// 				os.Exit(1)
+	// 			}
+	// 		},
+	// 	},
+	// 	{
+	// 		Name:  "status",
+	// 		Usage: "agent status",
+	// 		Action: func(c *cli.Context) {
+	// 			srv, err := daemon.New(name, description, dependencies...)
+	// 			if err != nil {
+	// 				os.Exit(1)
+	// 			}
+	// 			service := &Service{srv}
+	// 			if err := service.StatusDaemon(); err != nil {
+	// 				os.Exit(1)
+	// 			}
+	// 		},
+	// 	},
+	// }
 
 	app.Action = func(c *cli.Context) {
 		runAgent(c)

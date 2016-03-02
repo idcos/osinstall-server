@@ -18,10 +18,12 @@ var xmlPath = "X:\\Windows\\System32\\unattended.xml"
 var rootPath = "X:\\Windows\\System32"
 var scriptFile = path.Join(rootPath, "temp-script.cmd")
 
+var version = "v2016.02.23"
+
 func main() {
 
 	app := cli.NewApp()
-	app.Version = "v2016.02.23"
+	app.Version = version
 	app.Action = func(c *cli.Context) {
 		if err := run(c); err != nil {
 			utils.Logger.Error(err.Error())

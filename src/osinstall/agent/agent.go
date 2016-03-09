@@ -118,7 +118,9 @@ func New() (*OSInstallAgent, error) {
 	// get sn
 	agent.Logger.Debug("START to get SN")
 	if data, err = execScript(GetSNScript); err != nil {
-		return nil, err
+		agent.Logger.Error(data)
+		agent.Logger.Error(err)
+		return nil, fmt.Errorf("get SN error: %v\n%s", err, string(data))
 	}
 	agent.Sn = string(data)
 	agent.Sn = strings.Trim(agent.Sn, "\n")
@@ -127,8 +129,9 @@ func New() (*OSInstallAgent, error) {
 	// get mac addr
 	agent.Logger.Debug("START to get mac addr")
 	if data, err = execScript(GetMacScript); err != nil {
+		agent.Logger.Error(data)
 		log.Error(err)
-		return nil, err
+		return nil, fmt.Errorf("get mac addr error: %v\n%s", err, string(data))
 	}
 	agent.MacAddr = string(data)
 	agent.MacAddr = strings.Trim(agent.MacAddr, "\n")
@@ -249,8 +252,8 @@ func (agent *OSInstallAgent) IsIpInUse() error {
 	}
 
 	var pingScript = fmt.Sprintf(PingIp, jsonResp.Content.Ip)
-	if _, err = execScript(pingScript); err == nil {
-		return err
+	if output, err := execScript(pingScript); err == nil {
+		return fmt.Errorf("IsIpInUse error: %v\n%s", err, string(output))
 	}
 
 	return nil
@@ -280,7 +283,7 @@ func (agent *OSInstallAgent) ReportProductInfo() error {
 
 	// get infoFull from script
 	if output, err := execScript(ProductInfoScript); err != nil {
-		return err
+		return fmt.Errorf("ReportProductInfo error: %v\n%s", err, string(output))
 	} else if err = json.Unmarshal(output, &jsonReq); err != nil {
 		return err
 	}
@@ -412,8 +415,8 @@ func (agent *OSInstallAgent) ImplementHardConf() error {
 	// 安装硬件配置工具包
 	installHWScript := fmt.Sprintf(InstallHWTools, agent.Company, agent.Company)
 	agent.Logger.Debugf("installScript: %s\n", installHWScript)
-	if _, err := execScript(installHWScript); err != nil {
-		return err
+	if output, err := execScript(installHWScript); err != nil {
+		return fmt.Errorf("ImplementHardConf error: %v\n%s", err, string(output))
 	}
 
 	// 开始硬件配置
@@ -435,8 +438,8 @@ func (agent *OSInstallAgent) ImplementHardConf() error {
 				return err
 			}
 
-			if _, err = execScript(string(script)); err != nil {
-				return err
+			if output, err := execScript(string(script)); err != nil {
+				return fmt.Errorf("execscript hardware script error: %v\n%s", err, string(output))
 			}
 			agent.ReportProgress(curProgress, hardwareConf.Name+" - "+scriptB64.Name, "")
 		}
@@ -530,8 +533,8 @@ func (agent *OSInstallAgent) ReportMacInfo() error {
 
 // Reboot 重启系统
 func (agent *OSInstallAgent) Reboot() error {
-	if _, err := execScript(RebootScript); err != nil {
-		return err
+	if output, err := execScript(RebootScript); err != nil {
+		return fmt.Errorf("reboot error: %v\n%s", err, string(output))
 	}
 	return nil
 }

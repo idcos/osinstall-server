@@ -120,7 +120,7 @@ func New() (*OSInstallAgent, error) {
 	if data, err = execScript(GetSNScript); err != nil {
 		agent.Logger.Error(data)
 		agent.Logger.Error(err)
-		return nil, fmt.Errorf("get SN error: %s\n%v\n%s", GetSNScript, err, string(data))
+		return nil, fmt.Errorf("get SN error: \n#%s\n%v\n%s", GetSNScript, err, string(data))
 	}
 	agent.Sn = string(data)
 	agent.Sn = strings.Trim(agent.Sn, "\n")
@@ -131,7 +131,7 @@ func New() (*OSInstallAgent, error) {
 	if data, err = execScript(GetMacScript); err != nil {
 		agent.Logger.Error(data)
 		log.Error(err)
-		return nil, fmt.Errorf("get mac addr error: %s\n%v\n%s", GetMacScript, err, string(data))
+		return nil, fmt.Errorf("get mac addr error: \n#%s\n%v\n%s", GetMacScript, err, string(data))
 	}
 	agent.MacAddr = string(data)
 	agent.MacAddr = strings.Trim(agent.MacAddr, "\n")
@@ -253,7 +253,7 @@ func (agent *OSInstallAgent) IsIpInUse() error {
 
 	var pingScript = fmt.Sprintf(PingIp, jsonResp.Content.Ip)
 	if output, err := execScript(pingScript); err == nil {
-		return fmt.Errorf("IsIpInUse error: %s\n%v\n%s", pingScript, err, string(output))
+		return fmt.Errorf("IsIpInUse error: \n#%s\n%v\n%s", pingScript, err, string(output))
 	}
 
 	return nil
@@ -283,7 +283,7 @@ func (agent *OSInstallAgent) ReportProductInfo() error {
 
 	// get infoFull from script
 	if output, err := execScript(ProductInfoScript); err != nil {
-		return fmt.Errorf("ReportProductInfo error: %s\n%v\n%s", ProductInfoScript, err, string(output))
+		return fmt.Errorf("ReportProductInfo error: \n#%s\n%v\n%s", ProductInfoScript, err, string(output))
 	} else if err = json.Unmarshal(output, &jsonReq); err != nil {
 		return err
 	}
@@ -416,7 +416,7 @@ func (agent *OSInstallAgent) ImplementHardConf() error {
 	installHWScript := fmt.Sprintf(InstallHWTools, agent.Company, agent.Company)
 	agent.Logger.Debugf("installScript: %s\n", installHWScript)
 	if output, err := execScript(installHWScript); err != nil {
-		return fmt.Errorf("ImplementHardConf error: %s\n%v\n%s", installHWScript, err, string(output))
+		return fmt.Errorf("ImplementHardConf error: \n#%s\n%v\n%s", installHWScript, err, string(output))
 	}
 
 	// 开始硬件配置
@@ -439,7 +439,7 @@ func (agent *OSInstallAgent) ImplementHardConf() error {
 			}
 
 			if output, err := execScript(string(script)); err != nil {
-				return fmt.Errorf("execscript hardware script error: %s\n%v\n%s", string(script), err, string(output))
+				return fmt.Errorf("execscript hardware script error: \n#%s\n%v\n%s", string(script), err, string(output))
 			}
 			agent.ReportProgress(curProgress, hardwareConf.Name+" - "+scriptB64.Name, "")
 		}
@@ -534,7 +534,7 @@ func (agent *OSInstallAgent) ReportMacInfo() error {
 // Reboot 重启系统
 func (agent *OSInstallAgent) Reboot() error {
 	if output, err := execScript(RebootScript); err != nil {
-		return fmt.Errorf("reboot error: %s\n%v\n%s", RebootScript, err, string(output))
+		return fmt.Errorf("reboot error: \n#%s\n%v\n%s", RebootScript, err, string(output))
 	}
 	return nil
 }
@@ -613,11 +613,8 @@ func execScript(script string) ([]byte, error) {
 		return nil, err
 	}
 
-	if err := cmd.Wait(); err != nil {
-		return nil, err
-	}
-
-	return output.Bytes(), nil
+	err = cmd.Wait()
+	return output.Bytes(), err
 }
 
 func parseInterval(interval string) int {

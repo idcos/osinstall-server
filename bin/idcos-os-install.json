@@ -6,11 +6,6 @@
     "pxeConfigDir":"/var/lib/tftpboot/pxelinux.cfg"
    },
   "logger":{
-      "logFile":"/tmp/osinstall.log",
-      "level":"debug"
-  },
-  "rsa":{
-    "publicKey":"./rsa/public.pem",
-    "privateKey":"./rsa/private.pem"
+  	"level":"debug"
   }
 }

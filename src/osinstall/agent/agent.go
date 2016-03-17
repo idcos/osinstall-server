@@ -22,8 +22,6 @@ import (
 const (
 	GetSNScript        = `dmidecode -s system-serial-number 2>/dev/null | awk '/^[^#]/ { print $1 }'`
 	GetMacScript       = `ip addr show $(ip route get 10.0.0.0 | awk '/src/ { print $(NF-2) }') | awk '/ether/ { print $2 }'`
-	GetVendorScript    = `dmidecode -s system-manufacturer | awk '{ print $1 }' | tr 'A-Z' 'a-z'`
-	GetModelNumScript  = `dmidecode -s system-product-name`
 	GetCmdlineArgs     = `cat /proc/cmdline`
 	RegexpServerAddr   = `SERVER_ADDR=([^ ]+)`
 	RegexpLoopInterval = `LOOP_INTERVAL=([^ ]+)`
@@ -33,18 +31,23 @@ const (
 	PingIp             = `ping -c 4 -w 3 %s`
 
 	APIVersion = "v1"
+
+	ProductInfoScript = `/usr/local/bin/sysinfo.sh`
+	On                = "1"
+	Off               = "0"
 )
 
 var (
 	confContent = `
 [Logger]
-color = true
+color = false
 level = debug
-logFile = /agent.log
+logFile = /var/log/osinstall-agent.log
 `
 
 	defaultLoopInterval = 60
 	hardwareURL         = fmt.Sprintf("/api/osinstall/%s/device/getHardwareBySn", APIVersion)
+	isHaveHardwareConf  = fmt.Sprintf("/api/osinstall/%s/device/getPrepareInstallInfo", APIVersion)
 	installListURL      = fmt.Sprintf("/api/osinstall/%s/device/isInInstallList", APIVersion)
 	productInfoURL      = fmt.Sprintf("/api/osinstall/%s/report/deviceProductInfo", APIVersion)
 	installInfoURL      = fmt.Sprintf("/api/osinstall/%s/report/deviceInstallInfo", APIVersion)
@@ -61,6 +64,7 @@ type HardWareConf struct {
 	}
 }
 
+// OSInstallAgent agent data struct
 type OSInstallAgent struct {
 	Logger        logger.Logger
 	Config        *config.Config
@@ -69,12 +73,35 @@ type OSInstallAgent struct {
 	ServerAddr    string
 	LoopInterval  int
 	DevelopeMode  string
-	Vendor        string         // 厂商
-	ModelName     string         // 产品型号
-	Product       string         // 产品名称
+	Company       string
+	Product       string
+	ModelName     string
 	hardwareConfs []HardWareConf // base64 编码的硬件配置脚本
 }
 
+type nicInfo struct {
+	Name string
+	Mac  string
+	Ip   string
+}
+type cpuInfo struct {
+	Model string
+	Core  string
+}
+type diskInfo struct {
+	Name string
+	Size string
+}
+type memoryInfo struct {
+	Name string
+	Size string
+}
+type motherboardInfo struct {
+	Name  string
+	Model string
+}
+
+// New create agent
 func New() (*OSInstallAgent, error) {
 	// get config
 	var conf, err = iniconf.NewContent([]byte(confContent)).Load()
@@ -91,7 +118,9 @@ func New() (*OSInstallAgent, error) {
 	// get sn
 	agent.Logger.Debug("START to get SN")
 	if data, err = execScript(GetSNScript); err != nil {
-		return nil, err
+		agent.Logger.Error(data)
+		agent.Logger.Error(err)
+		return nil, fmt.Errorf("get SN error: \n#%s\n%v\n%s", GetSNScript, err, string(data))
 	}
 	agent.Sn = string(data)
 	agent.Sn = strings.Trim(agent.Sn, "\n")
@@ -100,8 +129,9 @@ func New() (*OSInstallAgent, error) {
 	// get mac addr
 	agent.Logger.Debug("START to get mac addr")
 	if data, err = execScript(GetMacScript); err != nil {
+		agent.Logger.Error(data)
 		log.Error(err)
-		return nil, err
+		return nil, fmt.Errorf("get mac addr error: \n#%s\n%v\n%s", GetMacScript, err, string(data))
 	}
 	agent.MacAddr = string(data)
 	agent.MacAddr = strings.Trim(agent.MacAddr, "\n")
@@ -138,31 +168,6 @@ func New() (*OSInstallAgent, error) {
 	agent.DevelopeMode = developMode
 	agent.DevelopeMode = strings.Trim(agent.DevelopeMode, "\n")
 	agent.Logger.Debugf("DEVELOPER: %s", agent.DevelopeMode)
-
-	// get Vendor
-	agent.Logger.Debug("START to get Vendor")
-	if data, err = execScript(GetVendorScript); err != nil {
-		return nil, err
-	}
-	agent.Vendor = string(data)
-	agent.Vendor = strings.Trim(agent.Vendor, "\n")
-	agent.Logger.Debugf("Vendor: %s", agent.Vendor)
-
-	// get Model number
-	agent.Logger.Debug("START to get Product and Model Name")
-	if data, err = execScript(GetModelNumScript); err != nil {
-		return nil, err
-	}
-	var productModel = strings.SplitN(string(data), " ", 2)
-	agent.Product = productModel[0]
-	if len(productModel) > 1 {
-		agent.ModelName = productModel[1]
-	} else {
-		agent.ModelName = ""
-	}
-	agent.Product = strings.Trim(agent.Product, "\n")
-	agent.ModelName = strings.Trim(agent.ModelName, "\n")
-	agent.Logger.Debugf("Product: %s \t ModelName: %s", agent.Product, agent.ModelName)
 
 	return agent, nil
 }
@@ -247,42 +252,58 @@ func (agent *OSInstallAgent) IsIpInUse() error {
 	}
 
 	var pingScript = fmt.Sprintf(PingIp, jsonResp.Content.Ip)
-	if _, err = execScript(pingScript); err == nil {
-		return err
+	if output, err := execScript(pingScript); err == nil {
+		return fmt.Errorf("IsIpInUse error: \n#%s\n%v\n%s", pingScript, err, string(output))
 	}
 
 	return nil
 }
 
-// HaveHardWareConf 检查服务端是否此机器的硬件配置
-func (agent *OSInstallAgent) HaveHardWareConf() error {
+//
+func (agent *OSInstallAgent) ReportProductInfo() error {
 	var url = agent.ServerAddr + productInfoURL
-	agent.Logger.Debugf("HaveHardWareConf url:%s\n", url)
+	agent.Logger.Debugf("ReportProductInfo url:%s\n", url)
 	var jsonReq struct {
-		Sn        string
-		Company   string
-		Product   string
-		ModelName string
+		Sn          string
+		Company     string
+		Product     string
+		ModelName   string
+		Ip          string
+		Mac         string
+		Nic         []nicInfo
+		Cpu         cpuInfo
+		Memory      []memoryInfo
+		MemorySum   int
+		DiskSum     int
+		Disk        []diskInfo
+		Motherboard motherboardInfo
+		Raid        string
+		Oob         string
 	}
-	jsonReq.Sn = agent.Sn
-	jsonReq.Company = agent.Vendor
-	jsonReq.Product = agent.Product
-	jsonReq.ModelName = agent.ModelName
+
+	// get infoFull from script
+	if output, err := execScript(ProductInfoScript); err != nil {
+		return fmt.Errorf("ReportProductInfo error: \n#%s\n%v\n%s", ProductInfoScript, err, string(output))
+	} else if err = json.Unmarshal(output, &jsonReq); err != nil {
+		return err
+	}
+
+	// set company to agent
+	agent.Company = strings.ToLower(jsonReq.Company)
+	agent.Product = jsonReq.Product
+	agent.ModelName = jsonReq.ModelName
 
 	var jsonResp struct {
 		Status  string
 		Message string
-		Content struct {
-			IsVerify string
-		}
 	}
 
-	agent.Logger.Debugf("HaveHardWareConf request body: %v", jsonReq)
+	agent.Logger.Debugf("ReportProductInfo request body: %v", jsonReq)
 	var ret, err = callRestAPI(url, jsonReq)
-	agent.Logger.Debugf("HaveHardWareConf api result:%s\n", string(ret))
 	if err != nil {
 		return err
 	}
+	agent.Logger.Debugf("ReportProductInfo api result:%s\n", string(ret))
 
 	if err := json.Unmarshal(ret, &jsonResp); err != nil {
 		return err
@@ -292,11 +313,60 @@ func (agent *OSInstallAgent) HaveHardWareConf() error {
 		return fmt.Errorf("Status: %s, Message: %s", jsonResp.Status, jsonResp.Message)
 	}
 
-	if jsonResp.Content.IsVerify == "false" && agent.DevelopeMode != "1" {
-		return errors.New("Verify is false AND developMode is not 1")
+	return nil
+}
+
+// IsHaveHardWareConf 检查服务端是否此机器的硬件配置
+func (agent *OSInstallAgent) IsHaveHardWareConf() (bool, error) {
+	var url = agent.ServerAddr + isHaveHardwareConf
+	var skipHWConf = false
+	agent.Logger.Debugf("IsHaveHardWareConf url:%s\n", url)
+	var jsonReq struct {
+		Sn        string
+		Company   string
+		Product   string
+		ModelName string
 	}
 
-	return nil
+	jsonReq.Sn = agent.Sn
+	jsonReq.Company = agent.Company
+	jsonReq.Product = agent.Product
+	jsonReq.ModelName = agent.ModelName
+
+	var jsonResp struct {
+		Status  string
+		Message string
+		Content struct {
+			IsVerify             string
+			IsSkipHardwareConfig string
+		}
+	}
+
+	agent.Logger.Debugf("IsHaveHardWareConf request body: %v", jsonReq)
+	var ret, err = callRestAPI(url, jsonReq)
+	agent.Logger.Debugf("IsHaveHardWareConf api result:%s\n", string(ret))
+	if err != nil {
+		return skipHWConf, err
+	}
+
+	if err := json.Unmarshal(ret, &jsonResp); err != nil {
+		return skipHWConf, err
+	}
+
+	if jsonResp.Status != "success" {
+		return skipHWConf, fmt.Errorf("Status: %s, Message: %s", jsonResp.Status, jsonResp.Message)
+	}
+
+	// is skip hardware configuration
+	if jsonResp.Content.IsSkipHardwareConfig == "true" {
+		return true, nil
+	}
+
+	if jsonResp.Content.IsVerify == "false" && agent.DevelopeMode != On {
+		return skipHWConf, errors.New("Verify is false AND developMode is not On")
+	}
+
+	return false, nil
 }
 
 // GetHardConf 获取硬件配置
@@ -343,10 +413,10 @@ func (agent *OSInstallAgent) GetHardWareConf() error {
 func (agent *OSInstallAgent) ImplementHardConf() error {
 
 	// 安装硬件配置工具包
-	installHWScript := fmt.Sprintf(InstallHWTools, agent.Vendor, agent.Vendor)
+	installHWScript := fmt.Sprintf(InstallHWTools, agent.Company, agent.Company)
 	agent.Logger.Debugf("installScript: %s\n", installHWScript)
-	if _, err := execScript(installHWScript); err != nil {
-		return err
+	if output, err := execScript(installHWScript); err != nil {
+		return fmt.Errorf("ImplementHardConf error: \n#%s\n%v\n%s", installHWScript, err, string(output))
 	}
 
 	// 开始硬件配置
@@ -368,8 +438,8 @@ func (agent *OSInstallAgent) ImplementHardConf() error {
 				return err
 			}
 
-			if _, err = execScript(string(script)); err != nil {
-				return err
+			if output, err := execScript(string(script)); err != nil {
+				return fmt.Errorf("execscript hardware script error: \n#%s\n%v\n%s", string(script), err, string(output))
 			}
 			agent.ReportProgress(curProgress, hardwareConf.Name+" - "+scriptB64.Name, "")
 		}
@@ -463,8 +533,8 @@ func (agent *OSInstallAgent) ReportMacInfo() error {
 
 // Reboot 重启系统
 func (agent *OSInstallAgent) Reboot() error {
-	if _, err := execScript(RebootScript); err != nil {
-		return err
+	if output, err := execScript(RebootScript); err != nil {
+		return fmt.Errorf("reboot error: \n#%s\n%v\n%s", RebootScript, err, string(output))
 	}
 	return nil
 }
@@ -535,7 +605,16 @@ func execScript(script string) ([]byte, error) {
 	file.Close()
 
 	var cmd = exec.Command("/bin/bash", file.Name())
-	return cmd.Output()
+	var output bytes.Buffer
+	cmd.Stdout = &output
+	cmd.Stderr = &output
+
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+
+	err = cmd.Wait()
+	return output.Bytes(), err
 }
 
 func parseInterval(interval string) int {

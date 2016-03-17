@@ -89,7 +89,7 @@ func UpdateHardwareById(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 	info.Version = strings.TrimSpace(info.Version)
 	info.Status = strings.TrimSpace(info.Status)
 
-	if info.Company == "" || info.Product == "" || info.ModelName == "" {
+	if info.Company == "" || info.ModelName == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
 		return
 	}
@@ -271,15 +271,24 @@ func GetModelNameByWhereAndGroup(ctx context.Context, w rest.ResponseWriter, r *
 	}
 
 	var info struct {
-		Company string
-		Product string
+		Company     string
+		Product     string
+		IsSystemAdd string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
 		return
 	}
 
-	where := " company = '" + info.Company + "' and product = '" + info.Product + "'"
+	where := " company = '" + info.Company + "'"
+	if info.Product != "" {
+		where += " and product = '" + info.Product + "'"
+	}
+
+	if info.IsSystemAdd != "" {
+		where += " and is_system_add = '" + info.IsSystemAdd + "'"
+	}
+
 	mod, err := repo.GetModelNameByWhereAndGroup(where)
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
@@ -327,7 +336,43 @@ func GetHardwareList(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 		return
 	}
 	result := make(map[string]interface{})
-	result["list"] = mods
+
+	type Hardware struct {
+		ID          uint
+		ShowName    string
+		Company     string
+		Product     string
+		ModelName   string
+		Raid        string
+		Oob         string
+		Bios        string
+		IsSystemAdd string
+		Tpl         string
+		Data        string
+		Source      string
+		Version     string
+		Status      string
+	}
+	var hardwares []Hardware
+	for _, v := range mods {
+		var hardware Hardware
+		hardware.ID = v.ID
+		hardware.ShowName = v.Company + "-" + v.ModelName
+		hardware.Company = v.Company
+		hardware.Product = v.Product
+		hardware.ModelName = v.ModelName
+		hardware.Raid = v.Raid
+		hardware.Oob = v.Oob
+		hardware.Bios = v.Bios
+		hardware.IsSystemAdd = v.IsSystemAdd
+		hardware.Tpl = v.Tpl
+		hardware.Data = v.Data
+		hardware.Source = v.Source
+		hardware.Version = v.Version
+		hardware.Status = v.Status
+		hardwares = append(hardwares, hardware)
+	}
+	result["list"] = hardwares
 
 	//总条数
 	count, err := repo.CountHardware(where)
@@ -376,7 +421,7 @@ func AddHardware(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	info.Version = strings.TrimSpace(info.Version)
 	info.Status = strings.TrimSpace(info.Status)
 
-	if info.Company == "" || info.Product == "" || info.ModelName == "" {
+	if info.Company == "" || info.ModelName == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
 		return
 	}
@@ -467,7 +512,7 @@ func UploadCompanyHardware(ctx context.Context, w rest.ResponseWriter, r *rest.R
 		return
 	}
 	for _, v := range data {
-		if v["Company"] == "" || v["Product"] == "" || v["ModelName"] == "" {
+		if v["Company"] == "" || v["ModelName"] == "" {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "文件格式错误!"})
 			return
 		}
@@ -619,7 +664,7 @@ func UploadHardware(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		return
 	}
 	for _, v := range data {
-		if v["Company"] == "" || v["Product"] == "" || v["ModelName"] == "" {
+		if v["Company"] == "" || v["ModelName"] == "" {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "文件格式错误!"})
 			return
 		}

@@ -9,6 +9,7 @@ import (
 	"crypto/md5"
 	"encoding/csv"
 	"encoding/hex"
+	"encoding/json"
 	"github.com/qiniu/iconv"
 	"io"
 	"os"
@@ -33,7 +34,7 @@ func UploadDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	}
 	defer cd.Close()
 
-	dir := "./upload/"
+	dir := "/tmp/osinstall-server/"
 	if !util.FileExist(dir) {
 		err := os.MkdirAll(dir, 0777)
 		if err != nil {
@@ -49,7 +50,7 @@ func UploadDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	h.Write([]byte(fmt.Sprintf("%s", time.Now().UnixNano()) + handle.Filename))
 	cipherStr := h.Sum(nil)
 	md5 := fmt.Sprintf("%s", hex.EncodeToString(cipherStr))
-	filename := md5 + "." + fix
+	filename := "osinstall-upload-" + md5 + "." + fix
 
 	result := make(map[string]interface{})
 	result["result"] = filename
@@ -93,7 +94,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		return
 	}
 
-	file := "./upload/" + info.Filename
+	file := "/tmp/osinstall-server/" + info.Filename
 
 	cd, err := iconv.Open("utf-8", "gbk") // convert gbk to utf8
 	if err != nil {
@@ -120,27 +121,32 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	length := len(ra)
 
 	type Device struct {
-		ID              uint
-		BatchNumber     string
-		Sn              string
-		Hostname        string
-		Ip              string
-		NetworkID       uint
-		OsID            uint
-		HardwareID      uint
-		SystemID        uint
-		Location        string
-		LocationID      uint
-		AssetNumber     string
-		Status          string
-		InstallProgress float64
-		InstallLog      string
-		NetworkName     string
-		OsName          string
-		HardwareName    string
-		SystemName      string
-		Content         string
-		UserID          uint
+		ID                uint
+		BatchNumber       string
+		Sn                string
+		Hostname          string
+		Ip                string
+		Netmask           string
+		Gateway           string
+		ManageIp          string
+		NetworkID         uint
+		ManageNetworkID   uint
+		OsID              uint
+		HardwareID        uint
+		SystemID          uint
+		Location          string
+		LocationID        uint
+		AssetNumber       string
+		Status            string
+		InstallProgress   float64
+		InstallLog        string
+		NetworkName       string
+		ManageNetworkName string
+		OsName            string
+		HardwareName      string
+		SystemName        string
+		Content           string
+		UserID            uint
 	}
 	var success []Device
 	var failure []Device
@@ -148,7 +154,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	for i := 1; i < length; i++ {
 		//result = append(result, ra[i][0])
 		var row Device
-		if len(ra[i]) != 8 {
+		if len(ra[i]) != 9 {
 			var br string
 			if row.Content != "" {
 				br = "<br />"
@@ -166,6 +172,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		row.SystemName = strings.TrimSpace(ra[i][5])
 		row.Location = strings.TrimSpace(ra[i][6])
 		row.AssetNumber = strings.TrimSpace(ra[i][7])
+		row.ManageIp = strings.TrimSpace(ra[i][8])
 		row.UserID = session.ID
 
 		if len(row.Sn) > 255 {
@@ -273,14 +280,14 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 				if row.Content != "" {
 					br = "<br />"
 				}
-				row.Content += br + "该设备已被录入，不能重复录入!"
+				row.Content += br + "该设备已被其他人录入，不能重复录入!"
 			} else {
 				if device.Status == "success" {
 					var br string
 					if row.Content != "" {
 						br = "<br />"
 					}
-					row.Content += br + "该设备已安装成功，请使用【单个录入】的功能重新录入并安装"
+					row.Content += br + "该设备已安装成功，请使用【单台录入】的功能重新录入并安装"
 				}
 			}
 
@@ -312,6 +319,24 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 				}
 				row.Content += br + "该IP已存在!"
 			}
+
+			if row.ManageIp != "" {
+				//IP
+				countManageIp, err := repo.CountDeviceByManageIpAndId(row.ManageIp, ID)
+				if err != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+					return
+				}
+
+				if countManageIp > 0 {
+					var br string
+					if row.Content != "" {
+						br = "<br />"
+					}
+					row.Content += br + "该管理IP已存在!"
+				}
+			}
+
 		} else {
 			//hostname
 			countHostname, err := repo.CountDeviceByHostname(row.Hostname)
@@ -340,6 +365,23 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 					br = "<br />"
 				}
 				row.Content += br + "该IP已存在!"
+			}
+
+			if row.ManageIp != "" {
+				//IP
+				countManageIp, err := repo.CountDeviceByManageIp(row.ManageIp)
+				if err != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+					return
+				}
+
+				if countManageIp > 0 {
+					var br string
+					if row.Content != "" {
+						br = "<br />"
+					}
+					row.Content += br + "该管理IP已存在!"
+				}
 			}
 		}
 
@@ -375,6 +417,45 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 				row.Content += br + "未匹配到网段!"
 			}
 			row.NetworkName = network.Network
+			row.Netmask = network.Netmask
+			row.Gateway = network.Gateway
+		}
+
+		if row.ManageIp != "" {
+			//匹配网络
+			isValidate, err := regexp.MatchString("^((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)$", row.ManageIp)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+				return
+			}
+
+			if !isValidate {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "管理IP格式不正确!"
+			}
+
+			modelIp, err := repo.GetManageIpByIp(row.ManageIp)
+			if err != nil {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "未匹配到管理网段!"
+			} else {
+				network, errNetwork := repo.GetManageNetworkById(modelIp.NetworkID)
+				if errNetwork != nil {
+					var br string
+					if row.Content != "" {
+						br = "<br />"
+					}
+					row.Content += br + "未匹配到管理网段!"
+				}
+				row.ManageNetworkID = network.ID
+				row.ManageNetworkName = network.Network
+			}
 		}
 
 		//OSName
@@ -409,7 +490,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 
 		if row.HardwareName != "" {
 			//HardwareName
-			countHardware, err := repo.CountHardwarrWithSeparator(row.HardwareName)
+			countHardware, err := repo.CountHardwareWithSeparator(row.HardwareName)
 			if err != nil {
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 				return
@@ -421,6 +502,32 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 					br = "<br />"
 				}
 				row.Content += br + "未匹配到硬件配置模板!"
+			} else {
+				hardware, err := repo.GetHardwareBySeaprator(row.HardwareName)
+				if err != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+					return
+				}
+				row.HardwareID = hardware.ID
+			}
+		}
+
+		if row.HardwareID > uint(0) {
+			hardware, err := repo.GetHardwareById(row.HardwareID)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+				return
+			}
+			if hardware.Data != "" {
+				if strings.Contains(hardware.Data, "<{manage_ip}>") || strings.Contains(hardware.Data, "<{manage_netmask}>") || strings.Contains(hardware.Data, "<{manage_gateway}>") {
+					if row.ManageIp == "" || row.ManageNetworkID <= uint(0) {
+						var br string
+						if row.Content != "" {
+							br = "<br />"
+						}
+						row.Content += br + "硬件配置模板的OOB网络类型为静态IP的方式，请填写管理IP!"
+					}
+				}
 			}
 		}
 
@@ -491,7 +598,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	file := "./upload/" + info.Filename
+	file := "/tmp/osinstall-server/" + info.Filename
 
 	cd, err := iconv.Open("utf-8", "gbk") // convert gbk to utf8
 	if err != nil {
@@ -523,7 +630,9 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		Sn              string
 		Hostname        string
 		Ip              string
+		ManageIp        string
 		NetworkID       uint
+		ManageNetworkID uint
 		OsID            uint
 		HardwareID      uint
 		SystemID        uint
@@ -552,7 +661,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		//result = append(result, ra[i][0])
 		var row Device
 
-		if len(ra[i]) != 8 {
+		if len(ra[i]) != 9 {
 			continue
 		}
 
@@ -564,6 +673,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		row.SystemName = strings.TrimSpace(ra[i][5])
 		row.Location = strings.TrimSpace(ra[i][6])
 		row.AssetNumber = strings.TrimSpace(ra[i][7])
+		row.ManageIp = strings.TrimSpace(ra[i][8])
 		row.UserID = session.ID
 
 		if len(row.Sn) > 255 {
@@ -702,6 +812,23 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 				}
 				row.Content += br + "SN:" + row.Sn + "该IP已存在!"
 			}
+
+			if row.ManageIp != "" {
+				//IP
+				countManageIp, err := repo.CountDeviceByManageIpAndId(row.ManageIp, ID)
+				if err != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+					return
+				}
+
+				if countManageIp > 0 {
+					var br string
+					if row.Content != "" {
+						br = "<br />"
+					}
+					row.Content += br + "SN:" + row.Sn + "该管理IP已存在!"
+				}
+			}
 		} else {
 			//hostname
 			countHostname, err := repo.CountDeviceByHostname(row.Hostname)
@@ -730,6 +857,23 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 					br = "<br />"
 				}
 				row.Content += br + "SN:" + row.Sn + "该IP已存在!"
+			}
+
+			if row.ManageIp != "" {
+				//IP
+				countManageIp, err := repo.CountDeviceByManageIp(row.ManageIp)
+				if err != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+					return
+				}
+
+				if countManageIp > 0 {
+					var br string
+					if row.Content != "" {
+						br = "<br />"
+					}
+					row.Content += br + "SN:" + row.Sn + "该管理IP已存在!"
+				}
 			}
 		}
 
@@ -767,6 +911,43 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		}
 
 		row.NetworkID = modelIp.NetworkID
+
+		if row.ManageIp != "" {
+			//匹配网络
+			isValidate, err := regexp.MatchString("^((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)$", row.ManageIp)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+				return
+			}
+
+			if !isValidate {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "SN:" + row.Sn + "管理IP格式不正确!"
+			}
+
+			modelIp, err := repo.GetManageIpByIp(row.ManageIp)
+			if err != nil {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "SN:" + row.Sn + "未匹配到管理网段!"
+			}
+
+			_, errNetwork := repo.GetManageNetworkById(modelIp.NetworkID)
+			if errNetwork != nil {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "SN:" + row.Sn + "未匹配到管理网段!"
+			}
+
+			row.ManageNetworkID = modelIp.NetworkID
+		}
 
 		//OSName
 		countOs, err := repo.CountOsConfigByName(row.OsName)
@@ -813,7 +994,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 
 		if row.HardwareName != "" {
 			//HardwareName
-			countHardware, err := repo.CountHardwarrWithSeparator(row.HardwareName)
+			countHardware, err := repo.CountHardwareWithSeparator(row.HardwareName)
 			if err != nil {
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 				return
@@ -835,13 +1016,40 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			row.HardwareID = hardware.ID
 		}
 
-		if row.Location != "" {
-			locationId, err := repo.GetLocationIdByName(row.Location)
+		if row.HardwareID > uint(0) {
+			hardware, err := repo.GetHardwareById(row.HardwareID)
 			if err != nil {
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 				return
 			}
-			if locationId <= 0 {
+			if hardware.Data != "" {
+				if strings.Contains(hardware.Data, "<{manage_ip}>") || strings.Contains(hardware.Data, "<{manage_netmask}>") || strings.Contains(hardware.Data, "<{manage_gateway}>") {
+					if row.ManageIp == "" || row.ManageNetworkID <= uint(0) {
+						var br string
+						if row.Content != "" {
+							br = "<br />"
+						}
+						row.Content += br + "SN:" + row.Sn + "硬件配置模板的OOB网络类型为静态IP的方式，请填写管理IP!"
+					}
+				}
+			}
+		}
+
+		if row.Location != "" {
+			countLocation, err := repo.CountLocationByName(row.Location)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+				return
+			}
+			if countLocation > 0 {
+				locationId, err := repo.GetLocationIdByName(row.Location)
+				if err != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+					return
+				}
+				row.LocationID = locationId
+			}
+			if row.LocationID <= uint(0) {
 				/*
 					var br string
 					if row.Content != "" {
@@ -849,17 +1057,13 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 					}
 					row.Content += br + "SN:" + row.Sn + " 未匹配到位置!"
 				*/
-				_, err := repo.ImportLocation(row.Location)
+				locationId, err := repo.ImportLocation(row.Location)
 				if err != nil {
 					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 					return
 				}
-				locationId, err := repo.GetLocationIdByName(row.Location)
-				if err != nil {
-					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-					return
-				}
-				if locationId <= 0 {
+
+				if locationId <= uint(0) {
 					var br string
 					if row.Content != "" {
 						br = "<br />"
@@ -867,8 +1071,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 					row.Content += br + "SN:" + row.Sn + " 未匹配到位置!"
 				}
 				row.LocationID = locationId
-			} else {
-				row.LocationID = locationId
+
 			}
 		}
 		if row.Content != "" {
@@ -884,20 +1087,91 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 					return
 				}
 
-				_, errUpdate := repo.UpdateDeviceById(id, batchNumber, row.Sn, row.Hostname, row.Ip, row.NetworkID, row.OsID, row.HardwareID, row.SystemID, "", row.LocationID, row.AssetNumber, status, row.IsSupportVm, row.UserID)
+				deviceOld, err := repo.GetDeviceById(id)
+				if err != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+					return
+				}
+
+				_, errLog := repo.UpdateDeviceLogTypeByDeviceIdAndType(id, "install", "install_history")
+				if errLog != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
+					return
+				}
+
+				device, errUpdate := repo.UpdateDeviceById(id, batchNumber, row.Sn, row.Hostname, row.Ip, row.ManageIp, row.NetworkID, row.ManageNetworkID, row.OsID, row.HardwareID, row.SystemID, "", row.LocationID, row.AssetNumber, status, row.IsSupportVm, row.UserID)
 				if errUpdate != nil {
 					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdate.Error()})
 					return
 				}
-			} else {
-				_, err := repo.AddDevice(batchNumber, row.Sn, row.Hostname, row.Ip, row.NetworkID, row.OsID, row.HardwareID, row.SystemID, "", row.LocationID, row.AssetNumber, status, row.IsSupportVm, row.UserID)
+
+				//log
+				logContent := make(map[string]interface{})
+				logContent["data_old"] = deviceOld
+				logContent["data"] = device
+
+				json, err := json.Marshal(logContent)
 				if err != nil {
 					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
 					return
+				}
+
+				_, errAddLog := repo.AddDeviceLog(device.ID, "修改设备信息", "operate", string(json))
+				if errAddLog != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+					return
+				}
+			} else {
+				device, err := repo.AddDevice(batchNumber, row.Sn, row.Hostname, row.Ip, row.ManageIp, row.NetworkID, row.ManageNetworkID, row.OsID, row.HardwareID, row.SystemID, "", row.LocationID, row.AssetNumber, status, row.IsSupportVm, row.UserID)
+				if err != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+					return
+				}
+
+				//log
+				logContent := make(map[string]interface{})
+				logContent["data"] = device
+				json, err := json.Marshal(logContent)
+				if err != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+					return
+				}
+
+				_, errAddLog := repo.AddDeviceLog(device.ID, "录入新设备", "operate", string(json))
+				if errAddLog != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+					return
+				}
+
+				//init manufactures device_id
+				countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(row.Sn)
+				if errCountManufacturer != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCountManufacturer.Error()})
+					return
+				}
+				if countManufacturer > 0 {
+					manufacturerId, errGetManufacturerBySn := repo.GetManufacturerIdBySn(row.Sn)
+					if errGetManufacturerBySn != nil {
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errGetManufacturerBySn.Error()})
+						return
+					}
+					_, errUpdate := repo.UpdateManufacturerDeviceIdById(manufacturerId, device.ID)
+					if errUpdate != nil {
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error()})
+						return
+					}
 				}
 			}
 		}
 	}
 
+	//删除文件
+	if util.FileExist(file) {
+		err := os.Remove(file)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+			return
+		}
+	}
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
 }

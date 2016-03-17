@@ -55,6 +55,8 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchDelete", route.BatchDelete))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/validateSn", route.ValidateSn))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchCancelInstall", route.BatchCancelInstall))
+	routes = append(routes, rest.Get("/api/osinstall/v1/device/getDeviceBySn", route.GetDeviceBySn))
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/importDeviceForOpenApi", route.ImportDeviceForOpenApi))
 
 	//Hardware
 	routes = append(routes, rest.Post("/api/osinstall/v1/hardware/add", route.AddHardware))
@@ -77,6 +79,7 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/report/deviceInstallInfo", route.ReportInstallInfo))
 	routes = append(routes, rest.Post("/api/osinstall/v1/report/deviceMacInfo", route.ReportMacInfo))
 	routes = append(routes, rest.Post("/api/osinstall/v1/report/deviceProductInfo", route.ReportProductInfo))
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/getPrepareInstallInfo", route.GetDevicePrepareInstallInfo))
 	routes = append(routes, rest.Get("/api/osinstall/v1/device/getSystemBySn", route.GetSystemBySn))
 	routes = append(routes, rest.Get("/api/osinstall/v1/device/getNetworkBySn", route.GetNetworkBySn))
 
@@ -105,6 +108,8 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/product/list", route.GetScanDeviceProduct))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/modelName/list", route.GetScanDeviceModelName))
 	routes = append(routes, rest.Get("/api/osinstall/v1/device/scan/export", route.ExportScanDeviceList))
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/batchAssignOwner", route.BatchAssignManufacturerOnwer))
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/viewByDeviceId", route.GetScanDeviceByDeviceId))
 
 	//User
 	routes = append(routes, rest.Post("/api/osinstall/v1/user/add", route.AddUser))
@@ -115,4 +120,13 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/user/delete", route.DeleteUserById))
 	routes = append(routes, rest.Post("/api/osinstall/v1/user/login", route.Login))
 	routes = append(routes, rest.Post("/api/osinstall/v1/user/logout", route.LoginOut))
+
+	//ManageNetwork
+	routes = append(routes, rest.Post("/api/osinstall/v1/manageNetwork/add", route.AddManageNetwork))
+	routes = append(routes, rest.Post("/api/osinstall/v1/manageNetwork/list", route.GetManageNetworkList))
+	routes = append(routes, rest.Post("/api/osinstall/v1/manageNetwork/view", route.GetManageNetworkById))
+	routes = append(routes, rest.Post("/api/osinstall/v1/manageNetwork/update", route.UpdateManageNetworkById))
+	routes = append(routes, rest.Post("/api/osinstall/v1/manageNetwork/delete", route.DeleteManageNetworkById))
+	routes = append(routes, rest.Post("/api/osinstall/v1/manageNetwork/validateIp", route.ValidateManageIp))
+
 }

@@ -10,16 +10,16 @@ import (
 )
 
 //device相关
-func (repo *MySQLRepo) AddDevice(batchNumber string, sn string, hostname string, ip string, networkId uint, osId uint, hardwareId uint, systemId uint, location string, locationId uint, assetNumber string, status string, isSupportVm string, userID uint) (*model.Device, error) {
-	mod := model.Device{BatchNumber: batchNumber, Sn: sn, Hostname: hostname, Ip: ip, NetworkID: networkId, OsID: osId, HardwareID: hardwareId, SystemID: systemId, Location: location, LocationID: locationId, AssetNumber: assetNumber, Status: status, IsSupportVm: isSupportVm, UserID: userID}
+func (repo *MySQLRepo) AddDevice(batchNumber string, sn string, hostname string, ip string, manageIp string, networkId uint, manageNetworkId uint, osId uint, hardwareId uint, systemId uint, location string, locationId uint, assetNumber string, status string, isSupportVm string, userID uint) (*model.Device, error) {
+	mod := model.Device{BatchNumber: batchNumber, Sn: sn, Hostname: hostname, Ip: ip, ManageIp: manageIp, NetworkID: networkId, ManageNetworkID: manageNetworkId, OsID: osId, HardwareID: hardwareId, SystemID: systemId, Location: location, LocationID: locationId, AssetNumber: assetNumber, Status: status, IsSupportVm: isSupportVm, UserID: userID}
 	err := repo.db.Create(&mod).Error
 	return &mod, err
 }
 
-func (repo *MySQLRepo) UpdateDeviceById(id uint, batchNumber string, sn string, hostname string, ip string, networkId uint, osId uint, hardwareId uint, systemId uint, location string, locationId uint, assetNumber string, status string, isSupportVm string, userID uint) (*model.Device, error) {
-	mod := model.Device{BatchNumber: batchNumber, Sn: sn, Hostname: hostname, Ip: ip, NetworkID: networkId, OsID: osId, HardwareID: hardwareId, SystemID: systemId, Location: location, LocationID: locationId, AssetNumber: assetNumber, Status: status, IsSupportVm: isSupportVm, UserID: userID}
+func (repo *MySQLRepo) UpdateDeviceById(id uint, batchNumber string, sn string, hostname string, ip string, manageIp string, networkId uint, manageNetworkId uint, osId uint, hardwareId uint, systemId uint, location string, locationId uint, assetNumber string, status string, isSupportVm string, userID uint) (*model.Device, error) {
+	mod := model.Device{BatchNumber: batchNumber, Sn: sn, Hostname: hostname, Ip: ip, ManageIp: manageIp, NetworkID: networkId, ManageNetworkID: manageNetworkId, OsID: osId, HardwareID: hardwareId, SystemID: systemId, Location: location, LocationID: locationId, AssetNumber: assetNumber, Status: status, IsSupportVm: isSupportVm, UserID: userID}
 	//设备信息发生修改，但属主不发生变化
-	err := repo.db.Unscoped().First(&mod, id).Update("batch_number", batchNumber).Update("sn", sn).Update("hostname", hostname).Update("ip", ip).Update("network_id", networkId).Update("os_id", osId).Update("hardware_id", hardwareId).Update("system_id", systemId).Update("location", location).Update("location_id", locationId).Update("asset_number", assetNumber).Update("status", status).Update("install_progress", 0.0000).Update("install_log", "").Update("is_support_vm", isSupportVm).Error
+	err := repo.db.Unscoped().First(&mod, id).Update("batch_number", batchNumber).Update("sn", sn).Update("hostname", hostname).Update("ip", ip).Update("manage_ip", manageIp).Update("network_id", networkId).Update("manage_network_id", manageNetworkId).Update("os_id", osId).Update("hardware_id", hardwareId).Update("system_id", systemId).Update("location", location).Update("location_id", locationId).Update("asset_number", assetNumber).Update("status", status).Update("install_progress", 0.0000).Update("install_log", "").Update("is_support_vm", isSupportVm).Error
 	return &mod, err
 }
 
@@ -105,10 +105,24 @@ func (repo *MySQLRepo) CountDeviceByIp(ip string) (uint, error) {
 	return count, err
 }
 
+func (repo *MySQLRepo) CountDeviceByManageIp(manageIp string) (uint, error) {
+	mod := model.Device{ManageIp: manageIp}
+	var count uint
+	err := repo.db.Unscoped().Model(mod).Where("manage_ip = ?", manageIp).Count(&count).Error
+	return count, err
+}
+
 func (repo *MySQLRepo) CountDeviceByIpAndId(ip string, id uint) (uint, error) {
 	mod := model.Device{Ip: ip}
 	var count uint
 	err := repo.db.Unscoped().Model(mod).Where("ip = ? and id != ?", ip, id).Count(&count).Error
+	return count, err
+}
+
+func (repo *MySQLRepo) CountDeviceByManageIpAndId(manageIp string, id uint) (uint, error) {
+	mod := model.Device{ManageIp: manageIp}
+	var count uint
+	err := repo.db.Unscoped().Model(mod).Where("manage_ip = ? and id != ?", manageIp, id).Count(&count).Error
 	return count, err
 }
 
@@ -145,7 +159,7 @@ func (repo *MySQLRepo) GetDeviceListWithPage(limit uint, offset uint, where stri
 	*/
 
 	var result []model.DeviceFull
-	sql := "SELECT t1.*,t2.network as network_name,t3.name as os_name,concat(t4.company,'-',t4.product,'-',t4.model_name) as hardware_name,t5.name as system_name FROM devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join hardwares t4 on t1.hardware_id = t4.id left join system_configs t5 on t1.system_id = t5.id " + where
+	sql := "SELECT t1.*,t2.network as network_name,t6.network as manage_network_name,t3.name as os_name,concat(t4.company,'-',t4.model_name) as hardware_name,t5.name as system_name,t7.username as owner_name FROM devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join hardwares t4 on t1.hardware_id = t4.id left join system_configs t5 on t1.system_id = t5.id left join manage_networks t6 on t1.manage_network_id = t6.id left join `users` t7 on t1.user_id = t7.id " + where + " order by t1.id DESC"
 
 	if offset > 0 {
 		sql += " limit " + fmt.Sprintf("%d", offset) + "," + fmt.Sprintf("%d", limit)
@@ -159,7 +173,7 @@ func (repo *MySQLRepo) GetDeviceListWithPage(limit uint, offset uint, where stri
 
 func (repo *MySQLRepo) GetFullDeviceById(id uint) (*model.DeviceFull, error) {
 	var result model.DeviceFull
-	err := repo.db.Raw("SELECT t1.*,t2.network as network_name,t3.name as os_name,concat(t4.company,'-',t4.product,'-',t4.model_name) as hardware_name,t5.name as system_name FROM devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join hardwares t4 on t1.hardware_id = t4.id left join system_configs t5 on t1.system_id = t5.id where t1.id = ?", id).Scan(&result).Error
+	err := repo.db.Raw("SELECT t1.*,t2.network as network_name,t6.network as manage_network_name,t3.name as os_name,concat(t4.company,'-',t4.model_name) as hardware_name,t5.name as system_name FROM devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join hardwares t4 on t1.hardware_id = t4.id left join system_configs t5 on t1.system_id = t5.id left join manage_networks t6 on t1.manage_network_id = t6.id where t1.id = ?", id).Scan(&result).Error
 	return &result, err
 }
 

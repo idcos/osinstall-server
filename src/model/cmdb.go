@@ -6,28 +6,33 @@ import (
 )
 
 type DeviceFull struct {
-	ID              uint
-	BatchNumber     string
-	Sn              string
-	Hostname        string
-	Ip              string
-	NetworkID       uint
-	OsID            uint
-	HardwareID      uint
-	SystemID        uint
-	Location        string
-	LocationID      uint
-	AssetNumber     string
-	Status          string
-	InstallProgress float64
-	InstallLog      string
-	NetworkName     string
-	OsName          string
-	HardwareName    string
-	SystemName      string
-	IsSupportVm     string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID                uint
+	BatchNumber       string
+	Sn                string
+	Hostname          string
+	Ip                string
+	ManageIp          string
+	NetworkID         uint
+	ManageNetworkID   uint
+	OsID              uint
+	HardwareID        uint
+	SystemID          uint
+	Location          string
+	LocationID        uint
+	AssetNumber       string
+	Status            string
+	InstallProgress   float64
+	InstallLog        string
+	NetworkName       string
+	ManageNetworkName string
+	OsName            string
+	HardwareName      string
+	SystemName        string
+	IsSupportVm       string
+	UserID            uint
+	OwnerName         string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 type Device struct {
@@ -36,7 +41,9 @@ type Device struct {
 	Sn              string  `sql:"not null;unique;"` //序列号
 	Hostname        string  `sql:"not null;"`        //主机名
 	Ip              string  `sql:"not null;unique;"` //IP
+	ManageIp        string  `sql:"unique;"`          //IP
 	NetworkID       uint    `sql:"not null;"`        //网段模板ID
+	ManageNetworkID uint    ``                       //管理网段模板ID
 	OsID            uint    `sql:"not null;"`        //操作系统ID
 	HardwareID      uint    ``                       //硬件配置模板ID
 	SystemID        uint    `sql:"not null;"`        //系统配置模板ID
@@ -57,7 +64,9 @@ type IDevice interface {
 	CountDeviceByHostname(hostname string) (uint, error)
 	CountDeviceByHostnameAndId(hostname string, id uint) (uint, error)
 	CountDeviceByIp(ip string) (uint, error)
+	CountDeviceByManageIp(ManageIp string) (uint, error)
 	CountDeviceByIpAndId(ip string, id uint) (uint, error)
+	CountDeviceByManageIpAndId(ManageIp string, id uint) (uint, error)
 	GetDeviceIdBySn(sn string) (uint, error)
 	GetDeviceBySn(sn string) (*Device, error)
 	CountDevice(where string) (int, error)
@@ -67,8 +76,8 @@ type IDevice interface {
 	ReInstallDeviceById(Id uint) (*Device, error)
 	CancelInstallDeviceById(Id uint) (*Device, error)
 	CreateBatchNumber() (string, error)
-	AddDevice(BatchNumber string, Sn string, Hostname string, Ip string, NetworkID uint, OsID uint, HardwareID uint, SystemID uint, Location string, LocationID uint, AssetNumber string, Status string, IsSupportVm string, UserID uint) (*Device, error)
-	UpdateDeviceById(ID uint, BatchNumber string, Sn string, Hostname string, Ip string, NetworkID uint, OsID uint, HardwareID uint, SystemID uint, Location string, LocationID uint, AssetNumber string, Status string, IsSupportVm string, UserID uint) (*Device, error)
+	AddDevice(BatchNumber string, Sn string, Hostname string, Ip string, ManageIp string, NetworkID uint, ManageNetworkID uint, OsID uint, HardwareID uint, SystemID uint, Location string, LocationID uint, AssetNumber string, Status string, IsSupportVm string, UserID uint) (*Device, error)
+	UpdateDeviceById(ID uint, BatchNumber string, Sn string, Hostname string, Ip string, ManageIp string, NetworkID uint, ManageNetworkID uint, OsID uint, HardwareID uint, SystemID uint, Location string, LocationID uint, AssetNumber string, Status string, IsSupportVm string, UserID uint) (*Device, error)
 	UpdateInstallInfoById(ID uint, status string, installProgress float64) (*Device, error)
 	GetSystemBySn(sn string) (*SystemConfig, error)
 	GetNetworkBySn(sn string) (*Network, error)
@@ -83,7 +92,9 @@ type DeviceHistory struct {
 	Sn              string  `sql:"not null;unique;"` //序列号
 	Hostname        string  `sql:"not null;"`        //主机名
 	Ip              string  `sql:"not null;unique;"` //IP
+	ManageIp        string  `sql:"unique;"`          //ManageIP
 	NetworkID       uint    `sql:"not null;"`        //网段模板ID
+	ManageNetworkID uint    ``                       //管理网段模板ID
 	OsID            uint    `sql:"not null;"`        //操作系统ID
 	HardwareID      uint    ``                       //硬件配置模板ID
 	SystemID        uint    `sql:"not null;"`        //系统配置模板ID
@@ -141,6 +152,45 @@ type IIp interface {
 	GetIpByIp(Ip string) (*Ip, error)
 	AssignNewIpByNetworkId(NetworkID uint) (string, error)
 	GetNotUsedIPListByNetworkId(NetworkID uint) ([]Ip, error)
+}
+
+// ManageNetwork 网络
+type ManageNetwork struct {
+	gorm.Model
+	Network string `sql:"not null;unique;"` //网段
+	Netmask string `sql:"not null;`         //掩码
+	Gateway string `sql:"not null;"`        //网关
+	Vlan    string //vlan
+	Trunk   string //trunk
+	Bonding string //bonding
+}
+
+// INetwork 网络操作接口
+type IManageNetwork interface {
+	CountManageNetworkByNetwork(Network string) (uint, error)
+	GetManageNetworkIdByNetwork(Network string) (uint, error)
+	CountManageNetworkByNetworkAndId(Network string, ID uint) (uint, error)
+	CountManageNetwork() (uint, error)
+	GetManageNetworkListWithPage(Limit uint, Offset uint) ([]ManageNetwork, error)
+	GetManageNetworkById(Id uint) (*ManageNetwork, error)
+	UpdateManageNetworkById(Id uint, Network string, Netmask string, Gateway string, Vlan string, Trunk string, Bonding string) (*ManageNetwork, error)
+	DeleteManageNetworkById(Id uint) (*ManageNetwork, error)
+	AddManageNetwork(Network string, Netmask string, Gateway string, Vlan string, Trunk string, Bonding string) (*ManageNetwork, error)
+}
+
+// Network 网络
+type ManageIp struct {
+	gorm.Model
+	NetworkID uint   `sql:"not null;"`
+	Ip        string `sql:"not null;"`
+}
+
+// INetwork 网络操作接口
+type IManageIp interface {
+	DeleteManageIpByNetworkId(NetworkID uint) (*ManageIp, error)
+	AddManageIp(NetworkID uint, Ip string) (*ManageIp, error)
+	CountManageIpByIp(Ip string) (uint, error)
+	GetManageIpByIp(Ip string) (*ManageIp, error)
 }
 
 // OS 操作系统
@@ -234,7 +284,7 @@ type IHardware interface {
 	GetHardwareBySn(sn string) (*Hardware, error)
 	CountHardwareByCompanyAndProductAndName(Company string, Product string, ModelName string) (uint, error)
 	CountHardwareByCompanyAndProductAndNameAndId(Company string, Product string, ModelName string, ID uint) (uint, error)
-	CountHardwarrWithSeparator(Name string) (uint, error)
+	CountHardwareWithSeparator(Name string) (uint, error)
 	GetHardwareIdByCompanyAndProductAndName(Company string, Product string, ModelName string) (uint, error)
 	CountHardware(where string) (uint, error)
 	GetHardwareListWithPage(Limit uint, Offset uint, where string) ([]Hardware, error)
@@ -308,27 +358,59 @@ type Manufacturer struct {
 	Mac         string
 	Nic         string
 	Cpu         string
+	CpuSum      uint `sql:"type:int(11);default:0;"`
 	Memory      string
+	MemorySum   uint `sql:"type:int(11);default:0;"`
 	Disk        string
+	DiskSum     uint `sql:"type:int(11);default:0;"`
 	Motherboard string
 	Raid        string
 	Oob         string
+	UserID      uint `sql:"not null;default:0;"`
+}
+
+type ManufacturerFull struct {
+	ID          uint
+	DeviceID    uint
+	Company     string
+	Product     string
+	ModelName   string
+	Sn          string
+	Ip          string
+	Mac         string
+	Nic         string
+	Cpu         string
+	CpuSum      uint
+	Memory      string
+	MemorySum   uint
+	Disk        string
+	DiskSum     uint
+	Motherboard string
+	Raid        string
+	Oob         string
+	UserID      uint
+	OwnerName   string
 }
 
 type IManufacturer interface {
 	CountManufacturerByDeviceID(DeviceID uint) (uint, error)
 	GetManufacturerById(Id uint) (*Manufacturer, error)
+	GetManufacturerByDeviceId(DeviceID uint) (*Manufacturer, error)
 	GetManufacturerByDeviceID(DeviceID uint) (*Manufacturer, error)
 	DeleteManufacturerById(Id uint) (*Manufacturer, error)
-	AddManufacturer(DeviceID uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, Memory string, Disk string, Motherboard string, Raid string, Oob string) (*Manufacturer, error)
-	UpdateManufacturerById(Id uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, Memory string, Disk string, Motherboard string, Raid string, Oob string) (*Manufacturer, error)
-	GetManufacturerListWithPage(Limit uint, Offset uint, Where string) ([]Manufacturer, error)
-	CountManufacturerByWhere(Where string) (uint, error)
+	DeleteManufacturerBySn(Sn string) (*Manufacturer, error)
+	AddManufacturer(DeviceID uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string) (*Manufacturer, error)
+	UpdateManufacturerById(Id uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string) (*Manufacturer, error)
+	UpdateManufacturerDeviceIdById(id uint, deviceId uint) (*Manufacturer, error)
+	GetManufacturerListWithPage(Limit uint, Offset uint, Where string) ([]ManufacturerFull, error)
+	CountManufacturerByWhere(Where string) (int, error)
 	GetManufacturerCompanyByGroup(Where string) ([]Manufacturer, error)
 	GetManufacturerProductByGroup(Where string) ([]Manufacturer, error)
 	GetManufacturerModelNameByGroup(Where string) ([]Manufacturer, error)
 	CountManufacturerBySn(Sn string) (uint, error)
 	GetManufacturerIdBySn(Sn string) (uint, error)
+	AssignManufacturerOnwer(Id uint, UserID uint) (*Manufacturer, error)
+	AssignManufacturerNewOnwer(NewUserID uint, OldUserID uint) error
 }
 
 type VmDevice struct {

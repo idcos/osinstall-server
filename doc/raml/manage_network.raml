@@ -1,33 +1,25 @@
 #%RAML 1.0
-title: hardware相关
-baseUri: /api/osinstall/{version}
+title: 管理网段相关
+baseUri: /api/network/{version}
 version: v1
 mediaType: application/json
 
-/hardware/add:
+/manageNetwork/add:
   post:
     description: 增加
     queryParameters:
-      Company:
-        description: 企业
+      Network:
+        description: 网段
         type: string
         required: true
-      ModelName:
-        description: 产品型号
+      Netmask:
+        description: 掩码
         type: string
         required: true
-      Raid:
-        description: raid
+      Gateway:
+        description: 网关
         type: string
-        required: false
-      Oob:
-        description: oob
-        type: string
-        required: false
-      Bios:
-        description: bios
-        type: string
-        required: false
+        required: true
     responses:
       200:
         body:
@@ -38,7 +30,7 @@ mediaType: application/json
                 "Message": "",
               }
 
-/hardware/list:
+/manageNetwork/list:
   post:
     description: 获取列表
     queryParameters:
@@ -65,7 +57,7 @@ mediaType: application/json
               }
 
 
-/hardware/view:
+/manageNetwork/view:
   post:
     description: 获取详情
     queryParameters:
@@ -87,7 +79,7 @@ mediaType: application/json
               }
 
 
-/hardware/update:
+/manageNetwork/update:
   post:
     description: 修改
     queryParameters:
@@ -95,26 +87,18 @@ mediaType: application/json
         description: ID
         type: number
         required: true
-      Company:
-        description: 企业
+      Network:
+        description: 网段
         type: string
         required: true
-      ModelName:
-        description: 型号
+      Netmask:
+        description: 掩码
         type: string
         required: true
-      Raid:
-        description: raid
+      Gateway:
+        description: 网关
         type: string
-        required: false
-      Oob:
-        description: oob
-        type: string
-        required: false
-      Bios:
-        description: bios
-        type: string
-        required: false
+        required: true
     responses:
       200:
         body:
@@ -126,7 +110,7 @@ mediaType: application/json
               }
 
 
-/hardware/delete:
+/manageNetwork/delete:
   post:
     description: 删除
     queryParameters:

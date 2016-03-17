@@ -1,9 +1,21 @@
 package mysqlrepo
 
 import (
-	//"fmt"
+	"fmt"
 	"model"
 )
+
+func (repo *MySQLRepo) AssignManufacturerOnwer(id uint, userId uint) (*model.Manufacturer, error) {
+	mod := model.Manufacturer{UserID: userId}
+	err := repo.db.First(&mod, id).Update("user_id", userId).Error
+	return &mod, err
+}
+
+func (repo *MySQLRepo) AssignManufacturerNewOnwer(newOwnerID uint, oldOwnerID uint) error {
+	sql := "UPDATE manufacturers SET `user_id` = " + fmt.Sprintf("%d", newOwnerID) + " where `user_id` = " + fmt.Sprintf("%d", oldOwnerID)
+	err := repo.db.Exec(sql).Error
+	return err
+}
 
 func (repo *MySQLRepo) GetManufacturerCompanyByGroup(where string) ([]model.Manufacturer, error) {
 	var result []model.Manufacturer
@@ -35,21 +47,31 @@ func (repo *MySQLRepo) GetManufacturerModelNameByGroup(where string) ([]model.Ma
 	return result, err
 }
 
-func (repo *MySQLRepo) GetManufacturerListWithPage(limit uint, offset uint, where string) ([]model.Manufacturer, error) {
-	var mods []model.Manufacturer
-	err := repo.db.Unscoped().Where(where).Limit(limit).Offset(offset).Find(&mods).Error
-	return mods, err
+func (repo *MySQLRepo) GetManufacturerListWithPage(limit uint, offset uint, where string) ([]model.ManufacturerFull, error) {
+	var result []model.ManufacturerFull
+	sql := "SELECT t1.*,t2.username as owner_name from manufacturers t1 left join users t2 on t1.user_id = t2.id where t1.id > 0 " + where + " order by t1.id DESC"
+
+	if offset > 0 {
+		sql += " limit " + fmt.Sprintf("%d", offset) + "," + fmt.Sprintf("%d", limit)
+	} else {
+		sql += " limit " + fmt.Sprintf("%d", limit)
+	}
+
+	err := repo.db.Raw(sql).Scan(&result).Error
+	return result, err
 }
 
-func (repo *MySQLRepo) CountManufacturerByWhere(where string) (uint, error) {
-	mod := model.Manufacturer{}
-	var count uint
-	err := repo.db.Model(mod).Where(where).Count(&count).Error
-	return count, err
+func (repo *MySQLRepo) CountManufacturerByWhere(where string) (int, error) {
+	row := repo.db.DB().QueryRow("SELECT count(t1.id) as c from manufacturers t1 left join users t2 on t1.user_id = t2.id where t1.id > 0 " + where)
+	var count = -1
+	if err := row.Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
-func (repo *MySQLRepo) AddManufacturer(deviceId uint, company string, product string, modelName string, sn string, ip string, mac string, nic string, cpu string, memory string, disk string, motherboard string, raid string, oob string) (*model.Manufacturer, error) {
-	mod := model.Manufacturer{DeviceID: deviceId, Company: company, Product: product, ModelName: modelName, Sn: sn, Ip: ip, Mac: mac, Nic: nic, Cpu: cpu, Memory: memory, Disk: disk, Motherboard: motherboard, Raid: raid, Oob: oob}
+func (repo *MySQLRepo) AddManufacturer(deviceId uint, company string, product string, modelName string, sn string, ip string, mac string, nic string, cpu string, cpuSum uint, memory string, memorySum uint, disk string, diskSum uint, motherboard string, raid string, oob string) (*model.Manufacturer, error) {
+	mod := model.Manufacturer{DeviceID: deviceId, Company: company, Product: product, ModelName: modelName, Sn: sn, Ip: ip, Mac: mac, Nic: nic, Cpu: cpu, CpuSum: cpuSum, Memory: memory, MemorySum: memorySum, Disk: disk, DiskSum: diskSum, Motherboard: motherboard, Raid: raid, Oob: oob}
 	err := repo.db.Create(&mod).Error
 	return &mod, err
 }
@@ -57,6 +79,12 @@ func (repo *MySQLRepo) AddManufacturer(deviceId uint, company string, product st
 func (repo *MySQLRepo) DeleteManufacturerById(id uint) (*model.Manufacturer, error) {
 	mod := model.Manufacturer{}
 	err := repo.db.Unscoped().Where("id = ?", id).Delete(&mod).Error
+	return &mod, err
+}
+
+func (repo *MySQLRepo) DeleteManufacturerBySn(sn string) (*model.Manufacturer, error) {
+	mod := model.Manufacturer{}
+	err := repo.db.Unscoped().Where("sn = ?", sn).Delete(&mod).Error
 	return &mod, err
 }
 
@@ -73,15 +101,27 @@ func (repo *MySQLRepo) GetManufacturerById(id uint) (*model.Manufacturer, error)
 	return &mod, err
 }
 
+func (repo *MySQLRepo) GetManufacturerByDeviceId(deviceId uint) (*model.Manufacturer, error) {
+	var mod model.Manufacturer
+	err := repo.db.Where("device_id = ?", deviceId).Find(&mod).Error
+	return &mod, err
+}
+
 func (repo *MySQLRepo) GetManufacturerByDeviceID(deviceId uint) (*model.Manufacturer, error) {
 	var mod model.Manufacturer
 	err := repo.db.Where("device_id = ?", deviceId).Find(&mod).Error
 	return &mod, err
 }
 
-func (repo *MySQLRepo) UpdateManufacturerById(id uint, company string, product string, modelName string, sn string, ip string, mac string, nic string, cpu string, memory string, disk string, motherboard string, raid string, oob string) (*model.Manufacturer, error) {
+func (repo *MySQLRepo) UpdateManufacturerById(id uint, company string, product string, modelName string, sn string, ip string, mac string, nic string, cpu string, cpuSum uint, memory string, memorySum uint, disk string, diskSum uint, motherboard string, raid string, oob string) (*model.Manufacturer, error) {
 	mod := model.Manufacturer{Company: company, Product: product, ModelName: modelName}
-	err := repo.db.First(&mod, id).Update("company", company).Update("product", product).Update("model_name", modelName).Update("sn", sn).Update("ip", ip).Update("mac", mac).Update("nic", nic).Update("cpu", cpu).Update("memory", memory).Update("disk", disk).Update("motherboard", motherboard).Update("raid", raid).Update("oob", oob).Error
+	err := repo.db.First(&mod, id).Update("company", company).Update("product", product).Update("model_name", modelName).Update("sn", sn).Update("ip", ip).Update("mac", mac).Update("nic", nic).Update("cpu", cpu).Update("cpu_sum", cpuSum).Update("memory", memory).Update("memory_sum", memorySum).Update("disk", disk).Update("disk_sum", diskSum).Update("motherboard", motherboard).Update("raid", raid).Update("oob", oob).Error
+	return &mod, err
+}
+
+func (repo *MySQLRepo) UpdateManufacturerDeviceIdById(id uint, deviceId uint) (*model.Manufacturer, error) {
+	mod := model.Manufacturer{DeviceID: deviceId}
+	err := repo.db.First(&mod, id).Update("device_id", deviceId).Error
 	return &mod, err
 }
 

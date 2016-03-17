@@ -13,6 +13,8 @@ type Repo interface {
 	IHardware
 	ILocation
 	IIp
+	IManageNetwork
+	IManageIp
 	IMac
 	IManufacturer
 	IDeviceLog

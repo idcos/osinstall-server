@@ -48,16 +48,16 @@ func (repo *MySQLRepo) CountHardwareByCompanyAndProductAndName(company string, p
 	return count, err
 }
 
-func (repo *MySQLRepo) CountHardwarrWithSeparator(name string) (uint, error) {
+func (repo *MySQLRepo) CountHardwareWithSeparator(name string) (uint, error) {
 	mod := model.Hardware{}
 	var count uint
-	err := repo.db.Model(mod).Where("CONCAT(company,'-',product,'-',model_name) = ?", name).Count(&count).Error
+	err := repo.db.Model(mod).Where("CONCAT(company,'-',model_name) = ?", name).Count(&count).Error
 	return count, err
 }
 
 func (repo *MySQLRepo) GetHardwareBySeaprator(name string) (*model.Hardware, error) {
 	var mod model.Hardware
-	err := repo.db.Where("CONCAT(company,'-',product,'-',model_name) = ?", name).Find(&mod).Error
+	err := repo.db.Where("CONCAT(company,'-',model_name) = ?", name).Find(&mod).Error
 	return &mod, err
 }
 

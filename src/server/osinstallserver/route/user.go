@@ -156,6 +156,12 @@ func DeleteUserById(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		return
 	}
 
+	errAssign := repo.AssignManufacturerNewOnwer(uint(0), info.ID)
+	if errAssign != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAssign.Error()})
+		return
+	}
+
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": osConfig})
 }
 
@@ -321,6 +327,7 @@ func GetUserList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	var info struct {
 		Limit  uint
 		Offset uint
+		Status string
 	}
 
 	if err := r.DecodeJSONPayload(&info); err != nil {
@@ -328,7 +335,12 @@ func GetUserList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	mods, err := repo.GetUserListWithPage(info.Limit, info.Offset, "")
+	var where = ""
+	if info.Status != "" {
+		where += " and status = '" + info.Status + "'"
+	}
+
+	mods, err := repo.GetUserListWithPage(info.Limit, info.Offset, where)
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 		return
@@ -337,7 +349,7 @@ func GetUserList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	result["list"] = mods
 
 	//总条数
-	count, err := repo.CountUser("")
+	count, err := repo.CountUser(where)
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 		return

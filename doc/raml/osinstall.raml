@@ -216,25 +216,13 @@ types:
         description: 厂商
         type: string
         required: true
-      Product:
-        description: 产品名称
-        type: string
-        required: false
       ModelName:
         description: 服务器型号
         type: string
         required: false
-      Ip:
-        description: 当前使用的IP
-        type: string
-        required: false
-      Mac:
-        description: Mac地址
-        type: string
-        required: false
       Nic:
         description: 网卡信息
-        type: []Nic
+        type: Nic[]
         required: false
       Cpu:
         description: CPU信息
@@ -244,9 +232,17 @@ types:
         description: 内存信息
         type: Memory[]
         required: false
+      MemorySum:
+        description: 内存总容量(MB)
+        type: Number
+        required: false
       Disk:
         description: 硬盘信息
         type: Disk[]
+        required: false
+      DiskSum:
+        description: 硬盘总容量(GB)
+        type: Number
         required: false
       Motherboard:
         description: 主板信息
@@ -269,8 +265,36 @@ types:
               {
                 "Status": "success",
                 "Message": "",
+              }
+
+/device/getPrepareInstallInfo:
+  post:
+    description: 装机之前，获取是否匹配到硬件配置库，是否略过硬件配置等信息
+    queryParameters:
+      Sn:
+        description: SN号
+        type: string
+        required: true
+      Company:
+        description: 厂商
+        type: string
+        required: true
+      ModelName:
+        description: 产品型号
+        type: string
+        required: false
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
                 "Content": {
                   "IsVerify":"true" //true:能匹配到硬件配置库,false:未匹配到硬件配置库
+                  "IsSkipHardwareConfig":"false",//true:略过硬件配置安装步骤,false:不略过
                 }
               }
 

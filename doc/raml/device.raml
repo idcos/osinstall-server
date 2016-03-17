@@ -25,6 +25,14 @@ mediaType: application/json
         description: network表ID
         type: number
         required: true
+      ManageIp:
+        description: 管理IP
+        type: string
+        required: false
+      ManageNetworkID:
+        description: manage_network表ID
+        type: number
+        required: false
       OsID:
         description: os_config表ID
         type: number
@@ -44,6 +52,10 @@ mediaType: application/json
       AssetNumber:
         description: 财编
         type: string
+        required: false
+      UserID:
+        description: 用户ID，user表ID
+        type: number
         required: false
       
     responses:
@@ -76,6 +88,14 @@ mediaType: application/json
         description: network表ID
         type: number
         required: true
+      ManageIp:
+        description: 管理IP
+        type: string
+        required: false
+      ManageNetworkID:
+        description: manage_network表ID
+        type: number
+        required: false
       OsID:
         description: os_config表ID
         type: number
@@ -226,13 +246,13 @@ mediaType: application/json
                 "Message": "",
               }
 
-/device/getNumByStatus:
+/device/batchCancelInstall:
   post:
-    description: 获取各状态下的设备数量
+    description: 批量取消安装
     queryParameters:
-      Status:
-        description: 状态
-        type: string
+      ID:
+        description: ID
+        type: number
         required: true
     responses:
       200:
@@ -242,8 +262,100 @@ mediaType: application/json
               {
                 "Status": "success",
                 "Message": "",
-                "Content":{
-                  "count":10
-                },
               }
 
+
+/device/getDeviceBySn:
+  get:
+    description: 根据SN获取设备信息
+    queryParameters:
+      sn:
+        description: SN
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Content": {
+                  "ID": 2,
+                  "CreatcedAt": "2016-03-11T11:55:50+08:00",
+                  "UpdatedAt": "2016-03-11T11:55:50+08:00",
+                  "BatchNumber": "20160311001",
+                  "Sn": "5GD4C3X",
+                  "Hostname": "web-db",
+                  "Ip": "192.168.1.1",
+                  "ManageIp": "192.168.100.1",
+                  "NetworkID": 1,
+                  "ManageNetworkID": 1,
+                  "OsID": 1,
+                  "HardwareID": 1,
+                  "SystemID": 1,
+                  "Location": "",
+                  "LocationID": 7,
+                  "AssetNumber": "CB201503110001",
+                  "Status": "success",  //状态：pre_install 准备安装，installing 正在安装，success 安装成功，failure 安装失败
+                  "InstallProgress": 1, //安装进度，1表示 100%
+                  "InstallLog": "",
+                  "UserID": 1
+                },
+                "Message": "操作成功",
+                "Status": "success"
+              }
+
+/device/importDeviceForOpenApi:
+  post:
+    description: 录入设备(针对第三方系统)
+    queryParameters:
+      Sn:
+        description: SN
+        type: string
+        required: true
+      Hostname:
+        description: hostname
+        type: string
+        required: true
+      Ip:
+        description: IP
+        type: string
+        required: true
+      ManageIp:
+        description: 管理IP
+        type: string
+        required: false
+      OsName:
+        description: 操作系统名称
+        type: string
+        required: true
+      HardwareName:
+        description: 硬件配置模板全称，如 Dell-PowerEdge R420
+        type: string
+        required: false
+      SystemName:
+        description: 系统模板名称
+        type: string
+        required: true
+      Location:
+        description: 地址，各层级地址间以"-"隔开。不存在的地址会自动补充到地址模板库。如：杭州-留下机房-A101-10机柜
+        type: string
+        required: true
+      AssetNumber:
+        description: 财编
+        type: string
+        required: false
+      UserID:
+        description: 用户ID，默认为0，可以不传
+        type: number
+        required: false
+      
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+              }

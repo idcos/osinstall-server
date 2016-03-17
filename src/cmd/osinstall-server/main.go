@@ -1,16 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"net"
 	"net/http"
 	"server/osinstallserver"
 )
 
 func main() {
-	srvr, err := osinstallserver.NewServer("idcos-os-install.json", osinstallserver.DevPipeline)
+	srvr, err := osinstallserver.NewServer("/etc/osinstall-server/osinstall-server.conf", osinstallserver.DevPipeline)
 	if err != nil {
-		fmt.Println(err)
+		srvr.Log.Error(err)
 		return
 	}
 
@@ -18,14 +17,14 @@ func main() {
 
 	l4, err := net.Listen("tcp4", addr)
 	if err != nil {
-		fmt.Println(err)
+		srvr.Log.Error(err)
 		return
 	}
 
-	fmt.Println("The server is running.")
+	srvr.Log.Info("The server is running.")
 
 	if err := http.Serve(l4, srvr); err != nil {
-		fmt.Println(err)
+		srvr.Log.Error(err)
 		return
 	}
 }

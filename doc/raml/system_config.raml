@@ -16,6 +16,10 @@ mediaType: application/json
         description: 详细信息
         type: string
         required: true
+      AccessToken:
+        description: 调用登录API时，生成的授权AccessToken。
+        type: string
+        required: true
     responses:
       200:
         body:
@@ -91,6 +95,10 @@ mediaType: application/json
         description: 详细信息
         type: string
         required: true
+      AccessToken:
+        description: 调用登录API时，生成的授权AccessToken。
+        type: string
+        required: true
     responses:
       200:
         body:
@@ -109,6 +117,10 @@ mediaType: application/json
       ID:
         description: ID
         type: number
+        required: true
+      AccessToken:
+        description: 调用登录API时，生成的授权AccessToken。
+        type: string
         required: true
     responses:
       200:

@@ -744,8 +744,15 @@ func BatchAssignManufacturerOnwer(ctx context.Context, w rest.ResponseWriter, r 
 	}
 
 	var infos []struct {
-		ID     uint
-		UserID uint
+		ID          uint
+		UserID      uint
+		AccessToken string
+	}
+
+	session, errSession := GetSession(w, r)
+	if errSession != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + errSession.Error()})
+		return
 	}
 
 	if err := r.DecodeJSONPayload(&infos); err != nil {
@@ -754,6 +761,21 @@ func BatchAssignManufacturerOnwer(ctx context.Context, w rest.ResponseWriter, r 
 	}
 
 	for _, info := range infos {
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		}
+
+		if session.Role != "Administrator" {
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "权限不足!"})
+			return
+		}
+
 		manufacturer, err := repo.GetManufacturerById(info.ID)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})

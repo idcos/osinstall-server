@@ -21,4 +21,5 @@ type Repo interface {
 	IDeviceHistory
 	IVmDevice
 	IUser
+	IUserAccessToken
 }

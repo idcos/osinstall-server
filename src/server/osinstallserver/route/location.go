@@ -17,10 +17,18 @@ func DeleteLocationById(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 		return
 	}
 	var info struct {
-		ID uint
+		ID          uint
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
 		return
 	}
 
@@ -92,15 +100,23 @@ func UpdateLocationById(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 		return
 	}
 	var info struct {
-		ID   uint
-		Pid  uint
-		Name string
+		ID          uint
+		Pid         uint
+		Name        string
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
 		return
 	}
 	info.Name = strings.TrimSpace(info.Name)
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
+		return
+	}
 
 	if info.Name == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
@@ -253,8 +269,9 @@ func AddLocation(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 	var info struct {
-		Pid  uint
-		Name string
+		Pid         uint
+		Name        string
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
@@ -262,6 +279,13 @@ func AddLocation(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	info.Name = strings.TrimSpace(info.Name)
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
+		return
+	}
 
 	if info.Name == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})

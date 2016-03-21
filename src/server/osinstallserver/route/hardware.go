@@ -28,10 +28,18 @@ func DeleteHardwareById(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 		return
 	}
 	var info struct {
-		ID uint
+		ID          uint
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
 		return
 	}
 
@@ -62,21 +70,29 @@ func UpdateHardwareById(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 		return
 	}
 	var info struct {
-		ID        uint
-		Company   string
-		Product   string
-		ModelName string
-		Raid      string
-		Oob       string
-		Bios      string
-		Tpl       string
-		Data      string
-		Source    string
-		Version   string
-		Status    string
+		ID          uint
+		Company     string
+		Product     string
+		ModelName   string
+		Raid        string
+		Oob         string
+		Bios        string
+		Tpl         string
+		Data        string
+		Source      string
+		Version     string
+		Status      string
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
 		return
 	}
 
@@ -405,6 +421,7 @@ func AddHardware(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		Source      string
 		Version     string
 		Status      string
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
@@ -420,6 +437,13 @@ func AddHardware(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	info.Source = strings.TrimSpace(info.Source)
 	info.Version = strings.TrimSpace(info.Version)
 	info.Status = strings.TrimSpace(info.Status)
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
+		return
+	}
 
 	if info.Company == "" || info.ModelName == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})

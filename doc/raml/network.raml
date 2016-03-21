@@ -20,10 +20,6 @@ mediaType: application/json
         description: 网关
         type: string
         required: true
-      Vlan:
-        description: Vlan
-        type: string
-        required: false
       Trunk:
         description: Trunk
         type: string
@@ -32,6 +28,10 @@ mediaType: application/json
         description: Bonding
         type: string
         required: false
+      AccessToken:
+        description: 调用登录API时，生成的授权AccessToken。
+        type: string
+        required: true
     responses:
       200:
         body:
@@ -111,10 +111,6 @@ mediaType: application/json
         description: 网关
         type: string
         required: true
-      Vlan:
-        description: Vlan
-        type: string
-        required: false
       Trunk:
         description: Trunk
         type: string
@@ -123,6 +119,10 @@ mediaType: application/json
         description: Bonding
         type: string
         required: false
+      AccessToken:
+        description: 调用登录API时，生成的授权AccessToken。
+        type: string
+        required: true
     responses:
       200:
         body:
@@ -141,6 +141,10 @@ mediaType: application/json
       ID:
         description: ID
         type: number
+        required: true
+      AccessToken:
+        description: 调用登录API时，生成的授权AccessToken。
+        type: string
         required: true
     responses:
       200:

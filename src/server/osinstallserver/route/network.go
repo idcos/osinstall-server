@@ -62,10 +62,17 @@ func DeleteNetworkById(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		return
 	}
 	var info struct {
-		ID uint
+		ID          uint
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
 		return
 	}
 
@@ -91,13 +98,14 @@ func UpdateNetworkById(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		return
 	}
 	var info struct {
-		ID      uint
-		Network string
-		Netmask string
-		Gateway string
-		Vlan    string
-		Trunk   string
-		Bonding string
+		ID          uint
+		Network     string
+		Netmask     string
+		Gateway     string
+		Vlan        string
+		Trunk       string
+		Bonding     string
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
@@ -110,6 +118,13 @@ func UpdateNetworkById(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	info.Vlan = strings.TrimSpace(info.Vlan)
 	info.Trunk = strings.TrimSpace(info.Trunk)
 	info.Bonding = strings.TrimSpace(info.Bonding)
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
+		return
+	}
 
 	if info.Network == "" || info.Netmask == "" || info.Gateway == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
@@ -308,12 +323,13 @@ func AddNetwork(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 	var info struct {
-		Network string
-		Netmask string
-		Gateway string
-		Vlan    string
-		Trunk   string
-		Bonding string
+		Network     string
+		Netmask     string
+		Gateway     string
+		Vlan        string
+		Trunk       string
+		Bonding     string
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
@@ -326,6 +342,13 @@ func AddNetwork(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	info.Vlan = strings.TrimSpace(info.Vlan)
 	info.Trunk = strings.TrimSpace(info.Trunk)
 	info.Bonding = strings.TrimSpace(info.Bonding)
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
+		return
+	}
 
 	if info.Network == "" || info.Netmask == "" || info.Gateway == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})

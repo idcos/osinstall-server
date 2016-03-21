@@ -1,0 +1,53 @@
+#%RAML 1.0
+title: 用户相关
+baseUri: /api/osinstall/{version}
+version: v1
+mediaType: application/json
+
+/user/login:
+  post:
+    description: 增加
+    queryParameters:
+      Username:
+        description: 用户名
+        type: string
+        required: true
+      Password:
+        description: 密码
+        type: string
+        required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Content": {
+                  "ID": 1,
+                  "Username": "admin",
+                  "Name": "超级管理员",
+                  "Role": "Administrator",
+                  "AccessToken": "097B55289D87C26FC33C2B0F7F80701D"
+                },
+                "Message": "登录成功",
+                "Status": "success"
+              }
+
+
+/user/logout:
+  post:
+    description: 增加
+    queryParameters:
+      AccessToken:
+        description: 登录时生成的AccessToken
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Message": "操作成功",
+                "Status": "success"
+              }

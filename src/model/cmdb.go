@@ -575,3 +575,28 @@ type IUser interface {
 	UpdateUserById(Id uint, Password string, Name string, PhoneNumber string, Permission string, Status string, Role string) (*User, error)
 	GetUserListWithPage(Limit uint, Offset uint, Where string) ([]User, error)
 }
+
+// Mac mac地址
+type UserWithToken struct {
+	ID          uint
+	Username    string
+	Name        string
+	PhoneNumber string
+	Status      string
+	Role        string
+	AccessToken string
+}
+
+// Mac mac地址
+type UserAccessToken struct {
+	gorm.Model
+	UserID      uint   `sql:"not null;"`
+	AccessToken string `sql:"not null;"`
+}
+
+type IUserAccessToken interface {
+	CountUserAccessTokenByToken(AccessToken string) (uint, error)
+	GetUserByAccessToken(AccessToken string) (*UserWithToken, error)
+	DeleteUserAccessTokenByToken(AccessToken string) (*UserAccessToken, error)
+	AddUserAccessToken(UserID uint, AccessToken string) (*UserAccessToken, error)
+}

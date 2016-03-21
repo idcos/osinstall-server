@@ -7,17 +7,20 @@ import (
 	"golang.org/x/net/context"
 	"middleware"
 	//"net/http"
+	"errors"
+	"fmt"
 	"model"
 	"server/osinstallserver/util"
 	"strings"
+	"time"
 	"utils"
 )
 
 var store = sessions.NewCookieStore([]byte("idcos-osinstall"))
 
-func GetSession(w rest.ResponseWriter, r *rest.Request) (model.User, error) {
+func GetSession(w rest.ResponseWriter, r *rest.Request) (model.UserWithToken, error) {
 	session, err := store.Get(r.Request, "user-authentication")
-	var user model.User
+	var user model.UserWithToken
 	if err != nil {
 		return user, err
 	}
@@ -26,7 +29,77 @@ func GetSession(w rest.ResponseWriter, r *rest.Request) (model.User, error) {
 		user.Username = session.Values["Username"].(string)
 		user.Name = session.Values["Name"].(string)
 		user.Role = session.Values["Role"].(string)
+		user.AccessToken = session.Values["AccessToken"].(string)
 	}
+	return user, nil
+}
+
+func VerifyAccessPurview(token string, ctx context.Context, isVerifyAdministratorRole bool, w rest.ResponseWriter, r *rest.Request) (model.UserWithToken, error) {
+	var user model.UserWithToken
+	session, errSession := GetSession(w, r)
+	if errSession != nil {
+		return user, errSession
+	}
+
+	if session.ID <= uint(0) {
+		accessTokenUser, errAccessToken := VerifyAccessToken(token, ctx, isVerifyAdministratorRole)
+		return accessTokenUser, errAccessToken
+	}
+
+	if session.Role == "" {
+		return user, errors.New("请您先登录!")
+	}
+
+	if isVerifyAdministratorRole == true {
+		if session.Role != "Administrator" {
+			return user, errors.New("权限不足，请使用超级管理员账号登录!")
+		} else {
+			user.ID = session.ID
+			user.Username = session.Username
+			user.Name = session.Name
+			user.Role = session.Role
+			return user, nil
+		}
+	}
+	return user, nil
+}
+
+func VerifyAccessToken(token string, ctx context.Context, isVerifyAdministratorRole bool) (model.UserWithToken, error) {
+	var user model.UserWithToken
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return user, errors.New("AccessToken 不能为空!")
+	}
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		return user, errors.New("内部服务器错误")
+	}
+
+	count, err := repo.CountUserAccessTokenByToken(token)
+	if err != nil {
+		return user, err
+	}
+
+	if count != 1 {
+		return user, errors.New("AccessToken 不正确!")
+	}
+
+	userInfo, err := repo.GetUserByAccessToken(token)
+	if err != nil {
+		return user, err
+	}
+
+	if isVerifyAdministratorRole == true {
+		if userInfo.Role != "Administrator" {
+			return user, errors.New("权限不足，请使用超级管理员账号登录!")
+		}
+	}
+
+	user.ID = userInfo.ID
+	user.Username = userInfo.Username
+	user.Name = userInfo.Name
+	user.Role = userInfo.Role
+	user.AccessToken = userInfo.AccessToken
 	return user, nil
 }
 
@@ -92,34 +165,61 @@ func Login(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
+	token := fmt.Sprintf("%d", user.ID) + "_" + time.Now().String()
+	accessToken, err := util.EncodePassword(token)
+	accessToken = strings.ToUpper(accessToken)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	_, errToken := repo.AddUserAccessToken(user.ID, accessToken)
+	if errToken != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errToken.Error()})
+		return
+	}
+
 	session.Values["ID"] = user.ID
 	session.Values["Username"] = user.Username
 	session.Values["Name"] = user.Name
 	session.Values["Role"] = user.Role
+	session.Values["AccessToken"] = accessToken
 	session.Save(r.Request, w)
 
 	type userInfo struct {
-		ID       uint
-		Username string
-		Name     string
-		Role     string
+		ID          uint
+		Username    string
+		Name        string
+		Role        string
+		AccessToken string
 	}
 	var userinfo userInfo
 	userinfo.ID = user.ID
 	userinfo.Username = user.Username
 	userinfo.Name = user.Name
 	userinfo.Role = user.Role
+	userinfo.AccessToken = accessToken
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "登录成功", "Content": userinfo})
 	return
 }
 
 func LoginOut(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
-	_, ok := middleware.RepoFromContext(ctx)
+	repo, ok := middleware.RepoFromContext(ctx)
 	if !ok {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
+	var info struct {
+		AccessToken string
+	}
+
+	if err := r.DecodeJSONPayload(&info); err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
 
 	session, err := store.Get(r.Request, "user-authentication")
 	if err != nil {
@@ -127,10 +227,25 @@ func LoginOut(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
+	/*
+		sessionUser, err := GetSession(w, r)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+			return
+		}
+	*/
+
+	_, errToken := repo.DeleteUserAccessTokenByToken(info.AccessToken)
+	if errToken != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errToken.Error()})
+		return
+	}
+
 	delete(session.Values, "ID")
 	delete(session.Values, "Username")
 	delete(session.Values, "Name")
 	delete(session.Values, "Role")
+	delete(session.Values, "AccessToken")
 	session.Save(r.Request, w)
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
@@ -143,10 +258,17 @@ func DeleteUserById(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		return
 	}
 	var info struct {
-		ID uint
+		ID          uint
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	_, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, true)
+	if errAccessToken != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
 		return
 	}
 
@@ -179,6 +301,7 @@ func UpdateUserById(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		Permission  string
 		Status      string
 		Role        string
+		AccessToken string
 	}
 
 	if err := r.DecodeJSONPayload(&info); err != nil {
@@ -192,6 +315,13 @@ func UpdateUserById(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 	info.Permission = strings.TrimSpace(info.Permission)
 	info.Status = strings.TrimSpace(info.Status)
 	info.Role = strings.TrimSpace(info.Role)
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+
+	_, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, true)
+	if errAccessToken != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+		return
+	}
 
 	if info.Password == "" {
 		user, err := repo.GetUserById(info.ID)
@@ -232,6 +362,7 @@ func UpdateMyInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		Permission  string
 		Status      string
 		Role        string
+		AccessToken string
 	}
 
 	if err := r.DecodeJSONPayload(&info); err != nil {
@@ -242,6 +373,13 @@ func UpdateMyInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	info.Password = strings.TrimSpace(info.Password)
 	info.Name = strings.TrimSpace(info.Name)
 	info.PhoneNumber = strings.TrimSpace(info.PhoneNumber)
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+
+	_, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+	if errAccessToken != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+		return
+	}
 
 	user, err := repo.GetUserById(info.ID)
 	if err != nil {
@@ -325,14 +463,28 @@ func GetUserList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 	var info struct {
-		Limit  uint
-		Offset uint
-		Status string
+		Limit       uint
+		Offset      uint
+		Status      string
+		AccessToken string
 	}
 
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
 		return
+	}
+
+	session, errSession := GetSession(w, r)
+	if errSession != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + errSession.Error()})
+		return
+	}
+	if session.Username == "" {
+		_, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, true)
+		if errAccessToken != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+			return
+		}
 	}
 
 	var where = ""
@@ -373,6 +525,7 @@ func AddUser(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		Permission  string
 		Status      string
 		Role        string
+		AccessToken string
 	}
 
 	if err := r.DecodeJSONPayload(&info); err != nil {
@@ -387,6 +540,13 @@ func AddUser(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	info.Permission = strings.TrimSpace(info.Permission)
 	info.Status = strings.TrimSpace(info.Status)
 	info.Role = strings.TrimSpace(info.Role)
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+
+	_, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, true)
+	if errAccessToken != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+		return
+	}
 
 	if info.Username == "" || info.Password == "" || info.Status == "" || info.Role == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})

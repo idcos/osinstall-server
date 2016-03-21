@@ -24,8 +24,17 @@ func DeleteDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Reques
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
+	session, errSession := GetSession(w, r)
+	if errSession != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + errSession.Error()})
+		return
+	}
+
 	var info struct {
-		ID uint
+		ID          uint
+		AccessToken string
+		UserID      uint
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
@@ -35,6 +44,24 @@ func DeleteDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Reques
 	device, errDevice := repo.GetDeviceById(info.ID)
 	if errDevice != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDevice.Error()})
+		return
+	}
+
+	if session.ID <= uint(0) {
+		accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+		if errAccessToken != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+			return
+		}
+		info.UserID = accessTokenUser.ID
+		session.ID = accessTokenUser.ID
+		session.Role = accessTokenUser.Role
+	} else {
+		info.UserID = session.ID
+	}
+
+	if session.Role != "Administrator" && device.UserID != info.UserID {
+		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "您无权操作其他人的设备!"})
 		return
 	}
 
@@ -100,6 +127,12 @@ func BatchReInstall(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		return
 	}
 
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
 	conf, ok := middleware.ConfigFromContext(ctx)
 	if !ok {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
@@ -107,7 +140,9 @@ func BatchReInstall(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 	}
 
 	var infos []struct {
-		ID uint
+		ID          uint
+		AccessToken string
+		UserID      uint
 	}
 
 	if err := r.DecodeJSONPayload(&infos); err != nil {
@@ -116,14 +151,32 @@ func BatchReInstall(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 	}
 
 	for _, info := range infos {
-		_, err := repo.ReInstallDeviceById(info.ID)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-			return
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		} else {
+			info.UserID = session.ID
 		}
 
 		//log
-		device, err := repo.GetDeviceById(info.ID)
+		device, errDevice := repo.GetDeviceById(info.ID)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDevice.Error()})
+			return
+		}
+
+		if session.Role != "Administrator" && device.UserID != info.UserID {
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "您无权操作其他人的设备!"})
+			return
+		}
+
+		_, err := repo.ReInstallDeviceById(info.ID)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 			return
@@ -188,6 +241,12 @@ func BatchCancelInstall(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 		return
 	}
 
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
 	conf, ok := middleware.ConfigFromContext(ctx)
 	if !ok {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
@@ -195,7 +254,9 @@ func BatchCancelInstall(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 	}
 
 	var infos []struct {
-		ID uint
+		ID          uint
+		AccessToken string
+		UserID      uint
 	}
 
 	if err := r.DecodeJSONPayload(&infos); err != nil {
@@ -207,6 +268,24 @@ func BatchCancelInstall(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 		device, err := repo.GetDeviceById(info.ID)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+			return
+		}
+
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		} else {
+			info.UserID = session.ID
+		}
+
+		if session.Role != "Administrator" && device.UserID != info.UserID {
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "您无权操作其他人的设备!"})
 			return
 		}
 
@@ -279,6 +358,12 @@ func BatchDelete(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
 	conf, ok := middleware.ConfigFromContext(ctx)
 	if !ok {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
@@ -286,7 +371,9 @@ func BatchDelete(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	var infos []struct {
-		ID uint
+		ID          uint
+		AccessToken string
+		UserID      uint
 	}
 
 	if err := r.DecodeJSONPayload(&infos); err != nil {
@@ -295,9 +382,27 @@ func BatchDelete(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	for _, info := range infos {
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		} else {
+			info.UserID = session.ID
+		}
+
 		device, errInfo := repo.GetDeviceById(info.ID)
 		if errInfo != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errInfo.Error()})
+			return
+		}
+
+		if session.Role != "Administrator" && device.UserID != info.UserID {
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "您无权操作其他人的设备!"})
 			return
 		}
 
@@ -749,6 +854,7 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		IsSupportVm     string
 		Status          string
 		UserID          uint
+		AccessToken     string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
@@ -763,7 +869,19 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	info.AssetNumber = strings.TrimSpace(info.AssetNumber)
 	info.IsSupportVm = strings.TrimSpace(info.IsSupportVm)
 	info.Status = strings.TrimSpace(info.Status)
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
 	info.UserID = session.ID
+
+	if session.ID <= uint(0) {
+		accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+		if errAccessToken != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+			return
+		}
+		info.UserID = accessTokenUser.ID
+		session.ID = accessTokenUser.ID
+		session.Role = accessTokenUser.Role
+	}
 
 	if info.Sn == "" || info.Hostname == "" || info.Ip == "" || info.NetworkID == uint(0) || info.SystemID == uint(0) || info.OsID == uint(0) {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
@@ -782,7 +900,7 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			return
 		}
 
-		if session.Role != "Administrator" && device.UserID != session.ID {
+		if session.Role != "Administrator" && device.UserID != info.UserID {
 			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该设备已被录入，不能重复录入!"})
 			return
 		}
@@ -1058,6 +1176,7 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		IsSupportVm     string
 		Status          string
 		UserID          uint
+		AccessToken     string
 	}
 
 	if err := r.DecodeJSONPayload(&infos); err != nil {
@@ -1082,7 +1201,19 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		info.ManageIp = strings.TrimSpace(info.ManageIp)
 		info.AssetNumber = strings.TrimSpace(info.AssetNumber)
 		info.Status = strings.TrimSpace(info.Status)
+		info.AccessToken = strings.TrimSpace(info.AccessToken)
 		info.UserID = session.ID
+
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		}
 
 		if info.Sn == "" || info.Hostname == "" || info.Ip == "" || info.NetworkID == uint(0) || info.OsID == uint(0) {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
@@ -1267,6 +1398,17 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		info.UserID = session.ID
 		location := ""
 
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+			session.ID = accessTokenUser.ID
+		}
+
 		info.IsSupportVm = strings.TrimSpace(info.IsSupportVm)
 		if info.IsSupportVm == "" {
 			info.IsSupportVm = "Yes"
@@ -1395,6 +1537,7 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		IsSupportVm     string
 		AssetNumber     string
 		UserID          uint
+		AccessToken     string
 	}
 
 	if err := r.DecodeJSONPayload(&infos); err != nil {
@@ -1408,7 +1551,19 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		info.Ip = strings.TrimSpace(info.Ip)
 		info.ManageIp = strings.TrimSpace(info.ManageIp)
 		info.AssetNumber = strings.TrimSpace(info.AssetNumber)
+		info.AccessToken = strings.TrimSpace(info.AccessToken)
 		info.UserID = session.ID
+
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		}
 
 		if info.Hostname == "" || info.Ip == "" || info.NetworkID == uint(0) || info.OsID == uint(0) {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
@@ -1536,7 +1691,19 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		info.Ip = strings.TrimSpace(info.Ip)
 		info.ManageIp = strings.TrimSpace(info.ManageIp)
 		info.AssetNumber = strings.TrimSpace(info.AssetNumber)
+		info.AccessToken = strings.TrimSpace(info.AccessToken)
 		info.UserID = session.ID
+
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		}
 
 		info.IsSupportVm = strings.TrimSpace(info.IsSupportVm)
 		if info.IsSupportVm == "" {
@@ -2205,6 +2372,7 @@ func ImportDeviceForOpenApi(ctx context.Context, w rest.ResponseWriter, r *rest.
 		Content         string
 		IsSupportVm     string
 		UserID          uint
+		AccessToken     string
 	}
 
 	var row Device
@@ -2212,6 +2380,13 @@ func ImportDeviceForOpenApi(ctx context.Context, w rest.ResponseWriter, r *rest.
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error(), "Content": ""})
 		return
 	}
+
+	accessTokenUser, errAccessToken := VerifyAccessToken(row.AccessToken, ctx, false)
+	if errAccessToken != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+		return
+	}
+	row.UserID = accessTokenUser.ID
 
 	row.Sn = strings.TrimSpace(row.Sn)
 	row.Hostname = strings.TrimSpace(row.Hostname)
@@ -2292,10 +2467,20 @@ func ImportDeviceForOpenApi(ctx context.Context, w rest.ResponseWriter, r *rest.
 			return
 		}
 
-		_, errDevice := repo.GetDeviceBySn(row.Sn)
+		device, errDevice := repo.GetDeviceBySn(row.Sn)
 		if errDevice != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
 			return
+		}
+
+		if accessTokenUser.Role != "Administrator" && device.UserID != accessTokenUser.ID {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备已被其他人录入，不能重复录入"})
+			return
+		} else {
+			if device.Status == "success" {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备已安装成功，请使用【单台录入】的功能重新录入并安装"})
+				return
+			}
 		}
 
 		//hostname
@@ -2541,11 +2726,6 @@ func ImportDeviceForOpenApi(ctx context.Context, w rest.ResponseWriter, r *rest.
 		deviceOld, err := repo.GetDeviceById(id)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-			return
-		}
-
-		if deviceOld.Status == "success" {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备已安装成功，请使用【单台录入】的功能重新录入并安装"})
 			return
 		}
 

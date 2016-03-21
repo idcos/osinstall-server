@@ -18,10 +18,18 @@ func DeleteOsConfigById(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 		return
 	}
 	var info struct {
-		ID uint
+		ID          uint
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
 		return
 	}
 
@@ -41,15 +49,24 @@ func UpdateOsConfigById(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 		return
 	}
 	var info struct {
-		ID   uint
-		Name string
-		Pxe  string
+		ID          uint
+		Name        string
+		Pxe         string
+		AccessToken string
 	}
 
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
 		return
 	}
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
+		return
+	}
+
 	info.Name = strings.TrimSpace(info.Name)
 	info.Pxe = strings.TrimSpace(info.Pxe)
 
@@ -144,8 +161,9 @@ func AddOsConfig(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 	var info struct {
-		Name string
-		Pxe  string
+		Name        string
+		Pxe         string
+		AccessToken string
 	}
 
 	if err := r.DecodeJSONPayload(&info); err != nil {
@@ -155,6 +173,13 @@ func AddOsConfig(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 
 	info.Name = strings.TrimSpace(info.Name)
 	info.Pxe = strings.TrimSpace(info.Pxe)
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
+		return
+	}
 
 	if info.Name == "" || info.Pxe == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})

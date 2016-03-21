@@ -18,10 +18,18 @@ func DeleteSystemConfigById(ctx context.Context, w rest.ResponseWriter, r *rest.
 		return
 	}
 	var info struct {
-		ID uint
+		ID          uint
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
 		return
 	}
 
@@ -41,9 +49,10 @@ func UpdateSystemConfigById(ctx context.Context, w rest.ResponseWriter, r *rest.
 		return
 	}
 	var info struct {
-		ID      uint
-		Name    string
-		Content string
+		ID          uint
+		Name        string
+		Content     string
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
@@ -52,6 +61,13 @@ func UpdateSystemConfigById(ctx context.Context, w rest.ResponseWriter, r *rest.
 
 	info.Name = strings.TrimSpace(info.Name)
 	info.Content = strings.TrimSpace(info.Content)
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
+		return
+	}
 
 	if info.Name == "" || info.Content == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
@@ -143,8 +159,9 @@ func AddSystemConfig(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 		return
 	}
 	var info struct {
-		Name    string
-		Content string
+		Name        string
+		Content     string
+		AccessToken string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
@@ -153,6 +170,13 @@ func AddSystemConfig(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 
 	info.Name = strings.TrimSpace(info.Name)
 	info.Content = strings.TrimSpace(info.Content)
+
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
+	if errVerify != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVerify.Error()})
+		return
+	}
 
 	if info.Name == "" || info.Content == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})

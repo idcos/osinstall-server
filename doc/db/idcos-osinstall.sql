@@ -19,8 +19,7 @@
 -- Current Database: `idcos-osinstall`
 --
 
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `idcos-osinstall` /*!40100 DEFAULT CHARACTER SET utf8 */;
-
+CREATE DATABASE IF NOT EXISTS `idcos-osinstall` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 USE `idcos-osinstall`;
 
 --

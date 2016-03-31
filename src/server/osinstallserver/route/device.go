@@ -103,6 +103,12 @@ func DeleteDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Reques
 		return
 	}
 
+	errCopy := repo.CopyDeviceToHistory(info.ID)
+	if errCopy != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCopy.Error()})
+		return
+	}
+
 	//删除设备关联的硬件信息
 	_, errManufacturer := repo.DeleteManufacturerBySn(device.Sn)
 	if errManufacturer != nil {

@@ -22,4 +22,5 @@ type Repo interface {
 	IVmDevice
 	IUser
 	IUserAccessToken
+	IDeviceInstallReport
 }

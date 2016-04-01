@@ -113,6 +113,21 @@ type IDeviceHistory interface {
 	CopyDeviceToHistory(ID uint) error
 }
 
+type DeviceInstallReport struct {
+	gorm.Model
+	Sn           string `sql:"not null;unique;"` //序列号
+	OsName       string
+	HardwareName string
+	SystemName   string
+	Status       string
+	UserID       uint
+}
+
+// IDevice 设备操作接口
+type IDeviceInstallReport interface {
+	CopyDeviceToInstallReport(ID uint) error
+}
+
 // Network 网络
 type Network struct {
 	gorm.Model

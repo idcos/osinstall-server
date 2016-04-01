@@ -1876,6 +1876,15 @@ func ReportInstallInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		return
 	}
 
+	//add report
+	if info.InstallProgress == 1 {
+		errReportLog := repo.CopyDeviceToInstallReport(device.ID)
+		if errReportLog != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errReportLog.Error()})
+			return
+		}
+	}
+
 	result := make(map[string]string)
 	result["Result"] = "true"
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})

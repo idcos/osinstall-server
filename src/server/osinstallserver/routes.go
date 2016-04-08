@@ -129,4 +129,7 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/manageNetwork/delete", route.DeleteManageNetworkById))
 	routes = append(routes, rest.Post("/api/osinstall/v1/manageNetwork/validateIp", route.ValidateManageIp))
 
+	//DeviceInstallReport
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/getInstallReport", route.GetDeviceInstallReport))
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/reportInstallReport", route.ReportDeviceInstallReport))
 }

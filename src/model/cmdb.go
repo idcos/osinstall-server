@@ -123,9 +123,34 @@ type DeviceInstallReport struct {
 	UserID       uint
 }
 
+type DeviceHardwareNameInstallReport struct {
+	HardwareName string
+	Count        uint
+}
+
+type DeviceProductNameInstallReport struct {
+	ProductName string
+	Count       uint
+}
+
+type DeviceOsNameInstallReport struct {
+	OsName string
+	Count  uint
+}
+
+type DeviceSystemNameInstallReport struct {
+	SystemName string
+	Count      uint
+}
+
 // IDevice 设备操作接口
 type IDeviceInstallReport interface {
 	CopyDeviceToInstallReport(ID uint) error
+	CountDeviceInstallReportByWhere(Where string) (uint, error)
+	GetDeviceHardwareNameInstallReport(Where string) ([]DeviceHardwareNameInstallReport, error)
+	GetDeviceProductNameInstallReport(Where string) ([]DeviceProductNameInstallReport, error)
+	GetDeviceOsNameInstallReport(Where string) ([]DeviceOsNameInstallReport, error)
+	GetDeviceSystemNameInstallReport(Where string) ([]DeviceSystemNameInstallReport, error)
 }
 
 // Network 网络

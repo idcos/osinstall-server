@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	GetSNScript        = `dmidecode -s system-serial-number 2>/dev/null | awk '/^[^#]/ { print $1 }'`
-	GetMacScript       = `ip addr show $(ip route get 10.0.0.0 | awk '/src/ { print $(NF-2) }') | awk '/ether/ { print $2 }'`
+	GetSNScript = `dmidecode -s system-serial-number 2>/dev/null | awk '/^[^#]/ { print $1 }'`
+	// GetMacScript       = `ip addr show $(ip route get 10.0.0.0 | awk '/src/ { print $(NF-2) }') | awk '/ether/ { print $2 }'`
 	GetCmdlineArgs     = `cat /proc/cmdline`
 	RegexpServerAddr   = `SERVER_ADDR=([^ ]+)`
 	RegexpLoopInterval = `LOOP_INTERVAL=([^ ]+)`
@@ -126,16 +126,17 @@ func New() (*OSInstallAgent, error) {
 	agent.Sn = strings.Trim(agent.Sn, "\n")
 	agent.Logger.Debugf("SN: %s", agent.Sn)
 
+	// get mac addr by sysinfo.sh
 	// get mac addr
-	agent.Logger.Debug("START to get mac addr")
-	if data, err = execScript(GetMacScript); err != nil {
-		agent.Logger.Error(data)
-		log.Error(err)
-		return nil, fmt.Errorf("get mac addr error: \n#%s\n%v\n%s", GetMacScript, err, string(data))
-	}
-	agent.MacAddr = string(data)
-	agent.MacAddr = strings.Trim(agent.MacAddr, "\n")
-	agent.Logger.Debugf("Mac ADDR: %s", agent.MacAddr)
+	// agent.Logger.Debug("START to get mac addr")
+	// if data, err = execScript(GetMacScript); err != nil {
+	// 	agent.Logger.Error(data)
+	// 	log.Error(err)
+	// 	return nil, fmt.Errorf("get mac addr error: \n#%s\n%v\n%s", GetMacScript, err, string(data))
+	// }
+	// agent.MacAddr = string(data)
+	// agent.MacAddr = strings.Trim(agent.MacAddr, "\n")
+	// agent.Logger.Debugf("Mac ADDR: %s", agent.MacAddr)
 
 	var serverAddr = ""
 	// get server addr
@@ -292,6 +293,14 @@ func (agent *OSInstallAgent) ReportProductInfo() error {
 	agent.Company = strings.ToLower(jsonReq.Company)
 	agent.Product = jsonReq.Product
 	agent.ModelName = jsonReq.ModelName
+
+	// set mac info to agent
+	for _, nic := range jsonReq.Nic {
+		if nic.Ip != "" {
+			agent.MacAddr = nic.Mac
+			break
+		}
+	}
 
 	var jsonResp struct {
 		Status  string

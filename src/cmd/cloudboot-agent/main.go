@@ -1,15 +1,16 @@
 package main
 
 import (
+	"github.com/codegangsta/cli"
 	"os"
 	"osinstall/agent"
-
-	"github.com/codegangsta/cli"
+	"time"
 )
 
-var version = "v1.1 (2016-03-02)"
-var name = "osinstall-agent"
-var description = "osinstall agent"
+var date = time.Now().Format("2006-01-02")
+var version = "v1.2.1 (" + date + ")"
+var name = "cloudboot-agent"
+var description = "cloudboot agent"
 
 //  dependencies that are NOT required by the service, but might be used
 // var dependencies = []string{"dummy.service"}

@@ -119,3 +119,39 @@ func (repo *MySQLRepo) ValidateHardwareProductModel(company string, product stri
 		return false, nil
 	}
 }
+
+func (repo *MySQLRepo) GetLastestVersionHardware() (model.Hardware, error) {
+	var result model.Hardware
+	err := repo.db.Raw("select * from `hardwares` where `is_system_add` = 'Yes' order by `version` DESC limit 1").Scan(&result).Error
+	return result, err
+}
+
+func (repo *MySQLRepo) CreateHardwareBackupTable(fix string) error {
+	sql := "DROP TABLE IF EXISTS `hardwares_back" + fix + "`"
+	err := repo.db.Exec(sql).Error
+	if err != nil {
+		return err
+	}
+
+	sqlBack := "create table `hardwares_back" + fix + "` select * from `hardwares`"
+	errBack := repo.db.Exec(sqlBack).Error
+	return errBack
+}
+
+func (repo *MySQLRepo) RollbackHardwareFromBackupTable(fix string) error {
+	sqlTruncate := "truncate table `hardwares`"
+	errTruncate := repo.db.Exec(sqlTruncate).Error
+	if errTruncate != nil {
+		return errTruncate
+	}
+
+	sql := "insert into `hardwares` select * from `hardwares_back" + fix + "`"
+	err := repo.db.Exec(sql).Error
+	return err
+}
+
+func (repo *MySQLRepo) DropHardwareBackupTable(fix string) error {
+	sql := "DROP TABLE IF EXISTS `hardwares_back" + fix + "`"
+	err := repo.db.Exec(sql).Error
+	return err
+}

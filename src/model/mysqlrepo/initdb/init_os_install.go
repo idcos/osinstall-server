@@ -25,6 +25,7 @@ var osInstallTables = []interface{}{
 	&model.ManageIp{},
 	&model.UserAccessToken{},
 	&model.DeviceInstallReport{},
+	&model.DeviceInstallCallback{},
 }
 
 func InitOsInstallTables(db *gorm.DB, conf *config.Config) error {

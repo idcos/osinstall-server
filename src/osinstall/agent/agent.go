@@ -27,6 +27,7 @@ const (
 	RegexpLoopInterval = `LOOP_INTERVAL=([^ ]+)`
 	RegexpDeveloper    = `DEVELOPER=([^ ]+)`
 	RebootScript       = `ipmitool chassis bootdev pxe; ipmitool power reset`
+	RebootScript2      = `fdisk -lu | awk '/^Disk.*bytes/ { gsub(/:/, ""); system("dd if=/dev/zero of="$2" bs=512 count=1") }'; reboot -f`
 	InstallHWTools     = `rpm --quiet -q %s-hw-tools || yum -y install %s-hw-tools`
 	PingIp             = `ping -c 4 -w 3 %s`
 
@@ -543,7 +544,10 @@ func (agent *OSInstallAgent) ReportMacInfo() error {
 // Reboot 重启系统
 func (agent *OSInstallAgent) Reboot() error {
 	if output, err := execScript(RebootScript); err != nil {
-		return fmt.Errorf("reboot error: \n#%s\n%v\n%s", RebootScript, err, string(output))
+		if output2, err2 := execScript(RebootScript2); err2 != nil {
+			return fmt.Errorf("reboot error: \n#%s\n%v\n%s\n\nsecond reboot error: \n#%s\n%v\n%s", RebootScript, err, string(output), RebootScript2, err2, string(output2))
+		}
+		//return fmt.Errorf("reboot error: \n#%s\n%v\n%s", RebootScript, err, string(output))
 	}
 	return nil
 }

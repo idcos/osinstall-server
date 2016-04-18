@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"model"
 	"os"
+	"time"
 	"utils"
 )
 
@@ -119,6 +120,13 @@ func DeleteDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Reques
 	mod, err := repo.DeleteDeviceById(info.ID)
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	//callback
+	_, errCallback := repo.DeleteDeviceInstallCallbackByDeviceID(info.ID)
+	if errCallback != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCallback.Error()})
 		return
 	}
 
@@ -483,6 +491,13 @@ func BatchDelete(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
 			return
 		}
+
+		//callback
+		_, errCallback := repo.DeleteDeviceInstallCallbackByDeviceID(info.ID)
+		if errCallback != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCallback.Error()})
+			return
+		}
 	}
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
@@ -588,6 +603,7 @@ func GetFullDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		SystemName        string
 		LocationName      string
 		IsSupportVm       string
+		Callback          string
 		UserID            uint
 		CreatedAt         utils.ISOTime
 		UpdatedAt         utils.ISOTime
@@ -622,6 +638,20 @@ func GetFullDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 		return
+	}
+
+	countCallback, errCount := repo.CountDeviceInstallCallbackByDeviceIDAndType(info.ID, "after_install")
+	if errCount != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCount.Error()})
+		return
+	}
+	if countCallback > 0 {
+		callback, err := repo.GetDeviceInstallCallbackByDeviceIDAndType(info.ID, "after_install")
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+			return
+		}
+		device.Callback = callback.Content
 	}
 
 	device.CreatedAt = utils.ISOTime(mod.CreatedAt)
@@ -861,6 +891,7 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		Status          string
 		UserID          uint
 		AccessToken     string
+		Callback        string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
@@ -876,6 +907,7 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	info.IsSupportVm = strings.TrimSpace(info.IsSupportVm)
 	info.Status = strings.TrimSpace(info.Status)
 	info.AccessToken = strings.TrimSpace(info.AccessToken)
+	info.Callback = strings.TrimSpace(info.Callback)
 	info.UserID = session.ID
 
 	if session.ID <= uint(0) {
@@ -1113,6 +1145,13 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
 			return
 		}
+
+		//callback script
+		errCallback := SaveDeviceInstallCallback(ctx, device.ID, "after_install", info.Callback)
+		if errCallback != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCallback.Error()})
+			return
+		}
 	} else {
 		device, err := repo.AddDevice(batchNumber, info.Sn, info.Hostname, info.Ip, info.ManageIp, info.NetworkID, info.ManageNetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, status, info.IsSupportVm, info.UserID)
 		if err != nil {
@@ -1153,6 +1192,13 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 				return
 			}
 		}
+
+		//callback script
+		errCallback := SaveDeviceInstallCallback(ctx, device.ID, "after_install", info.Callback)
+		if errCallback != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCallback.Error()})
+			return
+		}
 	}
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
@@ -1183,6 +1229,7 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		Status          string
 		UserID          uint
 		AccessToken     string
+		Callback        string
 	}
 
 	if err := r.DecodeJSONPayload(&infos); err != nil {
@@ -1208,6 +1255,7 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		info.AssetNumber = strings.TrimSpace(info.AssetNumber)
 		info.Status = strings.TrimSpace(info.Status)
 		info.AccessToken = strings.TrimSpace(info.AccessToken)
+		info.Callback = strings.TrimSpace(info.Callback)
 		info.UserID = session.ID
 
 		if session.ID <= uint(0) {
@@ -1400,6 +1448,7 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		info.Ip = strings.TrimSpace(info.Ip)
 		info.ManageIp = strings.TrimSpace(info.ManageIp)
 		info.AssetNumber = strings.TrimSpace(info.AssetNumber)
+		info.Callback = strings.TrimSpace(info.Callback)
 		info.Status = strings.TrimSpace(info.Status)
 		info.UserID = session.ID
 		location := ""
@@ -1469,6 +1518,13 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
 				return
 			}
+
+			//callback script
+			errCallback := SaveDeviceInstallCallback(ctx, device.ID, "after_install", info.Callback)
+			if errCallback != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCallback.Error()})
+				return
+			}
 		} else {
 			device, err := repo.AddDevice(batchNumber, info.Sn, info.Hostname, info.Ip, info.ManageIp, info.NetworkID, info.ManageNetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, status, info.IsSupportVm, info.UserID)
 			if err != nil {
@@ -1509,6 +1565,13 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 					return
 				}
 			}
+
+			//callback script
+			errCallback := SaveDeviceInstallCallback(ctx, device.ID, "after_install", info.Callback)
+			if errCallback != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCallback.Error()})
+				return
+			}
 		}
 
 	}
@@ -1544,6 +1607,7 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		AssetNumber     string
 		UserID          uint
 		AccessToken     string
+		Callback        string
 	}
 
 	if err := r.DecodeJSONPayload(&infos); err != nil {
@@ -1698,6 +1762,7 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		info.ManageIp = strings.TrimSpace(info.ManageIp)
 		info.AssetNumber = strings.TrimSpace(info.AssetNumber)
 		info.AccessToken = strings.TrimSpace(info.AccessToken)
+		info.Callback = strings.TrimSpace(info.Callback)
 		info.UserID = session.ID
 
 		if session.ID <= uint(0) {
@@ -1749,6 +1814,13 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		_, errAddLog := repo.AddDeviceLog(device.ID, "修改设备信息", "operate", string(json))
 		if errAddLog != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+			return
+		}
+
+		//callback script
+		errCallback := SaveDeviceInstallCallback(ctx, device.ID, "after_install", info.Callback)
+		if errCallback != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCallback.Error()})
 			return
 		}
 	}
@@ -1882,6 +1954,53 @@ func ReportInstallInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		if errReportLog != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errReportLog.Error()})
 			return
+		}
+	}
+
+	//exec callback script
+	if info.InstallProgress == 1 {
+		countCallback, errCountCallback := repo.CountDeviceInstallCallbackByDeviceIDAndType(device.ID, "after_install")
+		if errCountCallback != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCountCallback.Error()})
+			return
+		}
+		if countCallback > uint(0) {
+			callback, errCallback := repo.GetDeviceInstallCallbackByDeviceIDAndType(device.ID, "after_install")
+			if errCallback != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCallback.Error()})
+				return
+			}
+			if callback.Content != "" {
+				callback.Content = strings.Replace(callback.Content, "<{sn}>", device.Sn, -1)
+				callback.Content = strings.Replace(callback.Content, "<{hostname}>", device.Hostname, -1)
+				callback.Content = strings.Replace(callback.Content, "<{ip}>", device.Ip, -1)
+				callback.Content = strings.Replace(callback.Content, "<{manage_ip}>", device.ManageIp, -1)
+				if device.NetworkID > uint(0) {
+					network, _ := repo.GetNetworkById(device.NetworkID)
+					callback.Content = strings.Replace(callback.Content, "<{gateway}>", network.Gateway, -1)
+					callback.Content = strings.Replace(callback.Content, "<{netmask}>", network.Netmask, -1)
+				}
+				if device.ManageNetworkID > uint(0) {
+					manageNetwork, _ := repo.GetManageNetworkById(device.ManageNetworkID)
+					callback.Content = strings.Replace(callback.Content, "<{manage_gateway}>", manageNetwork.Gateway, -1)
+					callback.Content = strings.Replace(callback.Content, "<{manage_netmask}>", manageNetwork.Netmask, -1)
+				}
+				var runResult = "执行脚本:\n" + callback.Content
+				bytes, errRunScript := util.ExecScript(callback.Content)
+				runResult += "\n\n" + "执行结果:\n" + string(bytes)
+				var runStatus = "success"
+				var runTime = time.Now().Format("2006-01-02 15:04:05")
+				if errRunScript != nil {
+					runStatus = "failure"
+					runResult += "\n\n" + "错误信息:\n" + errRunScript.Error()
+				}
+
+				_, errUpdate := repo.UpdateDeviceInstallCallbackRunInfoByID(callback.ID, runTime, runResult, runStatus)
+				if errUpdate != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error()})
+					return
+				}
+			}
 		}
 	}
 

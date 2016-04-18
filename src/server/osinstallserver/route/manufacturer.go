@@ -7,6 +7,7 @@ import (
 	"github.com/qiniu/iconv"
 	"golang.org/x/net/context"
 	"middleware"
+	"regexp"
 	"strconv"
 	"strings"
 	"utils"
@@ -88,6 +89,10 @@ func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 				str = " or "
 			}
 			where += str + " t1.sn = '" + v + "' or t1.ip = '" + v + "' or t1.company = '" + v + "' or t1.product = '" + v + "' or t1.model_name = '" + v + "'"
+			isValidate, _ := regexp.MatchString("^((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)$", info.Keyword)
+			if isValidate {
+				where += " or t1.nic like '%%" + info.Keyword + "%%' "
+			}
 		}
 		where += " ) "
 	}

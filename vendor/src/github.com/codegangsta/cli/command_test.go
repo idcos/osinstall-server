@@ -3,10 +3,10 @@ package cli
 import (
 	"errors"
 	"flag"
-	"io/ioutil"
-	"testing"
 	"fmt"
+	"io/ioutil"
 	"strings"
+	"testing"
 )
 
 func TestCommandFlagParsing(t *testing.T) {
@@ -66,5 +66,32 @@ func TestCommand_Run_DoesNotOverwriteErrorFromBefore(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "after error") {
 		t.Errorf("expected text of error from After method, but got none in \"%v\"", err)
+	}
+}
+
+func TestCommand_OnUsageError_WithWrongFlagValue(t *testing.T) {
+	app := NewApp()
+	app.Commands = []Command{
+		Command{
+			Name:   "bar",
+			Flags: []Flag{
+				IntFlag{Name: "flag"},
+			},
+			OnUsageError: func(c *Context, err error) error {
+				if !strings.HasPrefix(err.Error(), "invalid value \"wrong\"") {
+					t.Errorf("Expect an invalid value error, but got \"%v\"", err)
+				}
+				return errors.New("intercepted: " + err.Error())
+			},
+		},
+	}
+
+	err := app.Run([]string{"foo", "bar", "--flag=wrong"})
+	if err == nil {
+		t.Fatalf("expected to receive error from Run, got none")
+	}
+
+	if !strings.HasPrefix(err.Error(), "intercepted: invalid value") {
+		t.Errorf("Expect an intercepted error, but got \"%v\"", err)
 	}
 }

@@ -11,14 +11,18 @@ import (
 	//"strconv"
 	"strings"
 	//"net/http"
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"github.com/qiniu/iconv"
 	"io"
 	"io/ioutil"
+	"model"
+	"net/http"
 	"os"
 	"server/osinstallserver/util"
 	"time"
+	"utils"
 )
 
 func DeleteHardwareById(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
@@ -772,4 +776,269 @@ func UploadHardware(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
 	return
+}
+
+func CheckOnlineUpdate(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	lastestHardware, err := repo.GetLastestVersionHardware()
+	type HardwareVersionWithDate struct {
+		Version string
+		Date    utils.ISOTime
+	}
+	var hardwareVersionWithDate HardwareVersionWithDate
+	hardwareVersionWithDate.Version = lastestHardware.Version
+	hardwareVersionWithDate.Date = utils.ISOTime(lastestHardware.CreatedAt)
+
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	result := make(map[string]interface{})
+	result["Version"] = lastestHardware.Version
+	b, err := json.Marshal(result)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	body := bytes.NewBuffer([]byte(b))
+	resp, err := http.Post("http://open.idcos.com/api/x86/check-online-update", "application/json;charset=utf-8", body)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "网络连接故障，在线更新配置库失败！", "CurrentVersion": hardwareVersionWithDate})
+		return
+	}
+	reportResult, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	type content struct {
+		Version string `json:"Version"`
+		Date    string `json:"Date"`
+	}
+	type Response struct {
+		Status  string    `json:"Status"`
+		Message string    `json:"Message"`
+		Content []content `json:"Content"`
+	}
+	var response Response
+	errJson := json.Unmarshal(reportResult, &response)
+	if errJson != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errJson.Error()})
+		return
+	}
+	if response.Status == "success" {
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "", "Content": response.Content, "CurrentVersion": hardwareVersionWithDate})
+	} else {
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作失败！"})
+	}
+}
+
+func RunOnlineUpdate(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	lastestHardware, err := repo.GetLastestVersionHardware()
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	result := make(map[string]interface{})
+	result["Version"] = lastestHardware.Version
+
+	b, err := json.Marshal(result)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	body := bytes.NewBuffer([]byte(b))
+	resp, err := http.Post("http://open.idcos.com/api/x86/run-online-update", "application/json;charset=utf-8", body)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "网络连接故障，操作失败！您可以通过线下方式分享给我们，谢谢！"})
+		return
+	}
+	reportResult, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	type Response struct {
+		Status  string           `json:"Status"`
+		Message string           `json:"Message"`
+		Content []model.Hardware `json:"Content"`
+	}
+	var response Response
+	errJson := json.Unmarshal(reportResult, &response)
+	if errJson != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errJson.Error()})
+		return
+	}
+	if response.Status == "success" {
+		var fix = "_" + time.Now().Format("20060102")
+		errBack := repo.CreateHardwareBackupTable(fix)
+		if errBack != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errBack.Error()})
+			return
+		}
+
+		for _, info := range response.Content {
+			info.Company = strings.TrimSpace(info.Company)
+			info.Product = strings.TrimSpace(info.Product)
+			info.ModelName = strings.TrimSpace(info.ModelName)
+			info.IsSystemAdd = strings.TrimSpace(info.IsSystemAdd)
+			info.Tpl = strings.TrimSpace(info.Tpl)
+			info.Data = strings.TrimSpace(info.Data)
+			info.Source = strings.TrimSpace(info.Source)
+			info.Version = strings.TrimSpace(info.Version)
+			info.Status = strings.TrimSpace(info.Status)
+
+			if info.Status == "Success" {
+				if info.Company == "" || info.ModelName == "" {
+					continue
+				}
+
+				count, err := repo.CountHardwareByCompanyAndProductAndName(info.Company, info.Product, info.ModelName)
+				if err != nil {
+					errRollback := repo.RollbackHardwareFromBackupTable(fix)
+					message := err.Error()
+					if errRollback != nil {
+						message += errRollback.Error()
+					}
+
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": message})
+					return
+				}
+
+				if count > 0 {
+					hardwareId, err := repo.GetHardwareIdByCompanyAndProductAndName(info.Company, info.Product, info.ModelName)
+					if err != nil {
+						errRollback := repo.RollbackHardwareFromBackupTable(fix)
+						message := err.Error()
+						if errRollback != nil {
+							message += errRollback.Error()
+						}
+
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": message})
+						return
+					}
+					hardware, err := repo.GetHardwareById(hardwareId)
+					if err != nil {
+						errRollback := repo.RollbackHardwareFromBackupTable(fix)
+						message := err.Error()
+						if errRollback != nil {
+							message += errRollback.Error()
+						}
+
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": message})
+						return
+					}
+					if hardware.IsSystemAdd != "Yes" {
+						continue
+					}
+
+					_, errUpdate := repo.UpdateHardwareById(hardware.ID, info.Company, info.Product, info.ModelName, info.Raid, info.Oob, info.Bios, info.Tpl, info.Data, info.Source, info.Version, info.Status)
+					if errUpdate != nil {
+						errRollback := repo.RollbackHardwareFromBackupTable(fix)
+						message := errUpdate.Error()
+						if errRollback != nil {
+							message += errRollback.Error()
+						}
+
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": message})
+						return
+					}
+				} else {
+					_, errAdd := repo.AddHardware(info.Company, info.Product, info.ModelName, info.Raid, info.Oob, info.Bios, info.IsSystemAdd, info.Tpl, info.Data, info.Source, info.Version, info.Status)
+					if errAdd != nil {
+						errRollback := repo.RollbackHardwareFromBackupTable(fix)
+						message := errAdd.Error()
+						if errRollback != nil {
+							message += errRollback.Error()
+						}
+
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": message})
+						return
+					}
+				}
+			} else if info.Status == "Deleted" {
+				count, err := repo.CountHardwareByCompanyAndProductAndName(info.Company, info.Product, info.ModelName)
+				if err != nil {
+					errRollback := repo.RollbackHardwareFromBackupTable(fix)
+					message := err.Error()
+					if errRollback != nil {
+						message += errRollback.Error()
+					}
+
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": message})
+					return
+				}
+
+				if count > 0 {
+					hardwareId, err := repo.GetHardwareIdByCompanyAndProductAndName(info.Company, info.Product, info.ModelName)
+					if err != nil {
+						errRollback := repo.RollbackHardwareFromBackupTable(fix)
+						message := err.Error()
+						if errRollback != nil {
+							message += errRollback.Error()
+						}
+
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": message})
+						return
+					}
+					hardware, err := repo.GetHardwareById(hardwareId)
+					if err != nil {
+						errRollback := repo.RollbackHardwareFromBackupTable(fix)
+						message := err.Error()
+						if errRollback != nil {
+							message += errRollback.Error()
+						}
+
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": message})
+						return
+					}
+					if hardware.IsSystemAdd != "Yes" {
+						continue
+					}
+
+					_, errDelete := repo.DeleteHardwareById(hardware.ID)
+					if errDelete != nil {
+						errRollback := repo.RollbackHardwareFromBackupTable(fix)
+						message := errDelete.Error()
+						if errRollback != nil {
+							message += errRollback.Error()
+						}
+
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": message})
+						return
+					}
+				}
+			}
+		}
+		/*
+			errDrop := repo.DropHardwareBackupTable()
+			if errDrop != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDrop.Error()})
+				return
+			}
+		*/
+
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": response.Content})
+	} else {
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作失败！您可以通过线下方式分享给我们，谢谢！"})
+	}
 }

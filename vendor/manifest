@@ -14,28 +14,9 @@
 			"branch": "master"
 		},
 		{
-			"importpath": "github.com/astaxie/beego/logs",
-			"repository": "https://github.com/astaxie/beego",
-			"revision": "fbb98fbe1fe5f6a4209772b44e2547714992340c",
-			"branch": "master",
-			"path": "/logs"
-		},
-		{
-			"importpath": "github.com/axgle/mahonia",
-			"repository": "https://github.com/axgle/mahonia",
-			"revision": "c528b747d92d41ca581a7acf3e604c396fc7c034",
-			"branch": "master"
-		},
-		{
 			"importpath": "github.com/belogik/goes",
 			"repository": "https://github.com/belogik/goes",
 			"revision": "e54d722c3aff588e4c737fe11c07359019240824",
-			"branch": "master"
-		},
-		{
-			"importpath": "github.com/codegangsta/cli",
-			"repository": "https://github.com/codegangsta/cli",
-			"revision": "f9cc3001e04f9783cb4ad08ca6791aa07134787c",
 			"branch": "master"
 		},
 		{
@@ -104,6 +85,25 @@
 			"repository": "https://gopkg.in/ini.v1",
 			"revision": "060d7da055ba6ec5ea7a31f116332fe5efa04ce0",
 			"branch": "v1"
+		},
+		{
+			"importpath": "github.com/astaxie/beego/logs",
+			"repository": "https://github.com/astaxie/beego",
+			"revision": "88c5dfa6ead42e624c2e7d9e04eab6cb2d07412a",
+			"branch": "master",
+			"path": "/logs"
+		},
+		{
+			"importpath": "github.com/codegangsta/cli",
+			"repository": "https://github.com/codegangsta/cli",
+			"revision": "71f57d300dd6a780ac1856c005c4b518cfd498ec",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/axgle/mahonia",
+			"repository": "https://github.com/axgle/mahonia",
+			"revision": "c528b747d92d41ca581a7acf3e604c396fc7c034",
+			"branch": "master"
 		}
 	]
 }

@@ -31,6 +31,7 @@ type DeviceFull struct {
 	IsSupportVm       string
 	UserID            uint
 	OwnerName         string
+	Callback          string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }
@@ -149,6 +150,7 @@ type IDeviceInstallReport interface {
 	CountDeviceInstallReportByWhere(Where string) (uint, error)
 	GetDeviceHardwareNameInstallReport(Where string) ([]DeviceHardwareNameInstallReport, error)
 	GetDeviceProductNameInstallReport(Where string) ([]DeviceProductNameInstallReport, error)
+	GetDeviceCompanyNameInstallReport(Where string) ([]DeviceProductNameInstallReport, error)
 	GetDeviceOsNameInstallReport(Where string) ([]DeviceOsNameInstallReport, error)
 	GetDeviceSystemNameInstallReport(Where string) ([]DeviceSystemNameInstallReport, error)
 }
@@ -339,6 +341,10 @@ type IHardware interface {
 	ValidateHardwareProductModel(Company string, Product string, ModelName string) (bool, error)
 	CountHardwareByWhere(Where string) (uint, error)
 	GetHardwareByWhere(Where string) (*Hardware, error)
+	GetLastestVersionHardware() (Hardware, error)
+	CreateHardwareBackupTable(Fix string) error
+	RollbackHardwareFromBackupTable(Fix string) error
+	DropHardwareBackupTable(Fix string) error
 }
 
 // Location 位置
@@ -639,4 +645,25 @@ type IUserAccessToken interface {
 	GetUserByAccessToken(AccessToken string) (*UserWithToken, error)
 	DeleteUserAccessTokenByToken(AccessToken string) (*UserAccessToken, error)
 	AddUserAccessToken(UserID uint, AccessToken string) (*UserAccessToken, error)
+}
+
+type DeviceInstallCallback struct {
+	gorm.Model
+	DeviceID     uint   `sql:"not null;"`
+	CallbackType string `sql:"not null;"`
+	Content      string `sql:"not null;"`
+	RunTime      string
+	RunResult    string
+	RunStatus    string
+}
+
+type IDeviceInstallCallback interface {
+	CountDeviceInstallCallbackByDeviceIDAndType(DeviceID uint, CallbackType string) (uint, error)
+	GetDeviceInstallCallbackByWhere(Where string, Order string) ([]DeviceInstallCallback, error)
+	GetDeviceInstallCallbackByDeviceIDAndType(DeviceID uint, CallbackType string) (*DeviceInstallCallback, error)
+	DeleteDeviceInstallCallbackByID(Id uint) (*DeviceInstallCallback, error)
+	DeleteDeviceInstallCallbackByDeviceID(DeviceID uint) (*DeviceInstallCallback, error)
+	AddDeviceInstallCallback(DeviceID uint, CallbackType string, Content string, RunTime string, RunResult string, RunStatus string) (*DeviceInstallCallback, error)
+	UpdateDeviceInstallCallbackByID(Id uint, DeviceID uint, CallbackType string, Content string, RunTime string, RunResult string, RunStatus string) (*DeviceInstallCallback, error)
+	UpdateDeviceInstallCallbackRunInfoByID(Id uint, RunTime string, RunResult string, RunStatus string) (*DeviceInstallCallback, error)
 }

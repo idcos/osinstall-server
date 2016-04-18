@@ -70,6 +70,8 @@ func init() {
 	routes = append(routes, rest.Get("/api/osinstall/v1/hardware/export", route.ExportHardware))
 	routes = append(routes, rest.Post("/api/osinstall/v1/hardware/uploadCompanyHardware", route.UploadCompanyHardware))
 	routes = append(routes, rest.Post("/api/osinstall/v1/hardware/uploadHardware", route.UploadHardware))
+	routes = append(routes, rest.Post("/api/osinstall/v1/hardware/checkOnlineUpdate", route.CheckOnlineUpdate))
+	routes = append(routes, rest.Post("/api/osinstall/v1/hardware/runOnlineUpdate", route.RunOnlineUpdate))
 	//DeviceLog
 	routes = append(routes, rest.Post("/api/osinstall/v1/deviceLog/list", route.GetDeviceLogByDeviceIdAndType))
 
@@ -132,4 +134,7 @@ func init() {
 	//DeviceInstallReport
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/getInstallReport", route.GetDeviceInstallReport))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/reportInstallReport", route.ReportDeviceInstallReport))
+
+	//DeviceInstallCallback
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/callback/list", route.GetDeviceInstallCallbackList))
 }

@@ -38,6 +38,16 @@ func (repo *MySQLRepo) GetDeviceProductNameInstallReport(where string) ([]model.
 	return result, err
 }
 
+func (repo *MySQLRepo) GetDeviceCompanyNameInstallReport(where string) ([]model.DeviceProductNameInstallReport, error) {
+	var result []model.DeviceProductNameInstallReport
+	var condition string
+	if where != "" {
+		condition = " where " + where
+	}
+	err := repo.db.Raw("select substring_index(product_name,'-',1) as product_name,count(*) as count from device_install_reports " + condition + " group by substring_index(product_name,'-',1) order by count(*) desc").Scan(&result).Error
+	return result, err
+}
+
 func (repo *MySQLRepo) GetDeviceOsNameInstallReport(where string) ([]model.DeviceOsNameInstallReport, error) {
 	var result []model.DeviceOsNameInstallReport
 	var condition string

@@ -21,7 +21,7 @@ func GetDeviceInstallReport(ctx context.Context, w rest.ResponseWriter, r *rest.
 		return
 	}
 
-	where := " id > 0 and `status` = 'success'"
+	where := "`status` = 'success'"
 	count, err := repo.CountDeviceInstallReportByWhere(where)
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
@@ -36,7 +36,21 @@ func GetDeviceInstallReport(ctx context.Context, w rest.ResponseWriter, r *rest.
 	}
 
 	where = "`status` = 'success'"
+	companyReport, err := repo.GetDeviceCompanyNameInstallReport(where)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	where = "`status` = 'success'"
 	osReport, err := repo.GetDeviceOsNameInstallReport(where)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	where = "`status` = 'success'"
+	hardwareReport, err := repo.GetDeviceHardwareNameInstallReport(where)
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 		return
@@ -45,6 +59,8 @@ func GetDeviceInstallReport(ctx context.Context, w rest.ResponseWriter, r *rest.
 	result := make(map[string]interface{})
 	result["Count"] = count
 	result["ProductReport"] = productReport
+	result["CompanyReport"] = companyReport
+	result["HardwareReport"] = hardwareReport
 	result["OsReport"] = osReport
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
@@ -106,7 +122,7 @@ func ReportDeviceInstallReport(ctx context.Context, w rest.ResponseWriter, r *re
 	}
 
 	body := bytes.NewBuffer([]byte(b))
-	resp, err := http.Post("http://www.idcos.com/api/x86/report-install-info", "application/json;charset=utf-8", body)
+	resp, err := http.Post("http://open.idcos.com/api/x86/report-install-info", "application/json;charset=utf-8", body)
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "网络连接故障，操作失败！您可以通过线下方式分享给我们，谢谢！"})
 		return
@@ -133,5 +149,4 @@ func ReportDeviceInstallReport(ctx context.Context, w rest.ResponseWriter, r *re
 	} else {
 		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作失败！您可以通过线下方式分享给我们，谢谢！"})
 	}
-
 }

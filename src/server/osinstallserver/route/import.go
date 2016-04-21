@@ -34,7 +34,7 @@ func UploadDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	}
 	defer cd.Close()
 
-	dir := "/tmp/osinstall-server/"
+	dir := "/tmp/cloudboot-server/"
 	if !util.FileExist(dir) {
 		err := os.MkdirAll(dir, 0777)
 		if err != nil {
@@ -94,7 +94,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		return
 	}
 
-	file := "/tmp/osinstall-server/" + info.Filename
+	file := "/tmp/cloudboot-server/" + info.Filename
 
 	cd, err := iconv.Open("utf-8", "gbk") // convert gbk to utf8
 	if err != nil {
@@ -108,10 +108,12 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
 		return
 	}
+
 	bufSize := 1024 * 1024
 	read := iconv.NewReader(cd, input, bufSize)
 
 	r2 := csv.NewReader(read)
+
 	ra, err := r2.ReadAll()
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
@@ -598,7 +600,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	file := "/tmp/osinstall-server/" + info.Filename
+	file := "/tmp/cloudboot-server/" + info.Filename
 
 	cd, err := iconv.Open("utf-8", "gbk") // convert gbk to utf8
 	if err != nil {

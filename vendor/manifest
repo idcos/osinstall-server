@@ -56,12 +56,6 @@
 			"branch": "master"
 		},
 		{
-			"importpath": "github.com/qiniu/iconv",
-			"repository": "https://github.com/qiniu/iconv",
-			"revision": "7a341d65c7dd46365a04ed9ad55e46c52f317ab2",
-			"branch": "develop"
-		},
-		{
 			"importpath": "github.com/smartystreets/goconvey",
 			"repository": "https://github.com/smartystreets/goconvey",
 			"revision": "530dd3d2cafa09958178e8c557bc4abeea1651a5",
@@ -104,6 +98,12 @@
 			"repository": "https://github.com/axgle/mahonia",
 			"revision": "c528b747d92d41ca581a7acf3e604c396fc7c034",
 			"branch": "master"
+		},
+		{
+			"importpath": "github.com/qiniu/iconv",
+			"repository": "https://github.com/qiniu/iconv",
+			"revision": "e9ee0ddd1a3a29262740aa08ed8ac740f23bc4a0",
+			"branch": "develop"
 		}
 	]
 }

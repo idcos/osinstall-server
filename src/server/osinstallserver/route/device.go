@@ -930,6 +930,17 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		info.IsSupportVm = "Yes"
 	}
 
+	//match manufacturer
+	countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(info.Sn)
+	if errCountManufacturer != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": errCountManufacturer.Error()})
+		return
+	}
+	if countManufacturer <= 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"})
+		return
+	}
+
 	countDevice, err := repo.CountDeviceBySn(info.Sn)
 	if countDevice > 0 {
 		device, err := repo.GetDeviceBySn(info.Sn)
@@ -1271,6 +1282,17 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 
 		if info.Sn == "" || info.Hostname == "" || info.Ip == "" || info.NetworkID == uint(0) || info.OsID == uint(0) {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
+			return
+		}
+
+		//match manufacturer
+		countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(info.Sn)
+		if errCountManufacturer != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCountManufacturer.Error()})
+			return
+		}
+		if countManufacturer <= 0 {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"})
 			return
 		}
 
@@ -2439,6 +2461,17 @@ func ValidateSn(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
+	//match manufacturer
+	countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(info.Sn)
+	if errCountManufacturer != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": errCountManufacturer.Error()})
+		return
+	}
+	if countManufacturer <= 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"})
+		return
+	}
+
 	if count > 0 {
 		session, err := GetSession(w, r)
 		if err != nil {
@@ -2584,6 +2617,17 @@ func ImportDeviceForOpenApi(ctx context.Context, w rest.ResponseWriter, r *rest.
 
 	if row.Location == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "位置不能为空"})
+		return
+	}
+
+	//match manufacturer
+	countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(row.Sn)
+	if errCountManufacturer != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": errCountManufacturer.Error()})
+		return
+	}
+	if countManufacturer <= 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"})
 		return
 	}
 

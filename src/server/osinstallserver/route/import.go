@@ -257,6 +257,20 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 			row.Content += br + "位置不能为空!"
 		}
 
+		//match manufacturer
+		countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(row.Sn)
+		if errCountManufacturer != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCountManufacturer.Error()})
+			return
+		}
+		if countManufacturer <= 0 {
+			var br string
+			if row.Content != "" {
+				br = "<br />"
+			}
+			row.Content += br + "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"
+		}
+
 		countDevice, err := repo.CountDeviceBySn(row.Sn)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
@@ -756,6 +770,20 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 				br = "<br />"
 			}
 			row.Content += br + "位置不能为空!"
+		}
+
+		//match manufacturer
+		countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(row.Sn)
+		if errCountManufacturer != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCountManufacturer.Error()})
+			return
+		}
+		if countManufacturer <= 0 {
+			var br string
+			if row.Content != "" {
+				br = "<br />"
+			}
+			row.Content += br + "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"
 		}
 
 		countDevice, err := repo.CountDeviceBySn(row.Sn)

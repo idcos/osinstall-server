@@ -9,6 +9,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 	"utils"
 
 	"github.com/codegangsta/cli"
@@ -18,7 +19,8 @@ var xmlPath = "X:\\Windows\\System32\\unattended.xml"
 var rootPath = "X:\\Windows\\System32"
 var scriptFile = path.Join(rootPath, "temp-script.cmd")
 
-var version = "v2016.02.23"
+var date = time.Now().Format("2006-01-02")
+var version = "v1.2.1 (" + date + ")"
 
 func main() {
 

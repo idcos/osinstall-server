@@ -28,7 +28,8 @@ type RestInfo struct {
 	Vlan     string
 }
 
-var version = "v2016.02.23"
+var date = time.Now().Format("2006-01-02")
+var version = "v1.2.1 (" + date + ")"
 
 func main() {
 
@@ -56,7 +57,7 @@ func run(c *cli.Context) error {
 		}
 	}
 
-	if !utils.PingLoop("osinstall.", 30, 2) {
+	if !utils.PingLoop("osinstall.", 300, 2) {
 		return errors.New("ping timeout")
 	}
 
@@ -100,7 +101,7 @@ func run(c *cli.Context) error {
 		utils.Logger.Error(err.Error())
 	}
 	time.Sleep(30 * time.Second)
-	if !utils.PingLoop("osinstall.", 30, 2) {
+	if !utils.PingLoop("osinstall.", 300, 2) {
 		return errors.New("ping timeout")
 	}
 	utils.ReportProgress(0.8, sn, "修改网络配置", "change network")

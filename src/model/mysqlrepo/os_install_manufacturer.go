@@ -1,6 +1,7 @@
 package mysqlrepo
 
 import (
+	"encoding/json"
 	"fmt"
 	"model"
 )
@@ -136,4 +137,34 @@ func (repo *MySQLRepo) GetManufacturerIdBySn(sn string) (uint, error) {
 	mod := model.Manufacturer{Sn: sn}
 	err := repo.db.Unscoped().Where("sn = ?", sn).Find(&mod).Error
 	return mod.ID, err
+}
+
+func (repo *MySQLRepo) GetManufacturerMacBySn(sn string) (string, error) {
+	mod := model.Manufacturer{Sn: sn}
+	err := repo.db.Unscoped().Where("sn = ?", sn).Find(&mod).Error
+	if err != nil {
+		return "", err
+	}
+	var mac string
+	if mod.Nic != "" {
+		type Nic struct {
+			Name string `json:"Name"`
+			Mac  string `json:"Mac"`
+			Ip   string `json:"Ip"`
+		}
+		var nics []Nic
+
+		err := json.Unmarshal([]byte(mod.Nic), &nics)
+		if err != nil {
+			return "", err
+		}
+		for _, nic := range nics {
+			if nic.Ip != "" {
+				mac = nic.Mac
+				break
+			}
+		}
+	}
+
+	return mac, nil
 }

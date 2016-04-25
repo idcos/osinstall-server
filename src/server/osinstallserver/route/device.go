@@ -2395,6 +2395,8 @@ func GetNetworkBySn(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		return
 	}
 
+	mac, _ := repo.GetManufacturerMacBySn(info.Sn)
+
 	result := make(map[string]interface{})
 	result["Hostname"] = device.Hostname
 	result["Ip"] = device.Ip
@@ -2403,6 +2405,7 @@ func GetNetworkBySn(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 	result["Vlan"] = mod.Vlan
 	result["Trunk"] = mod.Trunk
 	result["Bonding"] = mod.Bonding
+	result["HWADDR"] = mac
 	if info.Type == "raw" {
 		w.Header().Add("Content-type", "text/html; charset=utf-8")
 		var str string
@@ -2427,6 +2430,7 @@ func GetNetworkBySn(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		if mod.Bonding != "" {
 			str += "\nBonding=\"" + mod.Bonding + "\""
 		}
+		str += "\nHWADDR=\"" + mac + "\""
 		w.Write([]byte(str))
 	} else {
 		w.Header().Add("Content-type", "application/json; charset=utf-8")

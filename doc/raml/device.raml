@@ -383,3 +383,66 @@ mediaType: application/json
                 "Status": "success",
                 "Message": "",
               }
+
+
+/device/scan/list:
+  post:
+    description: 获取【资源池】【发现新设备】列表
+    queryParameters:
+      Limit:
+        description: 页容量
+        type: number
+        required: true
+      Offset:
+        description: 从第几行开始
+        type: number
+        required: true
+      Keyword:
+        description: 搜索关键字，可根据SN、厂商、产品名称、型号、DHCP IP搜索；搜索多条信息以\n隔开
+        type: string
+        required: false
+      Company:
+        description: 设备厂商
+        type: string
+        required: false
+      ModelName:
+        description: 设备型号
+        type: string
+        required: false
+      CpuRule:
+        description: CPU字段搜索规则，可传 >,<,=,!=，要与CPU参数结合使用
+        type: string
+        required: false
+      Cpu:
+        description: CPU核数
+        type: string
+        required: false
+      MemoryRule:
+        description: 内存字段搜索规则，可传 >,<,=,!=，要与Memory参数结合使用
+        type: string
+        required: false
+      Memory:
+        description: 内存大小，单位 MB
+        type: string
+        required: false
+      DiskRule:
+        description: 硬盘字段搜索规则，可传 >,<,=,!=，要与Disk参数结合使用
+        type: string
+        required: false
+      Disk:
+        description: 硬盘大小，单位 GB
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":{
+                  "list":{}
+                  "recordCount":100
+                },
+              }

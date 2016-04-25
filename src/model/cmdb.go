@@ -218,6 +218,7 @@ type IManageNetwork interface {
 	UpdateManageNetworkById(Id uint, Network string, Netmask string, Gateway string, Vlan string, Trunk string, Bonding string) (*ManageNetwork, error)
 	DeleteManageNetworkById(Id uint) (*ManageNetwork, error)
 	AddManageNetwork(Network string, Netmask string, Gateway string, Vlan string, Trunk string, Bonding string) (*ManageNetwork, error)
+	GetManufacturerMacBySn(Sn string) (string, error)
 }
 
 // Network 网络

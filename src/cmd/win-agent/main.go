@@ -26,6 +26,7 @@ type RestInfo struct {
 	Netmask  string
 	Trunk    string
 	Vlan     string
+	HWADDR   string
 }
 
 var date = time.Now().Format("2006-01-02")
@@ -67,16 +68,16 @@ func run(c *cli.Context) error {
 		utils.Logger.Error("get sn failed!")
 	}
 
-	var nic = getNicName()
-	if nic == "" {
-		utils.Logger.Error("get nix name failed")
-	}
-
 	restInfo, err := getRestInfo(sn)
 	if err != nil {
 		utils.Logger.Error(err.Error())
 	}
 	// fmt.Println(restInfo)
+
+	var nicInterfaceIndex = getInterfaceIndex(restInfo.HWADDR)
+	if nicInterfaceIndex == "" {
+		utils.Logger.Error("get nic interface index failed")
+	}
 
 	var dns = getDNS()
 	if dns == "" {
@@ -93,11 +94,11 @@ func run(c *cli.Context) error {
 	}
 	utils.ReportProgress(0.75, sn, "修改主机名", "change hostname")
 
-	if err = changeIP(nic, restInfo.Ip, restInfo.Netmask, restInfo.Gateway); err != nil {
+	if err = changeIP(nicInterfaceIndex, restInfo.Ip, restInfo.Netmask, restInfo.Gateway); err != nil {
 		utils.Logger.Error(err.Error())
 	}
 
-	if err = changeDNS(nic, dns); err != nil {
+	if err = changeDNS(nicInterfaceIndex, dns); err != nil {
 		utils.Logger.Error(err.Error())
 	}
 	time.Sleep(30 * time.Second)
@@ -148,10 +149,9 @@ func getSN() string {
 }
 
 // 网卡名称
-func getNicName() string {
-
-	var cmd = `wmic nic where NetConnectionStatus='2' get NetConnectionID /VALUE`
-	var r = `NetConnectionID=(.*[\p{Han}| |]+.*)`
+func getInterfaceIndex(mac string) string {
+	var cmd = fmt.Sprintf(`wmic nic where (MACAddress="%s" AND netConnectionStatus=2) get InterfaceIndex /value`, mac)
+	var r = `InterfaceIndex=(.*)`
 	var output string
 	utils.Logger.Debug(cmd)
 	if outputBytes, err := utils.ExecCmd(scriptFile, cmd); err != nil {
@@ -167,7 +167,7 @@ func getNicName() string {
 	if regResult == nil || len(regResult) != 2 {
 		return ""
 	}
-
+	utils.Logger.Info("Nic Interface Index:" + regResult[1])
 	// fmt.Println(strings.Trim(regResult[1], "\r\n"))
 	return regResult[1]
 }

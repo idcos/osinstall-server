@@ -74,7 +74,7 @@ func run(c *cli.Context) error {
 	}
 	// fmt.Println(restInfo)
 
-	var nicInterfaceIndex = getInterfaceIndex(restInfo.HWADDR)
+	var nicInterfaceIndex = getNicInterfaceIndex(restInfo.HWADDR)
 	if nicInterfaceIndex == "" {
 		utils.Logger.Error("get nic interface index failed")
 	}
@@ -149,7 +149,7 @@ func getSN() string {
 }
 
 // 网卡名称
-func getInterfaceIndex(mac string) string {
+func getNicInterfaceIndex(mac string) string {
 	var cmd = fmt.Sprintf(`wmic nic where (MACAddress="%s" AND netConnectionStatus=2) get InterfaceIndex /value`, mac)
 	var r = `InterfaceIndex=(.*)`
 	var output string

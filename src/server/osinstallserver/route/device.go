@@ -97,12 +97,14 @@ func DeleteDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Reques
 		return
 	}
 
-	//删除LOG
-	_, errLog := repo.DeleteDeviceLogByDeviceID(info.ID)
-	if errLog != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
-		return
-	}
+	/*
+		//删除LOG
+		_, errLog := repo.DeleteDeviceLogByDeviceID(info.ID)
+		if errLog != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
+			return
+		}
+	*/
 
 	errCopy := repo.CopyDeviceToHistory(info.ID)
 	if errCopy != nil {

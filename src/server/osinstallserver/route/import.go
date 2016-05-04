@@ -20,16 +20,17 @@ import (
 )
 
 func UploadDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	w.Header().Add("Content-type", "text/html; charset=utf-8")
 	r.ParseForm()
 	file, handle, err := r.FormFile("file")
 	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		w.Write([]byte("{\"Message\":\"" + err.Error() + "\",\"Status\":\"error\"}"))
 		return
 	}
 
 	cd, err := iconv.Open("UTF-8", "GBK")
 	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		w.Write([]byte("{\"Message\":\"" + err.Error() + "\",\"Status\":\"error\"}"))
 		return
 	}
 	defer cd.Close()
@@ -38,7 +39,7 @@ func UploadDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	if !util.FileExist(dir) {
 		err := os.MkdirAll(dir, 0777)
 		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+			w.Write([]byte("{\"Message\":\"" + err.Error() + "\",\"Status\":\"error\"}"))
 			return
 		}
 	}
@@ -62,12 +63,19 @@ func UploadDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	f, err := os.OpenFile(dir+filename, os.O_WRONLY|os.O_CREATE, 0666)
 	io.Copy(f, file)
 	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		w.Write([]byte("{\"Message\":\"" + err.Error() + "\",\"Status\":\"error\"}"))
 		return
 	}
 	defer f.Close()
 	defer file.Close()
-	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
+
+	data := map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result}
+	json, err := json.Marshal(data)
+	if err != nil {
+		w.Write([]byte("{\"Message\":\"" + err.Error() + "\",\"Status\":\"error\"}"))
+		return
+	}
+	w.Write([]byte(json))
 	return
 }
 

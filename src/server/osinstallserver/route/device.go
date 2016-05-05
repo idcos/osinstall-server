@@ -2117,6 +2117,13 @@ func ReportMacInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	osConfig.Pxe = strings.Replace(osConfig.Pxe, "{sn}", info.Sn, -1)
 
 	pxeFileName := util.GetPxeFileNameByMac(info.Mac)
+	logger, ok := middleware.LoggerFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+	logger.Debugf("Create pxe file: %s", conf.OsInstall.PxeConfigDir+"/"+pxeFileName)
+
 	errCreatePxeFile := util.CreatePxeFile(conf.OsInstall.PxeConfigDir, pxeFileName, osConfig.Pxe)
 	if errCreatePxeFile != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "配置文件生成失败" + err.Error()})

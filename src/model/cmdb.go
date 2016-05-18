@@ -85,6 +85,8 @@ type IDevice interface {
 	GetFullDeviceById(id uint) (*DeviceFull, error)
 	CountDeviceByWhere(where string) (int, error)
 	GetDeviceByWhere(where string) ([]Device, error)
+	GetInstallTimeoutDeviceList(timeout int) ([]Device, error)
+	IsInstallTimeoutDevice(timeout int, deviceId uint) (bool, error)
 }
 
 type DeviceHistory struct {

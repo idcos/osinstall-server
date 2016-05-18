@@ -104,6 +104,12 @@
 			"repository": "https://github.com/qiniu/iconv",
 			"revision": "e9ee0ddd1a3a29262740aa08ed8ac740f23bc4a0",
 			"branch": "develop"
+		},
+		{
+			"importpath": "github.com/jakecoffman/cron",
+			"repository": "https://github.com/jakecoffman/cron",
+			"revision": "275d5b11d4d33013ff591751835185fc5c23cfe9",
+			"branch": "master"
 		}
 	]
 }

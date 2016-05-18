@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"server/osinstallserver"
+	"server/osinstallserver/route"
 	"server/osinstallserver/util"
 	"time"
 )
@@ -60,6 +61,9 @@ func runServer(c *cli.Context) {
 	}
 
 	srvr.Log.Info("The server is running.")
+
+	//cron
+	route.CloudBootCron(srvr.Conf, srvr.Log, srvr.Repo)
 
 	if err := http.Serve(l4, srvr); err != nil {
 		srvr.Log.Error(err)

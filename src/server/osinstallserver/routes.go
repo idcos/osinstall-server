@@ -57,6 +57,7 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchCancelInstall", route.BatchCancelInstall))
 	routes = append(routes, rest.Get("/api/osinstall/v1/device/getDeviceBySn", route.GetDeviceBySn))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/importDeviceForOpenApi", route.ImportDeviceForOpenApi))
+	routes = append(routes, rest.Get("/api/osinstall/v1/device/export", route.ExportDevice))
 
 	//Hardware
 	routes = append(routes, rest.Post("/api/osinstall/v1/hardware/add", route.AddHardware))

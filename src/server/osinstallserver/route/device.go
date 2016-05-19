@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/AlexanderChen1989/go-json-rest/rest"
+	"github.com/qiniu/iconv"
 	"golang.org/x/net/context"
 	"middleware"
 	"regexp"
@@ -2991,4 +2992,153 @@ func ImportDeviceForOpenApi(ctx context.Context, w rest.ResponseWriter, r *rest.
 	}
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
+}
+
+func ExportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+	var info struct {
+		Keyword        string
+		OsID           string
+		HardwareID     string
+		SystemID       string
+		Status         string
+		BatchNumber    string
+		StartUpdatedAt string
+		EndUpdatedAt   string
+		UserID         string
+	}
+
+	info.Keyword = r.FormValue("Keyword")
+	info.Status = r.FormValue("Status")
+	info.BatchNumber = r.FormValue("BatchNumber")
+	info.StartUpdatedAt = r.FormValue("StartUpdatedAt")
+	info.EndUpdatedAt = r.FormValue("EndUpdatedAt")
+	info.UserID = r.FormValue("UserID")
+	info.OsID = r.FormValue("OsID")
+	info.HardwareID = r.FormValue("HardwareID")
+	info.SystemID = r.FormValue("SystemID")
+
+	info.Keyword = strings.TrimSpace(info.Keyword)
+	info.Status = strings.TrimSpace(info.Status)
+	info.BatchNumber = strings.TrimSpace(info.BatchNumber)
+	info.StartUpdatedAt = strings.TrimSpace(info.StartUpdatedAt)
+	info.EndUpdatedAt = strings.TrimSpace(info.EndUpdatedAt)
+	info.UserID = strings.TrimSpace(info.UserID)
+	info.OsID = strings.TrimSpace(info.OsID)
+	info.HardwareID = strings.TrimSpace(info.HardwareID)
+	info.SystemID = strings.TrimSpace(info.SystemID)
+
+	var where string
+	where = " where t1.id > 0 "
+	if info.OsID != "" {
+		osID, _ := strconv.Atoi(info.OsID)
+		where += " and t1.os_id = " + fmt.Sprintf("%d", osID)
+	}
+	if info.HardwareID != "" {
+		hardwareID, _ := strconv.Atoi(info.HardwareID)
+		where += " and t1.hardware_id = " + fmt.Sprintf("%d", hardwareID)
+	}
+	if info.SystemID != "" {
+		systemID, _ := strconv.Atoi(info.SystemID)
+		where += " and t1.system_id = " + fmt.Sprintf("%d", systemID)
+	}
+	if info.Status != "" {
+		where += " and t1.status = '" + info.Status + "'"
+	}
+	if info.BatchNumber != "" {
+		where += " and t1.batch_number = '" + info.BatchNumber + "'"
+	}
+
+	if info.StartUpdatedAt != "" {
+		where += " and t1.updated_at >= '" + info.StartUpdatedAt + "'"
+	}
+
+	if info.EndUpdatedAt != "" {
+		where += " and t1.updated_at <= '" + info.EndUpdatedAt + "'"
+	}
+
+	if info.UserID != "" {
+		userID, _ := strconv.Atoi(info.UserID)
+		where += " and t1.user_id = " + fmt.Sprintf("%d", userID)
+	}
+
+	if info.Keyword != "" {
+		where += " and ( "
+		info.Keyword = strings.Replace(info.Keyword, "\n", ",", -1)
+		info.Keyword = strings.Replace(info.Keyword, ";", ",", -1)
+		list := strings.Split(info.Keyword, ",")
+		for k, v := range list {
+			var str string
+			v = strings.TrimSpace(v)
+			if k == 0 {
+				str = ""
+			} else {
+				str = " or "
+			}
+			where += str + " t1.sn = '" + v + "' or t1.batch_number = '" + v + "' or t1.hostname = '" + v + "' or t1.ip = '" + v + "'"
+		}
+		where += " ) "
+	}
+
+	mods, err := repo.GetDeviceListWithPage(1000000, 0, where)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	var str string
+	str = "SN,主机名,IP,操作系统,硬件配置模板,系统安装模板,位置,财编,管理IP,批次号,状态\n"
+	for _, device := range mods {
+		var locationName string
+		if device.LocationID > uint(0) {
+			locationName, err = repo.FormatLocationNameById(device.LocationID, "", "-")
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+				return
+			}
+		}
+
+		var statusName string
+		if device.Status == "pre_install" {
+			statusName = "等待安装"
+		} else if device.Status == "installing" {
+			statusName = "正在安装"
+		} else if device.Status == "success" {
+			statusName = "安装成功"
+		} else if device.Status == "failure" {
+			statusName = "安装失败"
+		}
+
+		str += device.Sn + ","
+		str += device.Hostname + ","
+		str += device.Ip + ","
+		str += device.OsName + ","
+		str += device.HardwareName + ","
+		str += device.SystemName + ","
+		str += locationName + ","
+		str += device.AssetNumber + ","
+		str += device.ManageIp + ","
+		str += device.BatchNumber + ","
+		str += statusName + ","
+		str += "\n"
+	}
+
+	cd, err := iconv.Open("gbk", "utf-8") // convert utf-8 to gbk
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	defer cd.Close()
+	gbkStr := cd.ConvString(str)
+
+	bytes := []byte(gbkStr)
+
+	filename := "cloudboot-device-list.csv"
+	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename='%s';filename*=utf-8''%s", filename, filename))
+	w.Header().Add("Content-Type", "application/octet-stream")
+	w.Write(bytes)
 }

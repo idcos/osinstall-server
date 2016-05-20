@@ -796,3 +796,62 @@ func BatchAssignManufacturerOnwer(ctx context.Context, w rest.ResponseWriter, r 
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
 }
+
+func BatchDeleteScanDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	var infos []struct {
+		ID          uint
+		AccessToken string
+		UserID      uint
+	}
+
+	if err := r.DecodeJSONPayload(&infos); err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
+		return
+	}
+
+	for _, info := range infos {
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		} else {
+			info.UserID = session.ID
+		}
+
+		device, errInfo := repo.GetManufacturerById(info.ID)
+		if errInfo != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errInfo.Error()})
+			return
+		}
+
+		if session.Role != "Administrator" && device.UserID != info.UserID {
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "您无权操作其他人的设备!"})
+			return
+		}
+
+		_, errDevice := repo.DeleteManufacturerById(info.ID)
+		if errDevice != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDevice.Error()})
+			return
+		}
+	}
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
+}

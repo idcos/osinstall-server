@@ -113,6 +113,7 @@ func init() {
 	routes = append(routes, rest.Get("/api/osinstall/v1/device/scan/export", route.ExportScanDeviceList))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/batchAssignOwner", route.BatchAssignManufacturerOnwer))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/viewByDeviceId", route.GetScanDeviceByDeviceId))
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/batchDelete", route.BatchDeleteScanDevice))
 
 	//User
 	routes = append(routes, rest.Post("/api/osinstall/v1/user/add", route.AddUser))

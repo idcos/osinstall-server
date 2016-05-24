@@ -769,6 +769,8 @@ func GetDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		IsSupportVm     string
 		UserID          uint
 		OwnerName       string
+		BootosIp        string
+		OobIp           string
 		CreatedAt       utils.ISOTime
 		UpdatedAt       utils.ISOTime
 	}
@@ -797,6 +799,8 @@ func GetDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		device.IsSupportVm = v.IsSupportVm
 		device.UserID = v.UserID
 		device.OwnerName = v.OwnerName
+		device.BootosIp = v.BootosIp
+		device.OobIp = v.OobIp
 		/*
 			device.LocationName, err = repo.FormatLocationNameById(v.LocationID, "", "-")
 			if err != nil {
@@ -3091,7 +3095,7 @@ func ExportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	var str string
-	str = "SN,主机名,IP,操作系统,硬件配置模板,系统安装模板,位置,财编,管理IP,批次号,状态\n"
+	str = "SN,主机名,IP,操作系统,硬件配置模板,系统安装模板,位置,财编,管理IP,批次号,BootOS IP,带外IP,状态\n"
 	for _, device := range mods {
 		var locationName string
 		if device.LocationID > uint(0) {
@@ -3113,6 +3117,13 @@ func ExportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			statusName = "安装失败"
 		}
 
+		var bootosIP string
+		if device.Status == "installing" || device.Status == "pre_install" {
+			if device.InstallProgress >= 0 && device.InstallProgress < 0.6 {
+				bootosIP = device.BootosIp
+			}
+		}
+
 		str += device.Sn + ","
 		str += device.Hostname + ","
 		str += device.Ip + ","
@@ -3123,6 +3134,8 @@ func ExportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		str += device.AssetNumber + ","
 		str += device.ManageIp + ","
 		str += device.BatchNumber + ","
+		str += bootosIP + ","
+		str += device.OobIp + ","
 		str += statusName + ","
 		str += "\n"
 	}

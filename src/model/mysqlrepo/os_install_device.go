@@ -159,7 +159,7 @@ func (repo *MySQLRepo) GetDeviceListWithPage(limit uint, offset uint, where stri
 	*/
 
 	var result []model.DeviceFull
-	sql := "SELECT t1.*,t2.network as network_name,t6.network as manage_network_name,t3.name as os_name,concat(t4.company,'-',t4.model_name) as hardware_name,t5.name as system_name,t7.username as owner_name FROM devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join hardwares t4 on t1.hardware_id = t4.id left join system_configs t5 on t1.system_id = t5.id left join manage_networks t6 on t1.manage_network_id = t6.id left join `users` t7 on t1.user_id = t7.id " + where + " order by t1.id DESC"
+	sql := "SELECT t1.*,t2.network as network_name,t6.network as manage_network_name,t3.name as os_name,concat(t4.company,'-',t4.model_name) as hardware_name,t5.name as system_name,t7.username as owner_name,t8.ip as bootos_ip,t8.oob as oob_ip FROM devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join hardwares t4 on t1.hardware_id = t4.id left join system_configs t5 on t1.system_id = t5.id left join manage_networks t6 on t1.manage_network_id = t6.id left join `users` t7 on t1.user_id = t7.id left join manufacturers t8 on t1.`sn` = t8.`sn` " + where + " order by t1.id DESC"
 
 	if offset > 0 {
 		sql += " limit " + fmt.Sprintf("%d", offset) + "," + fmt.Sprintf("%d", limit)

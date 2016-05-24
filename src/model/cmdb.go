@@ -32,6 +32,8 @@ type DeviceFull struct {
 	UserID            uint
 	OwnerName         string
 	Callback          string
+	BootosIp          string
+	OobIp             string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }
@@ -451,6 +453,7 @@ type IManufacturer interface {
 	AddManufacturer(DeviceID uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string) (*Manufacturer, error)
 	UpdateManufacturerById(Id uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string) (*Manufacturer, error)
 	UpdateManufacturerDeviceIdById(id uint, deviceId uint) (*Manufacturer, error)
+	UpdateManufacturerIPById(id uint, ip string) (*Manufacturer, error)
 	GetManufacturerListWithPage(Limit uint, Offset uint, Where string) ([]ManufacturerFull, error)
 	CountManufacturerByWhere(Where string) (int, error)
 	GetManufacturerCompanyByGroup(Where string) ([]Manufacturer, error)

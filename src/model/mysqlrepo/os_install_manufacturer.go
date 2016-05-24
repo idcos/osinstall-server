@@ -120,6 +120,12 @@ func (repo *MySQLRepo) UpdateManufacturerById(id uint, company string, product s
 	return &mod, err
 }
 
+func (repo *MySQLRepo) UpdateManufacturerIPById(id uint, ip string) (*model.Manufacturer, error) {
+	mod := model.Manufacturer{Ip: ip}
+	err := repo.db.First(&mod, id).Update("ip", ip).Error
+	return &mod, err
+}
+
 func (repo *MySQLRepo) UpdateManufacturerDeviceIdById(id uint, deviceId uint) (*model.Manufacturer, error) {
 	mod := model.Manufacturer{DeviceID: deviceId}
 	err := repo.db.First(&mod, id).Update("device_id", deviceId).Error

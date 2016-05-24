@@ -576,6 +576,15 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	}
 	info.Nic = string(nic)
 
+	//bootos ip
+	for _, nicInfo := range infoFull.Nic {
+		nicInfo.Ip = strings.TrimSpace(nicInfo.Ip)
+		if nicInfo.Ip != "" {
+			info.Ip = nicInfo.Ip
+			break
+		}
+	}
+
 	//cpu
 	cpu, err := json.Marshal(infoFull.Cpu)
 	if err != nil {

@@ -2120,6 +2120,7 @@ func ReportMacInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 
 	//替换占位符
 	osConfig.Pxe = strings.Replace(osConfig.Pxe, "{sn}", info.Sn, -1)
+	osConfig.Pxe = strings.Replace(osConfig.Pxe, "\r\n", "\n", -1)
 
 	pxeFileName := util.GetPxeFileNameByMac(info.Mac)
 	logger, ok := middleware.LoggerFromContext(ctx)
@@ -2250,6 +2251,7 @@ func GetHardwareBySn(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 	var data []*ScriptData
 	var result2 []map[string]interface{}
 	if hardware.Data != "" {
+		hardware.Data = strings.Replace(hardware.Data, "\r\n", "\n", -1)
 		bytes := []byte(hardware.Data)
 		errData := json.Unmarshal(bytes, &data)
 		if errData != nil {
@@ -2336,6 +2338,7 @@ func GetSystemBySn(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 
 		return
 	}
+	mod.Content = strings.Replace(mod.Content, "\r\n", "\n", -1)
 
 	if info.Type == "raw" {
 		w.Header().Add("Content-type", "text/html; charset=utf-8")
@@ -2410,6 +2413,10 @@ func GetNetworkBySn(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 	}
 
 	mac, _ := repo.GetManufacturerMacBySn(info.Sn)
+
+	mod.Vlan = strings.Replace(mod.Vlan, "\r\n", "\n", -1)
+	mod.Trunk = strings.Replace(mod.Trunk, "\r\n", "\n", -1)
+	mod.Bonding = strings.Replace(mod.Bonding, "\r\n", "\n", -1)
 
 	result := make(map[string]interface{})
 	result["Hostname"] = device.Hostname

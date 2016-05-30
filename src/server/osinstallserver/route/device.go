@@ -681,6 +681,7 @@ func GetDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		StartUpdatedAt string
 		EndUpdatedAt   string
 		UserID         int
+		ID             int
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
@@ -693,6 +694,9 @@ func GetDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 
 	var where string
 	where = " where t1.id > 0 "
+	if info.ID > 0 {
+		where += " and t1.id = " + strconv.Itoa(info.ID)
+	}
 	if info.OsID > 0 {
 		where += " and t1.os_id = " + strconv.Itoa(info.OsID)
 	}

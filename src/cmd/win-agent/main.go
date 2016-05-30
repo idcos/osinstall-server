@@ -128,7 +128,7 @@ func run(c *cli.Context) error {
 // 查看本机 SN
 func getSN() string {
 	var cmd = `wmic bios get SerialNumber /VALUE`
-	var r = `SerialNumber=(.+)`
+	var r = `SerialNumber=(\S+)`
 	var output string
 	utils.Logger.Debug(cmd)
 	if outputBytes, err := utils.ExecCmd(scriptFile, cmd); err != nil {
@@ -145,7 +145,10 @@ func getSN() string {
 	}
 
 	// fmt.Println(strings.Trim(regResult[1], "\r\n"))
-	return strings.Trim(regResult[1], "\r\n")
+	var result string
+	result = strings.Trim(regResult[1], "\r\n")
+	result = strings.TrimSpace(result)
+	return result
 }
 
 // 网卡名称

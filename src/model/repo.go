@@ -24,4 +24,6 @@ type Repo interface {
 	IUserAccessToken
 	IDeviceInstallReport
 	IDeviceInstallCallback
+	IDhcpSubnet
+	IPlatformConfig
 }

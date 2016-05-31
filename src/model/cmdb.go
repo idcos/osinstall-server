@@ -673,3 +673,38 @@ type IDeviceInstallCallback interface {
 	UpdateDeviceInstallCallbackByID(Id uint, DeviceID uint, CallbackType string, Content string, RunTime string, RunResult string, RunStatus string) (*DeviceInstallCallback, error)
 	UpdateDeviceInstallCallbackRunInfoByID(Id uint, RunTime string, RunResult string, RunStatus string) (*DeviceInstallCallback, error)
 }
+
+type DhcpSubnet struct {
+	gorm.Model
+	StartIp string `sql:"not null;"`
+	EndIp   string `sql:"not null;"`
+	Gateway string `sql:"not null;"`
+}
+
+type IDhcpSubnet interface {
+	CountDhcpSubnet() (uint, error)
+	GetDhcpSubnetListWithPage(Limit uint, Offset uint) ([]DhcpSubnet, error)
+	GetDhcpSubnetById(Id uint) (*DhcpSubnet, error)
+	UpdateDhcpSubnetById(Id uint, StartIp string, EndIp string, Gateway string) (*DhcpSubnet, error)
+	DeleteDhcpSubnetById(Id uint) (*DhcpSubnet, error)
+	AddDhcpSubnet(StartIp string, EndIp string, Gateway string) (*DhcpSubnet, error)
+}
+
+type PlatformConfig struct {
+	gorm.Model
+	Name    string `sql:"not null;unique;"`
+	Content string `sql:"type:longtext;"`
+}
+
+type IPlatformConfig interface {
+	CountPlatformConfigByName(Name string) (uint, error)
+	CountPlatformConfigByNameAndId(Name string, ID uint) (uint, error)
+	CountPlatformConfig() (uint, error)
+	GetPlatformConfigListWithPage(Limit uint, Offset uint) ([]PlatformConfig, error)
+	GetPlatformConfigIdByName(Name string) (uint, error)
+	GetPlatformConfigById(Id uint) (*PlatformConfig, error)
+	UpdatePlatformConfigById(Id uint, Name string, Pxe string) (*PlatformConfig, error)
+	DeletePlatformConfigById(Id uint) (*PlatformConfig, error)
+	AddPlatformConfig(Name string, Content string) (*PlatformConfig, error)
+	GetPlatformConfigByName(Name string) (*PlatformConfig, error)
+}

@@ -139,4 +139,12 @@ func init() {
 
 	//DeviceInstallCallback
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/callback/list", route.GetDeviceInstallCallbackList))
+
+	//PlatformConfig
+	routes = append(routes, rest.Post("/api/osinstall/v1/platformConfig/save", route.SavePlatformConfig))
+	routes = append(routes, rest.Post("/api/osinstall/v1/platformConfig/viewByName", route.GetPlatformConfigByName))
+
+	//DHCPSubnet
+	routes = append(routes, rest.Post("/api/osinstall/v1/dhcp/subnet/list", route.GetDhcpSubnetList))
+	routes = append(routes, rest.Post("/api/osinstall/v1/dhcp/subnet/save", route.SaveDhcpSubnet))
 }

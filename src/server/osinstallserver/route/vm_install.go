@@ -609,6 +609,7 @@ func GetFullVmDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Req
 		DisplayPassword       string
 		DisplayUpdatePassword string
 		Status                string
+		VncPort               string
 		CreatedAt             utils.ISOTime
 		UpdatedAt             utils.ISOTime
 	}
@@ -645,6 +646,7 @@ func GetFullVmDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Req
 	vm.DisplayPassword = mod.DisplayPassword
 	vm.DisplayUpdatePassword = mod.DisplayUpdatePassword
 	vm.Status = mod.Status
+	vm.VncPort = mod.VncPort
 
 	vm.CreatedAt = utils.ISOTime(mod.CreatedAt)
 	vm.UpdatedAt = utils.ISOTime(mod.UpdatedAt)
@@ -1182,10 +1184,12 @@ func BatchStartVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			return
 		}
 
-		if vmDevice.Status != "success" {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备未完成安装，无法启动!(主机名:" + vmDevice.Hostname + ")"})
-			return
-		}
+		/*
+			if vmDevice.Status != "success" {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备未完成安装，无法启动!(主机名:" + vmDevice.Hostname + ")"})
+				return
+			}
+		*/
 
 		errRun := RunStartVm(ctx, vmDevice.ID)
 		//log
@@ -1260,10 +1264,12 @@ func BatchStopVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			return
 		}
 
-		if vmDevice.Status != "success" {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备未完成安装，无法停止!(主机名:" + vmDevice.Hostname + ")"})
-			return
-		}
+		/*
+			if vmDevice.Status != "success" {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备未完成安装，无法停止!(主机名:" + vmDevice.Hostname + ")"})
+				return
+			}
+		*/
 
 		errRun := RunStopVm(ctx, vmDevice.ID)
 		//log
@@ -1338,10 +1344,12 @@ func BatchReStartVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 			return
 		}
 
-		if vmDevice.Status != "success" {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备未完成安装，无法重启!(主机名:" + vmDevice.Hostname + ")"})
-			return
-		}
+		/*
+			if vmDevice.Status != "success" {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备未完成安装，无法重启!(主机名:" + vmDevice.Hostname + ")"})
+				return
+			}
+		*/
 
 		errRun := RunReStartVm(ctx, vmDevice.ID)
 		//log

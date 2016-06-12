@@ -350,7 +350,7 @@ func RunGetVmInfo(repo model.Repo, logger logger.Logger, vmDeviceId uint) (strin
 	return string(bytes), nil
 }
 
-//get vm info
+//get vm host info
 func RunGetVmHostInfo(repo model.Repo, logger logger.Logger, deviceId uint) (string, error) {
 	device, err := repo.GetDeviceById(deviceId)
 	if err != nil {
@@ -390,6 +390,29 @@ func RunGetVmHostPoolInfo(repo model.Repo, logger logger.Logger, conf *config.Co
 		device.Ip,
 		storage)
 	logger.Debugf("get vm host pool info:%s", cmd)
+	var runResult = "执行脚本:\n" + cmd
+	bytes, err := util.ExecScript(cmd)
+	logger.Debugf("result:%s", string(bytes))
+	runResult += "\n\n" + "执行结果:\n" + string(bytes)
+	if err != nil {
+		logger.Errorf("error:%s", err.Error())
+		runResult += "\n\n" + "错误信息:\n" + err.Error()
+		return "", errors.New(runResult)
+	}
+	return string(bytes), nil
+}
+
+//test connect vm host
+func RunTestConnectVmHost(repo model.Repo, logger logger.Logger, deviceId uint) (string, error) {
+	device, err := repo.GetDeviceById(deviceId)
+	if err != nil {
+		return "", err
+	}
+
+	var cmdFormat = `LANG=C ssh -o BatchMode=yes -o ConnectTimeout=3 root@%s 'w'`
+	var cmd = fmt.Sprintf(cmdFormat,
+		device.Ip)
+	logger.Debugf("test connect vm host:%s", cmd)
 	var runResult = "执行脚本:\n" + cmd
 	bytes, err := util.ExecScript(cmd)
 	logger.Debugf("result:%s", string(bytes))

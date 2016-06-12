@@ -149,35 +149,70 @@ func UpdateVmHostResource(logger logger.Logger, repo model.Repo, conf *config.Co
 	}
 	logger.Info("update vm host resource info")
 	for _, device := range devices {
-		text, err := RunGetVmHostInfo(repo, logger, device.ID)
+		var logTitle string
+		var installLog string
+		var cpuSum int
+		var memorySum int
+		var diskSum int
+		var isAvailable = "Yes"
+
+		_, err := RunTestConnectVmHost(repo, logger, device.ID)
 		if err != nil {
 			logger.Errorf("error:%s", err.Error())
-			continue
+			logTitle = "宿主机信息采集失败(无法SSH)"
+			installLog = err.Error()
+			_, errAddLog := repo.AddDeviceLog(device.ID, logTitle, "virtualization", installLog)
+			if errAddLog != nil {
+				logger.Errorf("error:%s", errAddLog.Error())
+			}
+			isAvailable = "No"
+		} else {
+			text, err := RunGetVmHostInfo(repo, logger, device.ID)
+			if err != nil {
+				logger.Errorf("error:%s", err.Error())
+				isAvailable = "No"
+
+				logTitle = "宿主机信息采集失败"
+				installLog = err.Error()
+				_, errAddLog := repo.AddDeviceLog(device.ID, logTitle, "virtualization", installLog)
+				if errAddLog != nil {
+					logger.Errorf("error:%s", errAddLog.Error())
+				}
+			} else {
+				//cpu
+				reg, _ := regexp.Compile("CPU\\(s\\):(\\s+)([\\d]+)\n")
+				matchs := reg.FindStringSubmatch(text)
+				cpuSum, err = strconv.Atoi(matchs[2])
+				if err != nil {
+					logger.Errorf("error:%s", err.Error())
+				}
+				//memory
+				reg, _ = regexp.Compile("Memory size:(\\s+)([\\d|.]+)(\\s+)([KiB|MiB|GiB|TiB]+)")
+				matchs = reg.FindStringSubmatch(text)
+				float, err := strconv.ParseFloat(matchs[2], 64)
+				if err != nil {
+					logger.Errorf("error:%s", err.Error())
+				}
+				memorySum = util.FotmatNumberToMB(float, matchs[4])
+			}
+			//disk
+			text, err = RunGetVmHostPoolInfo(repo, logger, conf, device.ID)
+			reg, _ := regexp.Compile("Capacity:(\\s+)([\\d|.]+)(\\s+)([KiB|MiB|GiB|TiB]+)")
+			matchs := reg.FindStringSubmatch(text)
+			float, err := strconv.ParseFloat(matchs[2], 64)
+			if err != nil {
+				logger.Errorf("error:%s", err.Error())
+				isAvailable = "No"
+
+				logTitle = "宿主机信息采集失败"
+				installLog = err.Error()
+				_, errAddLog := repo.AddDeviceLog(device.ID, logTitle, "virtualization", installLog)
+				if errAddLog != nil {
+					logger.Errorf("error:%s", errAddLog.Error())
+				}
+			}
+			diskSum = util.FotmatNumberToGB(float, matchs[4])
 		}
-		//cpu
-		reg, _ := regexp.Compile("CPU\\(s\\):(\\s+)([\\d]+)\n")
-		matchs := reg.FindStringSubmatch(text)
-		cpuSum, err := strconv.Atoi(matchs[2])
-		if err != nil {
-			logger.Errorf("error:%s", err.Error())
-		}
-		//memory
-		reg, _ = regexp.Compile("Memory size:(\\s+)([\\d|.]+)(\\s+)([KiB|MiB|GiB|TiB]+)")
-		matchs = reg.FindStringSubmatch(text)
-		float, err := strconv.ParseFloat(matchs[2], 64)
-		if err != nil {
-			logger.Errorf("error:%s", err.Error())
-		}
-		memorySum := util.FotmatNumberToMB(float, matchs[4])
-		//disk
-		text, err = RunGetVmHostPoolInfo(repo, logger, conf, device.ID)
-		reg, _ = regexp.Compile("Capacity:(\\s+)([\\d|.]+)(\\s+)([KiB|MiB|GiB|TiB]+)")
-		matchs = reg.FindStringSubmatch(text)
-		float, err = strconv.ParseFloat(matchs[2], 64)
-		if err != nil {
-			logger.Errorf("error:%s", err.Error())
-		}
-		diskSum := util.FotmatNumberToGB(float, matchs[4])
 
 		//update resource
 		var infoHost model.VmHost
@@ -202,7 +237,7 @@ func UpdateVmHostResource(logger logger.Logger, repo model.Repo, conf *config.Co
 			infoHost.DiskUsed = vmHost.DiskUsed
 			infoHost.DiskAvailable = vmHost.DiskAvailable
 			infoHost.VmNum = vmHost.VmNum
-			infoHost.IsAvailable = vmHost.IsAvailable
+			infoHost.IsAvailable = isAvailable
 			infoHost.Remark = vmHost.Remark
 		} else {
 			infoHost.Sn = device.Sn
@@ -213,7 +248,7 @@ func UpdateVmHostResource(logger logger.Logger, repo model.Repo, conf *config.Co
 			infoHost.DiskUsed = uint(0)
 			infoHost.DiskAvailable = uint(0)
 			infoHost.VmNum = uint(0)
-			infoHost.IsAvailable = "Yes"
+			infoHost.IsAvailable = isAvailable
 			infoHost.Remark = ""
 		}
 		infoHost.CpuSum = uint(cpuSum)

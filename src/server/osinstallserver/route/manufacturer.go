@@ -221,7 +221,8 @@ func ExportScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Re
 	}
 
 	var str string
-	str = "SN(必填),主机名(必填),IP(必填),操作系统(必填),硬件配置模板,系统安装模板(必填),位置(必填),财编,管理IP\n"
+	var strTitle string
+	strTitle = "SN(必填),主机名(必填),IP(必填),操作系统(必填),硬件配置模板,系统安装模板(必填),位置(必填),财编,管理IP\n"
 	for _, device := range mods {
 		str += device.Sn + ","
 		str += ","
@@ -240,9 +241,9 @@ func ExportScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Re
 		return
 	}
 	defer cd.Close()
-	gbkStr := cd.ConvString(str)
+	gbkStr := cd.ConvString(strTitle)
 
-	bytes := []byte(gbkStr)
+	bytes := []byte(gbkStr + str)
 
 	filename := "idcos-osinstall-scan-device.csv"
 	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename='%s';filename*=utf-8''%s", filename, filename))

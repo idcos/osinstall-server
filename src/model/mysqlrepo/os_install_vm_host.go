@@ -29,6 +29,12 @@ func (repo *MySQLRepo) DeleteVmHostById(id uint) (*model.VmHost, error) {
 	return &mod, err
 }
 
+func (repo *MySQLRepo) DeleteVmHostBySn(sn string) (*model.VmHost, error) {
+	mod := model.VmHost{}
+	err := repo.db.Unscoped().Where("sn = ?", sn).Delete(&mod).Error
+	return &mod, err
+}
+
 func (repo *MySQLRepo) CountVmHostBySn(sn string) (uint, error) {
 	mod := model.VmHost{Sn: sn}
 	var count uint

@@ -505,12 +505,11 @@ func CreatePxeFile(ctx context.Context, mac string) error {
 }
 
 func CreateNewMacAddress(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
-	repo, ok := middleware.RepoFromContext(ctx)
+	_, ok := middleware.RepoFromContext(ctx)
 	if !ok {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
-	fmt.Println(repo)
 
 	mac := util.CreateNewMacAddress()
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": mac})

@@ -279,6 +279,20 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 			row.Content += br + "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"
 		}
 
+		//validate ip from vm device
+		countVmIp, errVmIp := repo.CountVmDeviceByIp(row.Ip)
+		if errVmIp != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVmIp.Error()})
+			return
+		}
+		if countVmIp > 0 {
+			var br string
+			if row.Content != "" {
+				br = "<br />"
+			}
+			row.Content += br + row.Ip + " 该IP已被虚拟机使用!"
+		}
+
 		countDevice, err := repo.CountDeviceBySn(row.Sn)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
@@ -359,6 +373,20 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 					}
 					row.Content += br + "该管理IP已存在!"
 				}
+			}
+
+			//validate host server info
+			countVm, errVm := repo.CountVmDeviceByDeviceId(row.ID)
+			if errVm != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVm.Error()})
+				return
+			}
+			if countVm > 0 {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "该物理机下(SN:" + device.Sn + ")还存留有虚拟机，不允许修改信息。请先销毁虚拟机后再操作！"
 			}
 
 		} else {
@@ -794,6 +822,20 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			row.Content += br + "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"
 		}
 
+		//validate ip from vm device
+		countVmIp, errVmIp := repo.CountVmDeviceByIp(row.Ip)
+		if errVmIp != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVmIp.Error()})
+			return
+		}
+		if countVmIp > 0 {
+			var br string
+			if row.Content != "" {
+				br = "<br />"
+			}
+			row.Content += br + row.Ip + " 该IP已被虚拟机使用!"
+		}
+
 		countDevice, err := repo.CountDeviceBySn(row.Sn)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
@@ -866,6 +908,20 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 					}
 					row.Content += br + "SN:" + row.Sn + "该管理IP已存在!"
 				}
+			}
+
+			//validate host server info
+			countVm, errVm := repo.CountVmDeviceByDeviceId(row.ID)
+			if errVm != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVm.Error()})
+				return
+			}
+			if countVm > 0 {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "该物理机下(SN:" + device.Sn + ")还存留有虚拟机，不允许修改信息。请先销毁虚拟机后再操作！"
 			}
 		} else {
 			//hostname
@@ -1117,7 +1173,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			return
 		} else {
 			status := "pre_install"
-			row.IsSupportVm = "Yes"
+			row.IsSupportVm = "No"
 			if countDevice > 0 {
 				id, err := repo.GetDeviceIdBySn(row.Sn)
 				if err != nil {
@@ -1134,6 +1190,13 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 				_, errLog := repo.UpdateDeviceLogTypeByDeviceIdAndType(id, "install", "install_history")
 				if errLog != nil {
 					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
+					return
+				}
+
+				//delete host server info
+				_, errDeleteHost := repo.DeleteVmHostBySn(deviceOld.Sn)
+				if errDeleteHost != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDeleteHost.Error()})
 					return
 				}
 

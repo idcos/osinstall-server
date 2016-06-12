@@ -1,39 +1,47 @@
 package route
 
 import (
+	"errors"
 	"fmt"
 	"github.com/AlexanderChen1989/go-json-rest/rest"
 	"golang.org/x/net/context"
-	"math/rand"
+	"math"
 	"middleware"
 	"model"
+	"os"
 	"regexp"
 	"server/osinstallserver/util"
 	"strconv"
 	"strings"
-	"time"
 	"utils"
 )
 
-func CreateVmDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+func AddVmDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	repo, ok := middleware.RepoFromContext(ctx)
 	if !ok {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
 
-	type DeviceParam struct {
-		ID uint
-		Sn string
+	logger, ok := middleware.LoggerFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
 	}
 
 	var info struct {
-		Devices        []DeviceParam
-		VmNumber       int
+		Hostname       string
+		Mac            string
+		Ip             string
+		Sn             string
+		NetworkID      uint
 		OsID           uint
+		SystemID       uint
 		CpuCoresNumber uint
 		MemoryCurrent  uint
 		DiskSize       uint
+		UserID         uint
+		AccessToken    string
 	}
 
 	if err := r.DecodeJSONPayload(&info); err != nil {
@@ -41,185 +49,459 @@ func CreateVmDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		return
 	}
 
-	if len(info.Devices) <= 0 {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请选择要操作的物理机!"})
+	info.Hostname = strings.TrimSpace(info.Hostname)
+	info.Mac = strings.TrimSpace(info.Mac)
+	info.Mac = strings.ToLower(info.Mac)
+	info.Ip = strings.TrimSpace(info.Ip)
+	info.Sn = strings.TrimSpace(info.Sn)
+	info.AccessToken = strings.TrimSpace(info.AccessToken)
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+	info.UserID = session.ID
+	if session.ID <= uint(0) {
+		accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+		if errAccessToken != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+			return
+		}
+		info.UserID = accessTokenUser.ID
+		session.ID = accessTokenUser.ID
+		session.Role = accessTokenUser.Role
+	}
+
+	if info.Sn == "" || info.Hostname == "" || info.Ip == "" || info.OsID == uint(0) || info.SystemID == uint(0) {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
 		return
 	}
 
-	for _, v := range info.Devices {
-		if v.ID <= uint(0) && v.Sn != "" {
-			count, err := repo.CountDeviceBySn(v.Sn)
-			if err != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "参数错误!"})
-				return
-			}
-			if count > 0 {
-				v.ID, err = repo.GetDeviceIdBySn(v.Sn)
-				if err != nil {
-					w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "参数错误!"})
-					return
-				}
-			}
-		}
-
-		if v.ID <= uint(0) {
-			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该物理机不存在(SN:" + v.Sn + ")!"})
-			return
-		}
-
-		device, err := repo.GetDeviceById(v.ID)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "参数错误!"})
-			return
-		}
-
-		if device.Status != "success" {
-			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "SN:" + device.Sn + "不能安装虚拟机!"})
-			return
-		}
-	}
-
-	if info.VmNumber <= 0 || info.OsID <= uint(0) {
-		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "虚拟机个数和操作系统版本参数不能为空!", "Content": ""})
+	if info.NetworkID == uint(0) {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "未匹配到网段信息!"})
 		return
 	}
 
-	if info.CpuCoresNumber <= uint(0) {
-		info.CpuCoresNumber = uint(1)
+	if info.CpuCoresNumber <= uint(0) || info.MemoryCurrent <= uint(0) || info.DiskSize <= uint(0) {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "CPU、内存、磁盘参数格式不正确!"})
+		return
 	}
 
-	if info.MemoryCurrent <= uint(0) {
-		info.MemoryCurrent = uint(1024)
+	//match network
+	isValidate, err := regexp.MatchString("^((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)$", info.Ip)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+	if !isValidate {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": info.Ip + "IP格式不正确!"})
+		return
 	}
 
-	if info.DiskSize <= uint(0) {
-		info.MemoryCurrent = uint(60)
+	//check host device
+	count, err := repo.CountDeviceBySn(info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})
+		return
+	}
+	if count <= 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该宿主机不存在(SN:" + info.Sn + ")!"})
+		return
+	}
+	countVmHost, err := repo.CountVmHostBySn(info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})
+		return
+	}
+	if countVmHost <= 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该宿主机没有可用资源(SN:" + info.Sn + ")!"})
+		return
+	}
+	//get host device info
+	device, err := repo.GetDeviceBySn(info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})
+		return
+	}
+	if device.Status != "success" || device.IsSupportVm != "Yes" {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "SN:" + device.Sn + "不能安装虚拟机!"})
+		return
 	}
 
-	//循环安装虚拟机
-	var currentDeviceIndex int
-	currentDeviceIndex = 0
-	fix := time.Now().Format("20060102150405") + fmt.Sprintf("%d", rand.Intn(100))
-	var result []model.VmDevice
-	for i := 0; i < info.VmNumber; i++ {
-		var deviceId uint
-		deviceId = info.Devices[currentDeviceIndex].ID
-		if deviceId <= uint(0) && info.Devices[currentDeviceIndex].Sn != "" {
-			count, err := repo.CountDeviceBySn(info.Devices[currentDeviceIndex].Sn)
-			if err != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "参数错误!"})
-				return
-			}
-			if count > 0 {
-				deviceId, err = repo.GetDeviceIdBySn(info.Devices[currentDeviceIndex].Sn)
-				if err != nil {
-					w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "参数错误!"})
-					return
-				}
-			}
-		}
-
-		if deviceId <= uint(0) {
-			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该物理机不存在(SN:" + info.Devices[currentDeviceIndex].Sn + ")!"})
-			return
-		}
-
-		//deviceId := info.Devices[currentDeviceIndex].ID
-
-		currentDeviceIndex++
-		if currentDeviceIndex >= len(info.Devices) {
-			currentDeviceIndex = 0
-		}
-
-		device, err := repo.GetDeviceById(deviceId)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "参数错误!"})
-			return
-		}
-		ip, err := repo.AssignNewIpByNetworkId(device.NetworkID)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "参数错误!"})
-			return
-		}
-
-		var row model.VmDevice
-		row.DeviceID = deviceId
-		row.Ip = ip
-		row.Hostname = fix + fmt.Sprintf("%d", i)
-		row.Mac = util.CreateNewMacAddress()
-		row.NetworkID = device.NetworkID
-		row.OsID = info.OsID
-		row.CpuCoresNumber = info.CpuCoresNumber
-		row.CpuHotPlug = "No"
-		row.CpuPassthrough = "No"
-		row.CpuTopSockets = 0
-		row.CpuTopCores = 0
-		row.CpuTopThreads = 0
-		row.CpuPinning = ""
-		row.MemoryCurrent = info.MemoryCurrent
-		row.MemoryMax = info.MemoryCurrent
-		row.MemoryKsm = "No"
-		row.DiskType = "raw"
-		row.DiskSize = info.DiskSize
-		row.DiskBusType = "virtio"
-		row.DiskCacheMode = "writeback"
-		row.DiskIoMode = "default"
-		row.NetworkType = "bridge"
-		row.NetworkDeviceType = "virtio"
-		row.DisplayType = "serialPorts"
-		row.DisplayPassword = ""
-		row.DisplayUpdatePassword = "No"
-		row.Status = "pre_install"
-
-		resultAdd, errAdd := repo.AddVmDevice(row.DeviceID,
-			row.Hostname,
-			row.Mac,
-			row.Ip,
-			row.NetworkID,
-			row.OsID,
-			row.CpuCoresNumber,
-			row.CpuHotPlug,
-			row.CpuPassthrough,
-			row.CpuTopSockets,
-			row.CpuTopCores,
-			row.CpuTopThreads,
-			row.CpuPinning,
-			row.MemoryCurrent,
-			row.MemoryMax,
-			row.MemoryKsm,
-			row.DiskType,
-			row.DiskSize,
-			row.DiskBusType,
-			row.DiskCacheMode,
-			row.DiskIoMode,
-			row.NetworkType,
-			row.NetworkDeviceType,
-			row.DisplayType,
-			row.DisplayPassword,
-			row.DisplayUpdatePassword,
-			row.Status)
-		if errAdd != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
-			return
-		}
-
-		result = append(result, resultAdd)
+	vmHost, err := repo.GetVmHostBySn(info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})
+		return
 	}
-	/*
-		count, err := repo.CountVmDeviceByMac(info.Mac)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "参数错误!"})
+	if vmHost.IsAvailable != "Yes" {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该宿主机无法安装虚拟机(SN:" + info.Sn + ")!"})
+		return
+	}
+
+	//check mac
+	countMac, err := repo.CountVmDeviceByMac(info.Mac)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})
+		return
+	}
+	if countMac > 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该Mac地址已存在!"})
+		return
+	}
+
+	//check hostname
+	countHostname, err := repo.CountVmDeviceByHostname(info.Hostname)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})
+		return
+	}
+	if countHostname > 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该主机名已存在!"})
+		return
+	}
+	countDeviceHostname, err := repo.CountDeviceByHostname(info.Hostname)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})
+		return
+	}
+	if countDeviceHostname > 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该主机名已存在(物理机已使用)!"})
+		return
+	}
+
+	//check mac
+	isValidateMac, err := regexp.MatchString("^([0-9a-fA-F]{2})(([/\\s:][0-9a-fA-F]{2}){5})$", info.Mac)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+	if !isValidateMac {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "Mac地址格式不正确!"})
+		return
+	}
+	if strings.Index(info.Mac, "52:54:00") != 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "Mac地址必须以\"52:54:00\"开头!"})
+		return
+	}
+
+	//check ip
+	countIp, err := repo.CountVmDeviceByIp(info.Ip)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})
+		return
+	}
+	if countIp > 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该IP已存在!"})
+		return
+	}
+	countDeviceIp, err := repo.CountDeviceByIp(info.Ip)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})
+		return
+	}
+	if countDeviceIp > 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该IP已存在(物理机已使用)!"})
+		return
+	}
+	if info.NetworkID != device.NetworkID {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "虚拟机和宿主机不在同一网段!"})
+		return
+	}
+
+	//check availability
+	if info.MemoryCurrent >= vmHost.MemoryAvailable {
+		memoryRound := float64(vmHost.MemoryAvailable / 1024)
+		memory := int(math.Floor(memoryRound))
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("宿主机剩余内存不够分配(最大可用 %dG)!", memory)})
+		return
+	}
+	if info.DiskSize >= vmHost.DiskAvailable {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("宿主机剩余磁盘空间不够分配(最大可用 %dG)!", vmHost.DiskAvailable)})
+		return
+	}
+	where := fmt.Sprintf("device_id = %d", device.ID)
+
+	//vnc port
+	maxVncPort, err := repo.GetMaxVncPort(where)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+		return
+	}
+	var vncPort uint
+	if maxVncPort <= uint(0) {
+		vncPort = uint(5900)
+	} else {
+		vncPort = maxVncPort + 1
+	}
+
+	var row model.VmDevice
+	row.DeviceID = device.ID
+	row.Ip = info.Ip
+	row.Hostname = info.Hostname
+	row.Mac = info.Mac
+	row.NetworkID = info.NetworkID
+	row.OsID = info.OsID
+	row.SystemID = info.SystemID
+	row.CpuCoresNumber = info.CpuCoresNumber
+	row.CpuHotPlug = "No"
+	row.CpuPassthrough = "No"
+	row.CpuTopSockets = 0
+	row.CpuTopCores = 0
+	row.CpuTopThreads = 0
+	row.CpuPinning = ""
+	row.MemoryCurrent = info.MemoryCurrent
+	row.MemoryMax = info.MemoryCurrent
+	row.MemoryKsm = "No"
+	row.DiskType = "raw"
+	row.DiskSize = info.DiskSize
+	row.DiskBusType = "virtio"
+	row.DiskCacheMode = "writeback"
+	row.DiskIoMode = "default"
+	row.NetworkType = "bridge"
+	row.NetworkDeviceType = "virtio"
+	row.DisplayType = "serialPorts"
+	row.DisplayPassword = ""
+	row.DisplayUpdatePassword = "No"
+	row.Status = "pre_create"
+	row.VncPort = fmt.Sprintf("%d", vncPort)
+	row.RunStatus = ""
+	row.UserID = info.UserID
+
+	resultAdd, errAdd := repo.AddVmDevice(row.DeviceID,
+		row.Hostname,
+		row.Mac,
+		row.Ip,
+		row.NetworkID,
+		row.OsID,
+		row.SystemID,
+		row.CpuCoresNumber,
+		row.CpuHotPlug,
+		row.CpuPassthrough,
+		row.CpuTopSockets,
+		row.CpuTopCores,
+		row.CpuTopThreads,
+		row.CpuPinning,
+		row.MemoryCurrent,
+		row.MemoryMax,
+		row.MemoryKsm,
+		row.DiskType,
+		row.DiskSize,
+		row.DiskBusType,
+		row.DiskCacheMode,
+		row.DiskIoMode,
+		row.NetworkType,
+		row.NetworkDeviceType,
+		row.DisplayType,
+		row.DisplayPassword,
+		row.DisplayUpdatePassword,
+		row.Status,
+		row.UserID,
+		row.VncPort,
+		row.RunStatus)
+	if errAdd != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errAdd.Error()})
+		return
+	}
+
+	var infoHost *model.VmHost
+	infoHost = vmHost
+	//cpu update
+	//cpu used sum
+	infoHost.CpuUsed, err = repo.GetCpuUsedSum(where)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+		return
+	}
+	cpuAvailable := int(infoHost.CpuSum - infoHost.CpuUsed)
+	if cpuAvailable <= 0 {
+		cpuAvailable = 0
+	}
+	infoHost.CpuAvailable = uint(cpuAvailable)
+	//memory update
+	infoHost.MemoryUsed, err = repo.GetMemoryUsedSum(where)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+		return
+	}
+	memoryAvailable := int(infoHost.MemorySum - infoHost.MemoryUsed)
+	if memoryAvailable <= 0 {
+		memoryAvailable = 0
+	}
+	infoHost.MemoryAvailable = uint(memoryAvailable)
+	//update disk
+	infoHost.DiskUsed, err = repo.GetDiskUsedSum(where)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+		return
+	}
+	diskAvailable := int(infoHost.DiskSum - infoHost.DiskUsed)
+	if diskAvailable < 0 {
+		diskAvailable = 0
+	}
+	infoHost.DiskAvailable = uint(diskAvailable)
+
+	infoHost.VmNum, err = repo.CountVmDeviceByDeviceId(device.ID)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+		return
+	}
+	//update host
+	_, errUpdate := repo.UpdateVmHostCpuMemoryDiskVmNumById(vmHost.ID, infoHost.CpuSum, infoHost.CpuUsed, infoHost.CpuAvailable, infoHost.MemorySum, infoHost.MemoryUsed, infoHost.MemoryAvailable, infoHost.DiskSum, infoHost.DiskUsed, infoHost.DiskAvailable, infoHost.VmNum)
+	if errUpdate != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdate.Error()})
+		return
+	}
+	vmDeviceId := resultAdd.ID
+	//update status
+	_, errUpdateStatus := repo.UpdateVmInstallInfoById(vmDeviceId, "creating", 0)
+	if errUpdateStatus != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdateStatus.Error()})
+		return
+	}
+	//create vm vol
+	errCreateVol := RunCreateVol(ctx, vmDeviceId)
+	var logTitle string
+	var installLog string
+	if errCreateVol != nil {
+		logTitle = "逻辑卷创建失败"
+		installLog = errCreateVol.Error()
+	} else {
+		logTitle = "逻辑卷创建成功"
+		installLog = "逻辑卷创建成功"
+	}
+	_, errAddLog := repo.AddVmDeviceLog(vmDeviceId, logTitle, "install", installLog)
+	if errAddLog != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "数据添加成功，虚拟机创建失败:" + errAddLog.Error()})
+		return
+	}
+	if errCreateVol != nil {
+		//update status
+		_, errUpdateStatus := repo.UpdateVmInstallInfoById(vmDeviceId, "create_failure", 0)
+		if errUpdateStatus != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdateStatus.Error()})
 			return
 		}
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "数据添加成功，虚拟机创建失败:" + errCreateVol.Error()})
+		return
+	}
 
-		if count > 0 {
-			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该Mac已存在，继续填写会覆盖旧的数据!"})
+	//create vm
+	errCreateVm := RunCreateVm(ctx, vmDeviceId)
+	if errCreateVm != nil {
+		logTitle = "虚拟机创建失败"
+		installLog = errCreateVm.Error()
+	} else {
+		logTitle = "虚拟机创建成功"
+		installLog = "虚拟机创建成功"
+	}
+	_, errAddLogVm := repo.AddVmDeviceLog(vmDeviceId, logTitle, "install", installLog)
+	if errAddLogVm != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "数据添加成功，虚拟机创建失败:" + errAddLogVm.Error()})
+		return
+	}
+	if errCreateVm != nil {
+		//update status
+		_, errUpdateStatus := repo.UpdateVmInstallInfoById(vmDeviceId, "create_failure", 0)
+		if errUpdateStatus != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdateStatus.Error()})
+			return
+		}
+		//destroy vol
+		errDestroyVol := RunDestroyVol(ctx, vmDeviceId)
+		var logTitle string
+		var installLog string
+		if errDestroyVol != nil {
+			logTitle = "逻辑卷销毁失败"
+			installLog = errDestroyVol.Error()
 		} else {
-			w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "Mac填写正确!"})
+			logTitle = "逻辑卷销毁成功"
+			installLog = "逻辑卷销毁成功"
 		}
-	*/
-	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功!", "Content": result})
+		_, errAddLogDestory := repo.AddVmDeviceLog(vmDeviceId, logTitle, "install", installLog)
+		if errAddLogDestory != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "数据添加成功，虚拟机创建失败:" + errAddLogDestory.Error()})
+			return
+		}
+		if errDestroyVol != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "数据添加成功，虚拟机创建失败:" + errDestroyVol.Error()})
+			return
+		}
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "数据添加成功，虚拟机创建失败:" + errCreateVm.Error()})
+		return
+	}
 
+	//update status
+	_, errUpdateStatus2 := repo.UpdateVmInstallInfoById(vmDeviceId, "pre_install", 0)
+	if errUpdateStatus2 != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdateStatus2.Error()})
+		return
+	}
+
+	//create pxe file
+	errPxe := CreatePxeFile(ctx, info.Mac)
+	if errPxe != nil {
+		logger.Error("Pxe文件生成失败:" + errPxe.Error())
+	}
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功!", "Content": resultAdd})
+}
+
+func CreatePxeFile(ctx context.Context, mac string) error {
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		return errors.New("内部服务器错误")
+	}
+
+	conf, ok := middleware.ConfigFromContext(ctx)
+	if !ok {
+		return errors.New("内部服务器错误")
+	}
+
+	if conf.OsInstall.PxeConfigDir == "" {
+		return errors.New("Pxe配置文件目录没有指定")
+	}
+
+	var info struct {
+		Mac string
+	}
+
+	info.Mac = strings.TrimSpace(mac)
+	if info.Mac == "" {
+		return errors.New("Mac地址参数不能为空")
+	}
+
+	//mac 大写转为 小写
+	info.Mac = strings.ToLower(info.Mac)
+
+	device, err := repo.GetVmDeviceByMac(info.Mac)
+	if err != nil {
+		return errors.New("该设备不存在")
+	}
+
+	osConfig, err := repo.GetOsConfigById(device.OsID)
+	if err != nil {
+		return errors.New("PXE信息没有配置" + err.Error())
+	}
+
+	//替换占位符
+	osConfig.Pxe = strings.Replace(osConfig.Pxe, "{sn}", info.Mac, -1)
+	osConfig.Pxe = strings.Replace(osConfig.Pxe, "\r\n", "\n", -1)
+
+	pxeFileName := util.GetPxeFileNameByMac(info.Mac)
+	logger, ok := middleware.LoggerFromContext(ctx)
+	if !ok {
+		return errors.New("内部服务器错误")
+	}
+	logger.Debugf("Create pxe file: %s", conf.OsInstall.PxeConfigDir+"/"+pxeFileName)
+
+	errCreatePxeFile := util.CreatePxeFile(conf.OsInstall.PxeConfigDir, pxeFileName, osConfig.Pxe)
+	if errCreatePxeFile != nil {
+		logger.Debugf("配置文件生成失败" + err.Error())
+		return errors.New("配置文件生成失败" + err.Error())
+	}
+
+	return nil
 }
 
 func CreateNewMacAddress(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
@@ -306,6 +588,7 @@ func GetFullVmDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Req
 		NetworkName           string
 		OsID                  uint
 		OsName                string
+		SystemName            string
 		CpuCoresNumber        uint
 		CpuHotPlug            string
 		CpuPassthrough        string
@@ -341,6 +624,7 @@ func GetFullVmDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Req
 	vm.NetworkName = mod.NetworkName
 	vm.OsID = mod.OsID
 	vm.OsName = mod.OsName
+	vm.SystemName = mod.SystemName
 	vm.CpuCoresNumber = mod.CpuCoresNumber
 	vm.CpuHotPlug = mod.CpuHotPlug
 	vm.CpuPassthrough = mod.CpuPassthrough
@@ -507,258 +791,6 @@ func GetVmDeviceListByHostSn(ctx context.Context, w rest.ResponseWriter, r *rest
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
 }
 
-func BatchAddVmDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
-	repo, ok := middleware.RepoFromContext(ctx)
-	fmt.Println(repo)
-	if !ok {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
-		return
-	}
-	var infos []model.VmDevice
-
-	if err := r.DecodeJSONPayload(&infos); err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
-		return
-	}
-
-	//先批量检测传入数据是否有问题
-	for _, info := range infos {
-		info.Hostname = strings.TrimSpace(info.Hostname)
-		info.Ip = strings.TrimSpace(info.Ip)
-		info.Mac = strings.TrimSpace(info.Mac)
-		info.CpuHotPlug = strings.TrimSpace(info.CpuHotPlug)
-		info.CpuPassthrough = strings.TrimSpace(info.CpuPassthrough)
-		info.CpuPinning = strings.TrimSpace(info.CpuPinning)
-		info.MemoryKsm = strings.TrimSpace(info.MemoryKsm)
-		info.DiskType = strings.TrimSpace(info.DiskType)
-		info.DiskBusType = strings.TrimSpace(info.DiskBusType)
-		info.DiskCacheMode = strings.TrimSpace(info.DiskCacheMode)
-		info.DiskIoMode = strings.TrimSpace(info.DiskIoMode)
-		info.NetworkType = strings.TrimSpace(info.NetworkType)
-		info.NetworkDeviceType = strings.TrimSpace(info.NetworkDeviceType)
-		info.DisplayType = strings.TrimSpace(info.DisplayType)
-		info.DisplayPassword = strings.TrimSpace(info.DisplayPassword)
-		info.DisplayUpdatePassword = strings.TrimSpace(info.DisplayUpdatePassword)
-
-		if info.Hostname == "" || info.Ip == "" || info.Mac == "" || info.DiskType == "" ||
-			info.NetworkType == "" || info.NetworkDeviceType == "" || info.DisplayType == "" {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
-			return
-		}
-
-		if info.DeviceID <= uint(0) || info.OsID <= uint(0) || info.CpuCoresNumber <= uint(0) || info.MemoryCurrent <= uint(0) ||
-			info.MemoryMax <= uint(0) || info.DiskSize <= uint(0) {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
-			return
-		}
-
-		count, err := repo.CountVmDeviceByMac(info.Mac)
-		if count > 0 {
-			vmDeviceId, err := repo.GetVmDeviceIdByMac(info.Mac)
-			if err != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-				return
-			}
-
-			count, err := repo.CountVmDeviceByHostnameAndId(info.Hostname, vmDeviceId)
-			if err != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-				return
-			}
-
-			if count > 0 {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": info.Hostname + " 该主机名已存在!"})
-				return
-			}
-
-			countIp, err := repo.CountVmDeviceByIpAndId(info.Ip, vmDeviceId)
-			if err != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-				return
-			}
-
-			if countIp > 0 {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": info.Ip + " 该IP已存在!"})
-				return
-			}
-		} else {
-			count, err := repo.CountVmDeviceByHostname(info.Hostname)
-			if err != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-				return
-			}
-
-			if count > 0 {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": info.Hostname + " 该主机名已存在!"})
-				return
-			}
-
-			countIp, err := repo.CountVmDeviceByIp(info.Ip)
-			if err != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-				return
-			}
-
-			if countIp > 0 {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": info.Ip + " 该IP已存在!"})
-				return
-			}
-		}
-
-		//物理机是否使用
-		countHostname, err := repo.CountDeviceByHostname(info.Hostname)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-			return
-		}
-
-		if countHostname > 0 {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": info.Hostname + " 该主机名已存在!"})
-			return
-		}
-
-		countIp, err := repo.CountDeviceByIp(info.Ip)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-			return
-		}
-
-		if countIp > 0 {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": info.Ip + " 该IP已存在!"})
-			return
-		}
-
-		//匹配网络
-		isValidate, err := regexp.MatchString("^((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)$", info.Ip)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
-			return
-		}
-
-		if !isValidate {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": info.Ip + "IP格式不正确!"})
-			return
-		}
-
-		modelIp, err := repo.GetIpByIp(info.Ip)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": info.Ip + "未匹配到网段!"})
-			return
-		}
-
-		_, errNetwork := repo.GetNetworkById(modelIp.NetworkID)
-		if errNetwork != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": info.Ip + "未匹配到网段!"})
-			return
-		}
-	}
-
-	for _, info := range infos {
-		info.Hostname = strings.TrimSpace(info.Hostname)
-		info.Ip = strings.TrimSpace(info.Ip)
-		info.Mac = strings.TrimSpace(info.Mac)
-		info.CpuHotPlug = strings.TrimSpace(info.CpuHotPlug)
-		info.CpuPassthrough = strings.TrimSpace(info.CpuPassthrough)
-		info.CpuPinning = strings.TrimSpace(info.CpuPinning)
-		info.MemoryKsm = strings.TrimSpace(info.MemoryKsm)
-		info.DiskType = strings.TrimSpace(info.DiskType)
-		info.DiskBusType = strings.TrimSpace(info.DiskBusType)
-		info.DiskCacheMode = strings.TrimSpace(info.DiskCacheMode)
-		info.DiskIoMode = strings.TrimSpace(info.DiskIoMode)
-		info.NetworkType = strings.TrimSpace(info.NetworkType)
-		info.NetworkDeviceType = strings.TrimSpace(info.NetworkDeviceType)
-		info.DisplayType = strings.TrimSpace(info.DisplayType)
-		info.DisplayPassword = strings.TrimSpace(info.DisplayPassword)
-		info.DisplayUpdatePassword = strings.TrimSpace(info.DisplayUpdatePassword)
-		info.Status = "pre_install"
-		//Mac已存在的情况下，要覆盖原数据
-		count, err := repo.CountVmDeviceByMac(info.Mac)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-			return
-		}
-
-		//覆盖
-		if count > 0 {
-			id, err := repo.GetVmDeviceIdByMac(info.Mac)
-			if err != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-				return
-			}
-
-			_, errUpdate := repo.UpdateVmDeviceById(id,
-				info.DeviceID,
-				info.Hostname,
-				info.Mac,
-				info.Ip,
-				info.NetworkID,
-				info.OsID,
-				info.CpuCoresNumber,
-				info.CpuHotPlug,
-				info.CpuPassthrough,
-				info.CpuTopSockets,
-				info.CpuTopCores,
-				info.CpuTopThreads,
-				info.CpuPinning,
-				info.MemoryCurrent,
-				info.MemoryMax,
-				info.MemoryKsm,
-				info.DiskType,
-				info.DiskSize,
-				info.DiskBusType,
-				info.DiskCacheMode,
-				info.DiskIoMode,
-				info.NetworkType,
-				info.NetworkDeviceType,
-				info.DisplayType,
-				info.DisplayPassword,
-				info.DisplayUpdatePassword,
-				info.Status)
-
-			if errUpdate != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdate.Error()})
-				return
-			}
-
-		} else {
-			_, err := repo.AddVmDevice(info.DeviceID,
-				info.Hostname,
-				info.Mac,
-				info.Ip,
-				info.NetworkID,
-				info.OsID,
-				info.CpuCoresNumber,
-				info.CpuHotPlug,
-				info.CpuPassthrough,
-				info.CpuTopSockets,
-				info.CpuTopCores,
-				info.CpuTopThreads,
-				info.CpuPinning,
-				info.MemoryCurrent,
-				info.MemoryMax,
-				info.MemoryKsm,
-				info.DiskType,
-				info.DiskSize,
-				info.DiskBusType,
-				info.DiskCacheMode,
-				info.DiskIoMode,
-				info.NetworkType,
-				info.NetworkDeviceType,
-				info.DisplayType,
-				info.DisplayPassword,
-				info.DisplayUpdatePassword,
-				info.Status)
-			if err != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
-				return
-			}
-		}
-
-	}
-
-	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
-}
-
 //重装
 func BatchReInstallVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	repo, ok := middleware.RepoFromContext(ctx)
@@ -766,8 +798,23 @@ func BatchReInstallVm(ctx context.Context, w rest.ResponseWriter, r *rest.Reques
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
+	logger, ok := middleware.LoggerFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
 	var infos []struct {
-		ID uint
+		ID          uint
+		AccessToken string
+		UserID      uint
 	}
 
 	if err := r.DecodeJSONPayload(&infos); err != nil {
@@ -776,13 +823,152 @@ func BatchReInstallVm(ctx context.Context, w rest.ResponseWriter, r *rest.Reques
 	}
 
 	for _, info := range infos {
-		_, err := repo.ReInstallVmDeviceById(info.ID)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		} else {
+			info.UserID = session.ID
+		}
+
+		vmDevice, errInfo := repo.GetVmDeviceById(info.ID)
+		if errInfo != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errInfo.Error()})
 			return
 		}
-	}
+		if session.Role != "Administrator" && vmDevice.UserID != info.UserID {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "您无权操作其他人的设备!(Mac:" + vmDevice.Mac + ")"})
+			return
+		}
+		//destroy vm
+		errRun := RunDestroyVm(ctx, vmDevice.ID)
+		var logTitle string
+		var installLog string
+		if errRun != nil {
+			logTitle = "虚拟机销毁失败"
+			installLog = errRun.Error()
+		} else {
+			logTitle = "虚拟机销毁成功"
+			installLog = "虚拟机销毁成功"
+		}
+		_, errAddLog := repo.AddVmDeviceLog(vmDevice.ID, logTitle, "install", installLog)
+		if errAddLog != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+			return
+		}
+		if errRun != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errRun.Error()})
+			return
+		}
+		//update status
+		_, errUpdateStatusCreate := repo.UpdateVmInstallInfoById(vmDevice.ID, "pre_create", 0)
+		if errUpdateStatusCreate != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdateStatusCreate.Error()})
+			return
+		}
+		//update run status
+		_, errUpdateRunStatus := repo.UpdateVmRunStatusById(vmDevice.ID, "")
+		if errUpdateRunStatus != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdateRunStatus.Error()})
+			return
+		}
+		//destroy vol
+		errDestroyVol := RunDestroyVol(ctx, vmDevice.ID)
+		if errDestroyVol != nil {
+			logTitle = "逻辑卷销毁失败"
+			installLog = errDestroyVol.Error()
+		} else {
+			logTitle = "逻辑卷销毁成功"
+			installLog = "逻辑卷销毁成功"
+		}
+		_, errAddLogDestory := repo.AddVmDeviceLog(vmDevice.ID, logTitle, "install", installLog)
+		if errAddLogDestory != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLogDestory.Error()})
+			return
+		}
+		if errDestroyVol != nil {
+			//update status
+			_, errUpdateStatusCreate := repo.UpdateVmInstallInfoById(vmDevice.ID, "create_failure", 0)
+			if errUpdateStatusCreate != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdateStatusCreate.Error()})
+				return
+			}
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDestroyVol.Error()})
+			return
+		}
+		//update status
+		_, errUpdateStatus := repo.UpdateVmInstallInfoById(vmDevice.ID, "creating", 0)
+		if errUpdateStatus != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdateStatus.Error()})
+			return
+		}
+		//create vol
+		errCreateVol := RunCreateVol(ctx, vmDevice.ID)
+		if errCreateVol != nil {
+			logTitle = "逻辑卷创建失败"
+			installLog = errCreateVol.Error()
+		} else {
+			logTitle = "逻辑卷创建成功"
+			installLog = "逻辑卷创建成功"
+		}
+		_, errAddLogCreateVol := repo.AddVmDeviceLog(vmDevice.ID, logTitle, "install", installLog)
+		if errAddLogCreateVol != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLogCreateVol.Error()})
+			return
+		}
+		if errCreateVol != nil {
+			//update status
+			_, errUpdateStatus := repo.UpdateVmInstallInfoById(vmDevice.ID, "create_failure", 0)
+			if errUpdateStatus != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdateStatus.Error()})
+				return
+			}
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCreateVol.Error()})
+			return
+		}
+		//create vm
+		errRunCreate := RunCreateVm(ctx, vmDevice.ID)
+		if errRunCreate != nil {
+			logTitle = "虚拟机创建失败"
+			installLog = errRunCreate.Error()
+		} else {
+			logTitle = "虚拟机创建成功"
+			installLog = "虚拟机创建成功"
+		}
+		_, errAddLogCreate := repo.AddVmDeviceLog(vmDevice.ID, logTitle, "install", installLog)
+		if errAddLogCreate != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLogCreate.Error()})
+			return
+		}
+		if errRunCreate != nil {
+			//update status
+			_, errUpdateStatusCreate := repo.UpdateVmInstallInfoById(vmDevice.ID, "create_failure", 0)
+			if errUpdateStatusCreate != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdateStatusCreate.Error()})
+				return
+			}
 
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errRunCreate.Error()})
+			return
+		}
+		//update status
+		_, errUpdateStatus2 := repo.UpdateVmInstallInfoById(vmDevice.ID, "pre_install", 0)
+		if errUpdateStatus2 != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdateStatus2.Error()})
+			return
+		}
+
+		//create pxe file
+		errPxe := CreatePxeFile(ctx, vmDevice.Mac)
+		if errPxe != nil {
+			logger.Error("Pxe文件生成失败:" + errPxe.Error())
+		}
+	}
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
 }
 
@@ -792,8 +978,23 @@ func BatchDeleteVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
+	conf, ok := middleware.ConfigFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
 	var infos []struct {
-		ID uint
+		ID          uint
+		AccessToken string
+		UserID      uint
 	}
 
 	if err := r.DecodeJSONPayload(&infos); err != nil {
@@ -802,10 +1003,365 @@ func BatchDeleteVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	}
 
 	for _, info := range infos {
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		} else {
+			info.UserID = session.ID
+		}
 
-		_, errDevice := repo.DeleteVmDeviceById(info.ID)
-		if errDevice != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDevice.Error()})
+		vmDevice, errInfo := repo.GetVmDeviceById(info.ID)
+		if errInfo != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errInfo.Error()})
+			return
+		}
+		if session.Role != "Administrator" && vmDevice.UserID != info.UserID {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "您无权操作其他人的设备!(Mac:" + vmDevice.Mac + ")"})
+			return
+		}
+
+		//get host device info
+		device, err := repo.GetDeviceById(vmDevice.DeviceID)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "宿主机不存在!(ID:" + fmt.Sprintf("%d", vmDevice.DeviceID) + ")"})
+			return
+		}
+
+		//delete vol
+		if vmDevice.Status != "pre_create" && vmDevice.Status != "create_failure" {
+			errDestoryVm := RunDestroyVm(ctx, vmDevice.ID)
+			if errDestoryVm != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "虚拟机销毁失败:" + errDestoryVm.Error()})
+				return
+			}
+
+			errDestoryVol := RunDestroyVol(ctx, vmDevice.ID)
+			if errDestoryVol != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "逻辑卷销毁失败:" + errDestoryVol.Error()})
+				return
+			}
+		}
+
+		//remove pxe config file
+		pxeFileName := util.GetPxeFileNameByMac(vmDevice.Mac)
+		confDir := conf.OsInstall.PxeConfigDir
+		if util.FileExist(confDir + "/" + pxeFileName) {
+			err := os.Remove(confDir + "/" + pxeFileName)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+				return
+			}
+		}
+
+		//delete vm device
+		_, errDelete := repo.DeleteVmDeviceById(info.ID)
+		if errDelete != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDelete.Error()})
+			return
+		}
+
+		//delete vm device log
+		_, errDeleteLog := repo.DeleteVmDeviceLogByDeviceID(vmDevice.ID)
+		if errDeleteLog != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDeleteLog.Error()})
+			return
+		}
+
+		//update host resource info
+		//get host info
+		vmHost, err := repo.GetVmHostBySn(device.Sn)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})
+			return
+		}
+		//condition
+		where := fmt.Sprintf("device_id = %d", device.ID)
+		var infoHost *model.VmHost
+		infoHost = vmHost
+		//cpu update
+		//cpu used sum
+		infoHost.CpuUsed, err = repo.GetCpuUsedSum(where)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+			return
+		}
+		cpuAvailable := int(infoHost.CpuSum - infoHost.CpuUsed)
+		if cpuAvailable <= 0 {
+			cpuAvailable = 0
+		}
+		infoHost.CpuAvailable = uint(cpuAvailable)
+		//memory update
+		infoHost.MemoryUsed, err = repo.GetMemoryUsedSum(where)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+			return
+		}
+		memoryAvailable := int(infoHost.MemorySum - infoHost.MemoryUsed)
+		if memoryAvailable <= 0 {
+			memoryAvailable = 0
+		}
+		infoHost.MemoryAvailable = uint(memoryAvailable)
+		//update disk
+		infoHost.DiskUsed, err = repo.GetDiskUsedSum(where)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+			return
+		}
+		diskAvailable := int(infoHost.DiskSum - infoHost.DiskUsed)
+		if diskAvailable < 0 {
+			diskAvailable = 0
+		}
+		infoHost.DiskAvailable = uint(diskAvailable)
+
+		infoHost.VmNum, err = repo.CountVmDeviceByDeviceId(device.ID)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+			return
+		}
+		//update host resource info
+		_, errUpdate := repo.UpdateVmHostCpuMemoryDiskVmNumById(vmHost.ID, infoHost.CpuSum, infoHost.CpuUsed, infoHost.CpuAvailable, infoHost.MemorySum, infoHost.MemoryUsed, infoHost.MemoryAvailable, infoHost.DiskSum, infoHost.DiskUsed, infoHost.DiskAvailable, infoHost.VmNum)
+		if errUpdate != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdate.Error()})
+			return
+		}
+	}
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
+}
+
+func BatchStartVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	var infos []struct {
+		ID          uint
+		AccessToken string
+		UserID      uint
+	}
+
+	if err := r.DecodeJSONPayload(&infos); err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
+		return
+	}
+
+	for _, info := range infos {
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		} else {
+			info.UserID = session.ID
+		}
+
+		vmDevice, errInfo := repo.GetVmDeviceById(info.ID)
+		if errInfo != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errInfo.Error()})
+			return
+		}
+		if session.Role != "Administrator" && vmDevice.UserID != info.UserID {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "您无权操作其他人的设备!(Mac:" + vmDevice.Mac + ")"})
+			return
+		}
+
+		if vmDevice.Status != "success" {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备未完成安装，无法启动!(主机名:" + vmDevice.Hostname + ")"})
+			return
+		}
+
+		errRun := RunStartVm(ctx, vmDevice.ID)
+		//log
+		var logTitle string
+		var installLog string
+		if errRun != nil {
+			logTitle = "虚拟机启动失败"
+			installLog = errRun.Error()
+		} else {
+			logTitle = "虚拟机启动成功"
+			installLog = "虚拟机启动成功"
+		}
+		_, errAddLog := repo.AddVmDeviceLog(vmDevice.ID, logTitle, "operate", installLog)
+		if errAddLog != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+			return
+		}
+		if errRun != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errRun.Error()})
+			return
+		}
+	}
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
+}
+
+func BatchStopVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	var infos []struct {
+		ID          uint
+		AccessToken string
+		UserID      uint
+	}
+
+	if err := r.DecodeJSONPayload(&infos); err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
+		return
+	}
+
+	for _, info := range infos {
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		} else {
+			info.UserID = session.ID
+		}
+
+		vmDevice, errInfo := repo.GetVmDeviceById(info.ID)
+		if errInfo != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errInfo.Error()})
+			return
+		}
+		if session.Role != "Administrator" && vmDevice.UserID != info.UserID {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "您无权操作其他人的设备!(Mac:" + vmDevice.Mac + ")"})
+			return
+		}
+
+		if vmDevice.Status != "success" {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备未完成安装，无法停止!(主机名:" + vmDevice.Hostname + ")"})
+			return
+		}
+
+		errRun := RunStopVm(ctx, vmDevice.ID)
+		//log
+		var logTitle string
+		var installLog string
+		if errRun != nil {
+			logTitle = "虚拟机停止失败"
+			installLog = errRun.Error()
+		} else {
+			logTitle = "虚拟机停止成功"
+			installLog = "虚拟机停止成功"
+		}
+		_, errAddLog := repo.AddVmDeviceLog(vmDevice.ID, logTitle, "operate", installLog)
+		if errAddLog != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+			return
+		}
+		if errRun != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errRun.Error()})
+			return
+		}
+	}
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
+}
+
+func BatchReStartVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	var infos []struct {
+		ID          uint
+		AccessToken string
+		UserID      uint
+	}
+
+	if err := r.DecodeJSONPayload(&infos); err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误"})
+		return
+	}
+
+	for _, info := range infos {
+		if session.ID <= uint(0) {
+			accessTokenUser, errAccessToken := VerifyAccessToken(info.AccessToken, ctx, false)
+			if errAccessToken != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAccessToken.Error()})
+				return
+			}
+			info.UserID = accessTokenUser.ID
+			session.ID = accessTokenUser.ID
+			session.Role = accessTokenUser.Role
+		} else {
+			info.UserID = session.ID
+		}
+
+		vmDevice, errInfo := repo.GetVmDeviceById(info.ID)
+		if errInfo != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errInfo.Error()})
+			return
+		}
+		if session.Role != "Administrator" && vmDevice.UserID != info.UserID {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "您无权操作其他人的设备!(Mac:" + vmDevice.Mac + ")"})
+			return
+		}
+
+		if vmDevice.Status != "success" {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备未完成安装，无法重启!(主机名:" + vmDevice.Hostname + ")"})
+			return
+		}
+
+		errRun := RunReStartVm(ctx, vmDevice.ID)
+		//log
+		var logTitle string
+		var installLog string
+		if errRun != nil {
+			logTitle = "虚拟机重启失败"
+			installLog = errRun.Error()
+		} else {
+			logTitle = "虚拟机重启成功"
+			installLog = "虚拟机重启成功"
+		}
+		_, errAddLog := repo.AddVmDeviceLog(vmDevice.ID, logTitle, "operate", installLog)
+		if errAddLog != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+			return
+		}
+		if errRun != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errRun.Error()})
 			return
 		}
 	}
@@ -830,18 +1386,18 @@ func ValidateMac(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	if info.Mac == "" {
-		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "Mac参数不能为空!", "Content": ""})
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "Mac参数不能为空!", "Content": ""})
 		return
 	}
 
 	count, err := repo.CountVmDeviceByMac(info.Mac)
 	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "参数错误!"})
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误!"})
 		return
 	}
 
 	if count > 0 {
-		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该Mac已存在，继续填写会覆盖旧的数据!"})
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该Mac已存在，继续填写会覆盖旧的数据!"})
 	} else {
 		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "Mac填写正确!"})
 	}

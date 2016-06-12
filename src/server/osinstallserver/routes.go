@@ -93,7 +93,6 @@ func init() {
 
 	//VM install
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/createNewMacAddress", route.CreateNewMacAddress))
-	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchAdd", route.BatchAddVmDevice))
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/list", route.GetVmDeviceList))
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/view", route.GetVmDeviceById))
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/viewFull", route.GetFullVmDeviceById))
@@ -101,8 +100,15 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/validateMac", route.ValidateMac))
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchReInstallVm", route.BatchReInstallVm))
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchDeleteVm", route.BatchDeleteVm))
-	routes = append(routes, rest.Post("/api/osinstall/v1/vm/create", route.CreateVmDevice))
+	routes = append(routes, rest.Post("/api/osinstall/v1/vm/add", route.AddVmDevice))
 	routes = append(routes, rest.Get("/api/osinstall/v1/vm/getListByHostSn", route.GetVmDeviceListByHostSn))
+	routes = append(routes, rest.Post("/api/osinstall/v1/vm/host/list", route.GetVmHostList))
+	routes = append(routes, rest.Post("/api/osinstall/v1/vm/host/viewBySn", route.GetVmHostBySn))
+	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchStart", route.BatchStartVm))
+	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchStop", route.BatchStopVm))
+	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchReStart", route.BatchReStartVm))
+	//vm device log
+	routes = append(routes, rest.Post("/api/osinstall/v1/vm/device/log/list", route.GetVmDeviceLogByDeviceIdAndType))
 
 	//Scan device
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/scan/list", route.GetScanDeviceList))

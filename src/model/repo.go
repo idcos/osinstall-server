@@ -26,4 +26,6 @@ type Repo interface {
 	IDeviceInstallCallback
 	IDhcpSubnet
 	IPlatformConfig
+	IVmHost
+	IVmDeviceLog
 }

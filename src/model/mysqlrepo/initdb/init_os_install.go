@@ -28,6 +28,8 @@ var osInstallTables = []interface{}{
 	&model.DeviceInstallCallback{},
 	&model.DhcpSubnet{},
 	&model.PlatformConfig{},
+	&model.VmHost{},
+	&model.VmDeviceLog{},
 }
 
 func InitOsInstallTables(db *gorm.DB, conf *config.Config) error {

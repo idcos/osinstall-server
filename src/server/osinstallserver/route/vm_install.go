@@ -438,6 +438,13 @@ func AddVmDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
+	//update run status
+	_, errUpdateRunStatus := repo.UpdateVmRunStatusById(vmDeviceId, "running")
+	if errUpdateRunStatus != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdateRunStatus.Error()})
+		return
+	}
+
 	//create pxe file
 	errPxe := CreatePxeFile(ctx, info.Mac)
 	if errPxe != nil {
@@ -609,6 +616,7 @@ func GetFullVmDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Req
 		DisplayPassword       string
 		DisplayUpdatePassword string
 		Status                string
+		RunStatus             string
 		VncPort               string
 		CreatedAt             utils.ISOTime
 		UpdatedAt             utils.ISOTime
@@ -645,6 +653,7 @@ func GetFullVmDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Req
 	vm.DisplayType = mod.DisplayType
 	vm.DisplayPassword = mod.DisplayPassword
 	vm.DisplayUpdatePassword = mod.DisplayUpdatePassword
+	vm.RunStatus = mod.RunStatus
 	vm.Status = mod.Status
 	vm.VncPort = mod.VncPort
 
@@ -964,6 +973,13 @@ func BatchReInstallVm(ctx context.Context, w rest.ResponseWriter, r *rest.Reques
 			return
 		}
 
+		//update run status
+		_, errUpdateRunStatus2 := repo.UpdateVmRunStatusById(vmDevice.ID, "running")
+		if errUpdateRunStatus2 != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdateRunStatus2.Error()})
+			return
+		}
+
 		//create pxe file
 		errPxe := CreatePxeFile(ctx, vmDevice.Mac)
 		if errPxe != nil {
@@ -1211,6 +1227,12 @@ func BatchStartVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errRun.Error()})
 			return
 		}
+		//update run status
+		_, errUpdateRunStatus := repo.UpdateVmRunStatusById(vmDevice.ID, "running")
+		if errUpdateRunStatus != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdateRunStatus.Error()})
+			return
+		}
 	}
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
@@ -1291,6 +1313,13 @@ func BatchStopVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errRun.Error()})
 			return
 		}
+
+		//update run status
+		_, errUpdateRunStatus := repo.UpdateVmRunStatusById(vmDevice.ID, "stop")
+		if errUpdateRunStatus != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdateRunStatus.Error()})
+			return
+		}
 	}
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
@@ -1369,6 +1398,13 @@ func BatchReStartVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		}
 		if errRun != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errRun.Error()})
+			return
+		}
+
+		//update run status
+		_, errUpdateRunStatus := repo.UpdateVmRunStatusById(vmDevice.ID, "running")
+		if errUpdateRunStatus != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdateRunStatus.Error()})
 			return
 		}
 	}

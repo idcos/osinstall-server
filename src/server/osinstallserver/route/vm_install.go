@@ -347,7 +347,7 @@ func AddVmDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 	//update host
-	_, errUpdate := repo.UpdateVmHostCpuMemoryDiskVmNumById(vmHost.ID, infoHost.CpuSum, infoHost.CpuUsed, infoHost.CpuAvailable, infoHost.MemorySum, infoHost.MemoryUsed, infoHost.MemoryAvailable, infoHost.DiskSum, infoHost.DiskUsed, infoHost.DiskAvailable, infoHost.VmNum)
+	_, errUpdate := repo.UpdateVmHostCpuMemoryDiskVmNumById(vmHost.ID, infoHost.CpuSum, infoHost.CpuUsed, infoHost.CpuAvailable, infoHost.MemorySum, infoHost.MemoryUsed, infoHost.MemoryAvailable, infoHost.DiskSum, infoHost.DiskUsed, infoHost.DiskAvailable, infoHost.VmNum, infoHost.IsAvailable)
 	if errUpdate != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdate.Error()})
 		return
@@ -1126,7 +1126,7 @@ func BatchDeleteVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 			return
 		}
 		//update host resource info
-		_, errUpdate := repo.UpdateVmHostCpuMemoryDiskVmNumById(vmHost.ID, infoHost.CpuSum, infoHost.CpuUsed, infoHost.CpuAvailable, infoHost.MemorySum, infoHost.MemoryUsed, infoHost.MemoryAvailable, infoHost.DiskSum, infoHost.DiskUsed, infoHost.DiskAvailable, infoHost.VmNum)
+		_, errUpdate := repo.UpdateVmHostCpuMemoryDiskVmNumById(vmHost.ID, infoHost.CpuSum, infoHost.CpuUsed, infoHost.CpuAvailable, infoHost.MemorySum, infoHost.MemoryUsed, infoHost.MemoryAvailable, infoHost.DiskSum, infoHost.DiskUsed, infoHost.DiskAvailable, infoHost.VmNum, infoHost.IsAvailable)
 		if errUpdate != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdate.Error()})
 			return

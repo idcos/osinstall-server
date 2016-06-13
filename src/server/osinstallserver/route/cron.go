@@ -24,7 +24,7 @@ func CloudBootCron(conf *config.Config, logger logger.Logger, repo model.Repo) {
 		InitBootOSIPForScanDeviceListProcess(logger, repo)
 	}, "InitBootOSIPForScanDeviceListProcessTask")
 	//update vm host resource
-	c.AddFunc("0 1 */3 * * *", func() {
+	c.AddFunc("0 1 1 * * *", func() {
 		UpdateVmHostResource(logger, repo, conf)
 	}, "UpdateVmHostResourceTask")
 	//start
@@ -298,7 +298,7 @@ func UpdateVmHostResource(logger logger.Logger, repo model.Repo, conf *config.Co
 		}
 		if count > 0 {
 			//update host
-			_, errUpdate := repo.UpdateVmHostCpuMemoryDiskVmNumById(infoHost.ID, infoHost.CpuSum, infoHost.CpuUsed, infoHost.CpuAvailable, infoHost.MemorySum, infoHost.MemoryUsed, infoHost.MemoryAvailable, infoHost.DiskSum, infoHost.DiskUsed, infoHost.DiskAvailable, infoHost.VmNum)
+			_, errUpdate := repo.UpdateVmHostCpuMemoryDiskVmNumById(infoHost.ID, infoHost.CpuSum, infoHost.CpuUsed, infoHost.CpuAvailable, infoHost.MemorySum, infoHost.MemoryUsed, infoHost.MemoryAvailable, infoHost.DiskSum, infoHost.DiskUsed, infoHost.DiskAvailable, infoHost.VmNum, infoHost.IsAvailable)
 			if errUpdate != nil {
 				logger.Errorf("error:%s", errUpdate.Error())
 				continue

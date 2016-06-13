@@ -17,9 +17,9 @@ func (repo *MySQLRepo) UpdateVmHostById(id uint, cpuSum uint, cpuUsed uint, cpuA
 	return &mod, err
 }
 
-func (repo *MySQLRepo) UpdateVmHostCpuMemoryDiskVmNumById(id uint, cpuSum uint, cpuUsed uint, cpuAvailable uint, memorySum uint, memoryUsed uint, memoryAvailable uint, diskSum uint, diskUsed uint, diskAvailable uint, vmNum uint) (*model.VmHost, error) {
-	mod := model.VmHost{CpuSum: cpuSum, CpuUsed: cpuUsed, CpuAvailable: cpuAvailable, MemorySum: memorySum, MemoryUsed: memoryUsed, MemoryAvailable: memoryAvailable, DiskSum: diskSum, DiskUsed: diskUsed, DiskAvailable: diskAvailable, VmNum: vmNum}
-	err := repo.db.Unscoped().First(&mod, id).Update("cpu_sum", cpuSum).Update("cpu_used", cpuUsed).Update("cpu_available", cpuAvailable).Update("memory_sum", memorySum).Update("memory_used", memoryUsed).Update("memory_available", memoryAvailable).Update("disk_sum", diskSum).Update("disk_used", diskUsed).Update("disk_available", diskAvailable).Update("vm_num", vmNum).Error
+func (repo *MySQLRepo) UpdateVmHostCpuMemoryDiskVmNumById(id uint, cpuSum uint, cpuUsed uint, cpuAvailable uint, memorySum uint, memoryUsed uint, memoryAvailable uint, diskSum uint, diskUsed uint, diskAvailable uint, vmNum uint, isAvailable string) (*model.VmHost, error) {
+	mod := model.VmHost{CpuSum: cpuSum, CpuUsed: cpuUsed, CpuAvailable: cpuAvailable, MemorySum: memorySum, MemoryUsed: memoryUsed, MemoryAvailable: memoryAvailable, DiskSum: diskSum, DiskUsed: diskUsed, DiskAvailable: diskAvailable, VmNum: vmNum, IsAvailable: isAvailable}
+	err := repo.db.Unscoped().First(&mod, id).Update("cpu_sum", cpuSum).Update("cpu_used", cpuUsed).Update("cpu_available", cpuAvailable).Update("memory_sum", memorySum).Update("memory_used", memoryUsed).Update("memory_available", memoryAvailable).Update("disk_sum", diskSum).Update("disk_used", diskUsed).Update("disk_available", diskAvailable).Update("vm_num", vmNum).Update("is_available", isAvailable).Error
 	return &mod, err
 }
 

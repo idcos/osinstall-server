@@ -788,7 +788,7 @@ type IVmHost interface {
 	GetVmHostListWithPage(Limit uint, Offset uint, Where string) ([]VmHostFull, error)
 	GetVmHostById(Id uint) (*VmHost, error)
 	UpdateVmHostById(Id uint, CpuSum uint, CpuUsed uint, CpuAvailable uint, MemorySum uint, MemoryUsed uint, MemoryAvailable uint, DiskSum uint, DiskUsed uint, DiskAvailable uint, IsAvailable string, Remark string, VmNum uint) (*VmHost, error)
-	UpdateVmHostCpuMemoryDiskVmNumById(Id uint, CpuSum uint, CpuUsed uint, CpuAvailable uint, MemorySum uint, MemoryUsed uint, MemoryAvailable uint, DiskSum uint, DiskUsed uint, DiskAvailable uint, VmNum uint) (*VmHost, error)
+	UpdateVmHostCpuMemoryDiskVmNumById(Id uint, CpuSum uint, CpuUsed uint, CpuAvailable uint, MemorySum uint, MemoryUsed uint, MemoryAvailable uint, DiskSum uint, DiskUsed uint, DiskAvailable uint, VmNum uint, IsAvailable string) (*VmHost, error)
 	DeleteVmHostById(Id uint) (*VmHost, error)
 	DeleteVmHostBySn(Sn string) (*VmHost, error)
 	AddVmHost(Sn string, CpuSum uint, CpuUsed uint, CpuAvailable uint, MemorySum uint, MemoryUsed uint, MemoryAvailable uint, DiskSum uint, DiskUsed uint, DiskAvailable uint, IsAvailable string, Remark string, VmNum uint) (*VmHost, error)

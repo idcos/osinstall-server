@@ -60,13 +60,13 @@ func (repo *MySQLRepo) CountDeviceLog() (uint, error) {
 
 func (repo *MySQLRepo) GetDeviceLogListByDeviceID(deviceID uint, order string) ([]model.DeviceLog, error) {
 	var mod []model.DeviceLog
-	err := repo.db.Unscoped().Where("device_id = ?", deviceID).Order(order).Find(&mod).Error
+	err := repo.db.Unscoped().Limit(1000).Where("device_id = ?", deviceID).Order(order).Find(&mod).Error
 	return mod, err
 }
 
 func (repo *MySQLRepo) GetDeviceLogListByDeviceIDAndType(deviceID uint, logType string, order string, maxId uint) ([]model.DeviceLog, error) {
 	var mod []model.DeviceLog
-	err := repo.db.Unscoped().Where("id > ? and device_id = ? and type = ?", maxId, deviceID, logType).Order(order).Find(&mod).Error
+	err := repo.db.Unscoped().Limit(1000).Where("id > ? and device_id = ? and type = ?", maxId, deviceID, logType).Order(order).Find(&mod).Error
 	return mod, err
 }
 

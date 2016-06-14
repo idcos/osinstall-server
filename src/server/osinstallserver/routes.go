@@ -107,6 +107,7 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchStart", route.BatchStartVm))
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchStop", route.BatchStopVm))
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/batchReStart", route.BatchReStartVm))
+	routes = append(routes, rest.Get("/api/osinstall/v1/vm/host/collectAndUpdate", route.CollectAndUpdateVmHostResource))
 	//vm device log
 	routes = append(routes, rest.Post("/api/osinstall/v1/vm/device/log/list", route.GetVmDeviceLogByDeviceIdAndType))
 

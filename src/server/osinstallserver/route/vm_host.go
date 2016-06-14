@@ -134,3 +134,23 @@ func GetVmHostList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
 }
+
+func CollectAndUpdateVmHostResource(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+	logger, ok := middleware.LoggerFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+	conf, ok := middleware.ConfigFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+	UpdateVmHostResource(logger, repo, conf)
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
+}

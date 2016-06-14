@@ -45,6 +45,7 @@ func GetVmHostList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		HardwareID     int
 		SystemID       int
 		Status         string
+		IsAvailable    string
 		BatchNumber    string
 		StartUpdatedAt string
 		EndUpdatedAt   string
@@ -79,6 +80,9 @@ func GetVmHostList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	}
 	if info.BatchNumber != "" {
 		where += " and t1.batch_number = '" + info.BatchNumber + "'"
+	}
+	if info.IsAvailable != "" {
+		where += " and t7.is_available = '" + info.IsAvailable + "'"
 	}
 
 	if info.StartUpdatedAt != "" {

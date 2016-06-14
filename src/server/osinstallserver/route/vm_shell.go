@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/net/context"
+	"io/ioutil"
 	"logger"
 	"middleware"
 	"model"
+	"os"
 	"server/osinstallserver/util"
+	"strings"
 )
 
 func RunCreateVol(ctx context.Context, vmDeviceId uint) error {
@@ -423,4 +426,69 @@ func RunTestConnectVmHost(repo model.Repo, logger logger.Logger, deviceId uint) 
 		return "", errors.New(runResult)
 	}
 	return string(bytes), nil
+}
+
+//create noVNC token file
+func RunCreateVmNoVncTokenFile(repo model.Repo, logger logger.Logger, vmDeviceId uint) error {
+	vmDevice, err := repo.GetVmDeviceById(vmDeviceId)
+	if err != nil {
+		return err
+	}
+
+	device, err := repo.GetDeviceById(vmDevice.DeviceID)
+	if err != nil {
+		return err
+	}
+
+	var newHostname = strings.Replace(vmDevice.Hostname, ":", "_", -1)
+	var strFormat = `%s: %s:%s`
+	var str = fmt.Sprintf(strFormat,
+		newHostname,
+		device.Ip,
+		vmDevice.VncPort)
+
+	var dir = "/etc/cloudboot-server/novnc-tokens"
+	var file = vmDevice.Hostname
+
+	if !util.FileExist(dir) {
+		err := os.MkdirAll(dir, 0777)
+		if err != nil {
+			return err
+		}
+	}
+	//文件已存在,先删除
+	if util.FileExist(dir + "/" + file) {
+		err := os.Remove(dir + "/" + file)
+		if err != nil {
+			return err
+		}
+	}
+	logger.Debugf("create vm novnc token file %s:%s", dir+"/"+file, str)
+	bytes := []byte(str)
+	errCreate := ioutil.WriteFile(dir+"/"+file, bytes, 0644)
+	if errCreate != nil {
+		logger.Errorf("error:%s", errCreate.Error())
+		return errCreate
+	}
+	return nil
+}
+
+//delete noVNC token file
+func RunDeleteVmNoVncTokenFile(repo model.Repo, logger logger.Logger, vmDeviceId uint) error {
+	vmDevice, err := repo.GetVmDeviceById(vmDeviceId)
+	if err != nil {
+		return err
+	}
+
+	var dir = "/etc/cloudboot-server/novnc-tokens"
+	var file = vmDevice.Hostname
+	logger.Debugf("delete vm novnc token file:%s", dir+"/"+file)
+	if util.FileExist(dir + "/" + file) {
+		err := os.Remove(dir + "/" + file)
+		if err != nil {
+			logger.Errorf("error:%s", err.Error())
+			return err
+		}
+	}
+	return nil
 }

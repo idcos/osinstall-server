@@ -451,6 +451,12 @@ func AddVmDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		logger.Error("Pxe文件生成失败:" + errPxe.Error())
 	}
 
+	//create novnc file
+	errNovnc := RunCreateVmNoVncTokenFile(repo, logger, vmDeviceId)
+	if errPxe != nil {
+		logger.Error("noVnc文件生成失败:" + errNovnc.Error())
+	}
+
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功!", "Content": resultAdd})
 }
 
@@ -680,6 +686,7 @@ func GetVmDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 		Keyword        string
 		OsID           int
 		Status         string
+		RunStatus      string
 		StartUpdatedAt string
 		EndUpdatedAt   string
 		DeviceID       int
@@ -692,6 +699,7 @@ func GetVmDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 
 	info.Keyword = strings.TrimSpace(info.Keyword)
 	info.Status = strings.TrimSpace(info.Status)
+	info.RunStatus = strings.TrimSpace(info.RunStatus)
 
 	var where string
 	where = " where t1.id > 0 "
@@ -701,6 +709,10 @@ func GetVmDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 
 	if info.Status != "" {
 		where += " and t1.status = '" + info.Status + "'"
+	}
+
+	if info.RunStatus != "" {
+		where += " and t1.run_status = '" + info.RunStatus + "'"
 	}
 
 	if info.StartUpdatedAt != "" {
@@ -996,6 +1008,12 @@ func BatchDeleteVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		return
 	}
 
+	logger, ok := middleware.LoggerFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
 	conf, ok := middleware.ConfigFromContext(ctx)
 	if !ok {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
@@ -1074,6 +1092,13 @@ func BatchDeleteVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 				return
 			}
+		}
+
+		//delete vm novnc token
+		errDeleteVncToken := RunDeleteVmNoVncTokenFile(repo, logger, vmDevice.ID)
+		if errDeleteVncToken != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDeleteVncToken.Error()})
+			return
 		}
 
 		//delete vm device

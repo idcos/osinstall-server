@@ -151,6 +151,7 @@ type DeviceSystemNameInstallReport struct {
 // IDevice 设备操作接口
 type IDeviceInstallReport interface {
 	CopyDeviceToInstallReport(ID uint) error
+	CopyVmDeviceToInstallReport(ID uint) error
 	CountDeviceInstallReportByWhere(Where string) (uint, error)
 	GetDeviceHardwareNameInstallReport(Where string) ([]DeviceHardwareNameInstallReport, error)
 	GetDeviceProductNameInstallReport(Where string) ([]DeviceProductNameInstallReport, error)
@@ -558,6 +559,8 @@ type IVmDevice interface {
 	ReInstallVmDeviceById(Id uint) (*VmDevice, error)
 	UpdateVmInstallInfoById(ID uint, status string, installProgress float64) (*VmDevice, error)
 	UpdateVmRunStatusById(ID uint, runStatus string) (*VmDevice, error)
+	GetSystemByVmMac(mac string) (*SystemConfig, error)
+	GetNetworkByVmMac(mac string) (*Network, error)
 	AddVmDevice(DeviceID uint,
 		Hostname string,
 		Mac string,

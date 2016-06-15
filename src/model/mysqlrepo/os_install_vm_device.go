@@ -13,13 +13,25 @@ func (repo *MySQLRepo) GetVmDeviceIdByMac(mac string) (uint, error) {
 
 func (repo *MySQLRepo) GetVmDeviceById(id uint) (*model.VmDevice, error) {
 	var mod model.VmDevice
-	err := repo.db.Where("id = ?", id).Find(&mod).Error
+	err := repo.db.Unscoped().Where("id = ?", id).Find(&mod).Error
 	return &mod, err
 }
 
 func (repo *MySQLRepo) GetVmDeviceByMac(mac string) (*model.VmDevice, error) {
 	var mod model.VmDevice
-	err := repo.db.Where("mac = ?", mac).Find(&mod).Error
+	err := repo.db.Unscoped().Where("mac = ?", mac).Find(&mod).Error
+	return &mod, err
+}
+
+func (repo *MySQLRepo) GetSystemByVmMac(sn string) (*model.SystemConfig, error) {
+	var mod model.SystemConfig
+	err := repo.db.Joins("inner join vm_devices on vm_devices.system_id = system_configs.id").Where("vm_devices.mac = ?", sn).Find(&mod).Error
+	return &mod, err
+}
+
+func (repo *MySQLRepo) GetNetworkByVmMac(sn string) (*model.Network, error) {
+	var mod model.Network
+	err := repo.db.Joins("inner join vm_devices on vm_devices.network_id = networks.id").Where("vm_devices.mac = ?", sn).Find(&mod).Error
 	return &mod, err
 }
 

@@ -1,6 +1,7 @@
 package route
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/AlexanderChen1989/go-json-rest/rest"
@@ -1470,4 +1471,324 @@ func ValidateMac(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "Mac填写正确!"})
 	}
 
+}
+
+func GetSystemBySnForVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	var info struct {
+		Sn   string
+		Type string
+	}
+
+	info.Sn = r.FormValue("sn")
+	info.Type = r.FormValue("type")
+	info.Sn = strings.TrimSpace(info.Sn)
+	info.Type = strings.TrimSpace(info.Type)
+
+	if info.Type == "" {
+		info.Type = "raw"
+	}
+
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		if info.Type == "raw" {
+			w.Write([]byte(""))
+		} else {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误", "Content": ""})
+		}
+		return
+	}
+
+	if info.Sn == "" {
+		if info.Type == "raw" {
+			w.Write([]byte(""))
+		} else {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "SN参数不能为空"})
+		}
+		return
+	}
+
+	mod, err := repo.GetSystemByVmMac(info.Sn)
+	if err != nil {
+		if info.Type == "raw" {
+			w.Write([]byte(""))
+		} else {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error(), "Content": ""})
+		}
+
+		return
+	}
+	mod.Content = strings.Replace(mod.Content, "\r\n", "\n", -1)
+
+	if info.Type == "raw" {
+		w.Header().Add("Content-type", "text/html; charset=utf-8")
+		w.Write([]byte(mod.Content))
+	} else {
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "成功获取system信息", "Content": mod})
+	}
+}
+
+func GetNetworkBySnForVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	var info struct {
+		Sn   string
+		Type string
+	}
+
+	info.Sn = r.FormValue("sn")
+	info.Type = r.FormValue("type")
+	info.Sn = strings.TrimSpace(info.Sn)
+	info.Type = strings.TrimSpace(info.Type)
+
+	if info.Type == "" {
+		info.Type = "raw"
+	}
+
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		if info.Type == "raw" {
+			w.Write([]byte(""))
+		} else {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误", "Content": ""})
+		}
+		return
+	}
+
+	if info.Sn == "" {
+		if info.Type == "raw" {
+			w.Write([]byte(""))
+		} else {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "SN参数不能为空"})
+		}
+		return
+	}
+
+	vmDeviceId, err := repo.GetVmDeviceIdByMac(info.Sn)
+	if err != nil {
+		if info.Type == "raw" {
+			w.Write([]byte(""))
+		} else {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error(), "Content": ""})
+		}
+		return
+	}
+
+	vmDevice, err := repo.GetVmDeviceById(vmDeviceId)
+	if err != nil {
+		if info.Type == "raw" {
+			w.Write([]byte(""))
+		} else {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error(), "Content": ""})
+		}
+		return
+	}
+
+	mod, err := repo.GetNetworkByVmMac(info.Sn)
+	if err != nil {
+		if info.Type == "raw" {
+			w.Write([]byte(""))
+		} else {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error(), "Content": ""})
+		}
+		return
+	}
+
+	mac := vmDevice.Mac
+
+	mod.Vlan = strings.Replace(mod.Vlan, "\r\n", "\n", -1)
+	mod.Trunk = strings.Replace(mod.Trunk, "\r\n", "\n", -1)
+	mod.Bonding = strings.Replace(mod.Bonding, "\r\n", "\n", -1)
+
+	result := make(map[string]interface{})
+	result["Hostname"] = vmDevice.Hostname
+	result["Ip"] = vmDevice.Ip
+	result["Netmask"] = mod.Netmask
+	result["Gateway"] = mod.Gateway
+	result["Vlan"] = mod.Vlan
+	result["Trunk"] = mod.Trunk
+	result["Bonding"] = mod.Bonding
+	result["HWADDR"] = mac
+	if info.Type == "raw" {
+		w.Header().Add("Content-type", "text/html; charset=utf-8")
+		var str string
+		if vmDevice.Hostname != "" {
+			str += "HOSTNAME=\"" + vmDevice.Hostname + "\""
+		}
+		if vmDevice.Ip != "" {
+			str += "\nIPADDR=\"" + vmDevice.Ip + "\""
+		}
+		if mod.Netmask != "" {
+			str += "\nNETMASK=\"" + mod.Netmask + "\""
+		}
+		if mod.Gateway != "" {
+			str += "\nGATEWAY=\"" + mod.Gateway + "\""
+		}
+		if mod.Vlan != "" {
+			str += "\nVLAN=\"" + mod.Vlan + "\""
+		}
+		if mod.Trunk != "" {
+			str += "\nTrunk=\"" + mod.Trunk + "\""
+		}
+		if mod.Bonding != "" {
+			str += "\nBonding=\"" + mod.Bonding + "\""
+		}
+		str += "\nHWADDR=\"" + mac + "\""
+		w.Write([]byte(str))
+	} else {
+		w.Header().Add("Content-type", "application/json; charset=utf-8")
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "成功获取network信息", "Content": result})
+	}
+}
+
+func IsInPreInstallListForVm(ctx context.Context, w rest.ResponseWriter, mac string) {
+	w.Header().Add("Content-type", "application/json; charset=utf-8")
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误", "Content": ""})
+		return
+	}
+
+	mac = strings.TrimSpace(mac)
+	if mac == "" {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "SN参数不能为空!"})
+		return
+	}
+
+	result := make(map[string]string)
+	count, err := repo.CountVmDeviceByMac(mac)
+	if err != nil || count <= 0 {
+		result["Result"] = "false"
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "该设备不在安装列表里", "Content": result})
+		return
+	}
+
+	vmDevice, err := repo.GetVmDeviceByMac(mac)
+	if err != nil {
+		result["Result"] = "false"
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "该设备不在安装列表里", "Content": result})
+		return
+	}
+
+	if vmDevice.Status == "pre_install" || vmDevice.Status == "installing" {
+		result["Result"] = "true"
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "该设备在安装列表里", "Content": result})
+	} else {
+		result["Result"] = "false"
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "该设备不在安装列表里", "Content": result})
+	}
+}
+
+func ReportInstallInfoForVm(ctx context.Context, w rest.ResponseWriter, mac string, title string, installProgress float64, log string) {
+	w.Header().Add("Content-type", "application/json; charset=utf-8")
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	conf, ok := middleware.ConfigFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	if conf.OsInstall.PxeConfigDir == "" {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "Pxe配置文件目录没有指定"})
+		return
+	}
+
+	var info struct {
+		Sn              string
+		Title           string
+		InstallProgress float64
+		InstallLog      string
+	}
+
+	info.Sn = strings.TrimSpace(mac)
+	info.Title = strings.TrimSpace(title)
+	info.InstallProgress = installProgress
+	info.InstallLog = strings.TrimSpace(log)
+	if info.Sn == "" {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "SN参数不能为空!"})
+		return
+	}
+
+	vmDeviceId, err := repo.GetVmDeviceIdByMac(info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备不存在!"})
+		return
+	}
+
+	vmDevice, err := repo.GetVmDeviceById(vmDeviceId)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	if vmDevice.Status != "pre_install" && vmDevice.Status != "installing" {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备不在安装列表里!"})
+		return
+	}
+
+	var status string
+	var logTitle string
+
+	if info.InstallProgress == -1 {
+		status = "failure"
+		info.InstallProgress = 0
+		logTitle = info.Title
+	} else if info.InstallProgress >= 0 && info.InstallProgress < 1 {
+		status = "installing"
+		logTitle = info.Title + "(" + fmt.Sprintf("安装进度 %.1f", info.InstallProgress*100) + "%)"
+	} else if info.InstallProgress == 1 {
+		status = "success"
+		logTitle = info.Title + "(" + fmt.Sprintf("安装进度 %.1f", info.InstallProgress*100) + "%)"
+	} else {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "安装进度参数不正确!"})
+		return
+	}
+
+	_, errUpdate := repo.UpdateVmInstallInfoById(vmDevice.ID, status, info.InstallProgress)
+	if errUpdate != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error()})
+		return
+	}
+
+	//删除PXE配置文件
+	if info.InstallProgress == 1 {
+		pxeFileName := util.GetPxeFileNameByMac(vmDevice.Mac)
+		confDir := conf.OsInstall.PxeConfigDir
+		if util.FileExist(confDir + "/" + pxeFileName) {
+			err := os.Remove(confDir + "/" + pxeFileName)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+				return
+			}
+		}
+	}
+
+	var installLog string
+	byteDecode, err := base64.StdEncoding.DecodeString(info.InstallLog)
+	if err != nil {
+		installLog = ""
+	} else {
+		installLog = string(byteDecode)
+	}
+
+	_, errAddLog := repo.AddVmDeviceLog(vmDevice.ID, logTitle, "install", installLog)
+	if errAddLog != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+		return
+	}
+
+	//add report
+	if info.InstallProgress == 1 {
+		errReportLog := repo.CopyVmDeviceToInstallReport(vmDevice.ID)
+		if errReportLog != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errReportLog.Error()})
+			return
+		}
+	}
+
+	result := make(map[string]string)
+	result["Result"] = "true"
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
 }

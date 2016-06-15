@@ -2035,6 +2035,18 @@ func ReportInstallInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 
 	info.Sn = strings.TrimSpace(info.Sn)
 	info.Title = strings.TrimSpace(info.Title)
+
+	//compatible vm api
+	isMacAddress, err := regexp.MatchString("^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+	if isMacAddress == true {
+		ReportInstallInfoForVm(ctx, w, info.Sn, info.Title, info.InstallProgress, info.InstallLog)
+		return
+	}
+
 	if info.Sn == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "SN参数不能为空!"})
 		return
@@ -2308,6 +2320,17 @@ func IsInPreInstallList(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 		return
 	}
 
+	//compatible vm api
+	isMacAddress, err := regexp.MatchString("^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+	if isMacAddress == true {
+		IsInPreInstallListForVm(ctx, w, info.Sn)
+		return
+	}
+
 	deviceId, err := repo.GetDeviceIdBySn(info.Sn)
 	result := make(map[string]string)
 	if err != nil {
@@ -2449,6 +2472,17 @@ func GetSystemBySn(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	info.Sn = strings.TrimSpace(info.Sn)
 	info.Type = strings.TrimSpace(info.Type)
 
+	//compatible vm api
+	isMacAddress, err := regexp.MatchString("^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+	if isMacAddress == true {
+		GetSystemBySnForVm(ctx, w, r)
+		return
+	}
+
 	if info.Type == "" {
 		info.Type = "raw"
 	}
@@ -2502,6 +2536,17 @@ func GetNetworkBySn(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 	info.Type = r.FormValue("type")
 	info.Sn = strings.TrimSpace(info.Sn)
 	info.Type = strings.TrimSpace(info.Type)
+
+	//compatible vm api
+	isMacAddress, err := regexp.MatchString("^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+	if isMacAddress == true {
+		GetNetworkBySnForVm(ctx, w, r)
+		return
+	}
 
 	if info.Type == "" {
 		info.Type = "raw"

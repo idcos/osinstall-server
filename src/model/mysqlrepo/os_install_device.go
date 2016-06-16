@@ -209,13 +209,13 @@ func (repo *MySQLRepo) GetNetworkBySn(sn string) (*model.Network, error) {
 
 func (repo *MySQLRepo) GetInstallTimeoutDeviceList(timeout int) ([]model.Device, error) {
 	var result []model.Device
-	sql := "select t3.* from (select device_id,max(id) as id from device_logs where type = 'install' and device_id in (select id from devices where status = 'installing') group by device_id ) t1 inner join device_logs t2 on t1.id = t2.id and (TO_SECONDS(now()) - TO_SECONDS(t2.created_at)) >= " + fmt.Sprintf("%d", timeout) + " inner join devices t3 on t1.device_id = t3.id"
+	sql := "select t3.* from (select device_id,max(id) as id from device_logs where type = 'install' and device_id in (select id from devices where status = 'installing') group by device_id ) t1 inner join device_logs t2 on t1.id = t2.id and (UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(t2.created_at)) >= " + fmt.Sprintf("%d", timeout) + " inner join devices t3 on t1.device_id = t3.id"
 	err := repo.db.Raw(sql).Scan(&result).Error
 	return result, err
 }
 
 func (repo *MySQLRepo) IsInstallTimeoutDevice(timeout int, deviceId uint) (bool, error) {
-	sql := "select count(t3.id) as count from (select device_id,max(id) as id from device_logs where type = 'install' and device_id = " + fmt.Sprintf("%d", deviceId) + " and device_id in (select id from devices where status = 'installing') group by device_id ) t1 inner join device_logs t2 on t1.id = t2.id and (TO_SECONDS(now()) - TO_SECONDS(t2.created_at)) >= " + fmt.Sprintf("%d", timeout) + " inner join devices t3 on t1.device_id = t3.id"
+	sql := "select count(t3.id) as count from (select device_id,max(id) as id from device_logs where type = 'install' and device_id = " + fmt.Sprintf("%d", deviceId) + " and device_id in (select id from devices where status = 'installing') group by device_id ) t1 inner join device_logs t2 on t1.id = t2.id and (UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(t2.created_at)) >= " + fmt.Sprintf("%d", timeout) + " inner join devices t3 on t1.device_id = t3.id"
 	row := repo.db.DB().QueryRow(sql)
 	var count = -1
 	if err := row.Scan(&count); err != nil {

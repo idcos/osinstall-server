@@ -174,7 +174,7 @@ func SaveDhcpSubnet(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		info.Gateway)
 	text = strings.Replace(text, matchs[0][0], str, -1)
 
-	logger.Debugf("update dhcp config %s:%s", file, str)
+	logger.Debugf("update dhcp config %s:%s", file, text)
 	var bytes = []byte(text)
 	errWrite := ioutil.WriteFile(file, bytes, 0666)
 	if errWrite != nil {
@@ -184,7 +184,7 @@ func SaveDhcpSubnet(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 	}
 
 	//restart dhcp service
-	var cmd = "service cloudboot dhcpd restart"
+	var cmd = "service dhcpd restart"
 	logger.Debugf("restart dhcpd:%s", cmd)
 	restartBytes, err := util.ExecScript(cmd)
 	logger.Debugf("result:%s", string(restartBytes))

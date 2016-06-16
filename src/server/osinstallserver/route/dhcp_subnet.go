@@ -7,7 +7,10 @@ import (
 	"golang.org/x/net/context"
 	"middleware"
 	//"net/http"
+	"fmt"
+	"io/ioutil"
 	"regexp"
+	"server/osinstallserver/util"
 	"strings"
 )
 
@@ -123,6 +126,77 @@ func SaveDhcpSubnet(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 			return
 		}
+	}
+
+	logger, ok := middleware.LoggerFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	//save to dhcp config file
+	file := "/etc/dhcp/dhcpd.conf"
+	if !util.FileExist(file) {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "数据已保存，DHCP配置文件(" + file + ")不存在，请手工配置!"})
+		return
+	}
+
+	text, err := util.ReadFile(file)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	reg, err := regexp.Compile("(?s)subnet(\\s+)(.*?)(\\s+)(netmask)(\\s+)(.*?)(\\s+){(.*?)}")
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	matchs := reg.FindAllStringSubmatch(text, -1)
+	if len(matchs) <= 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "DHCP配置文件(" + file + ")未配置subnet节点，请手工操作！"})
+		return
+	}
+
+	if len(matchs) > 1 {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "DHCP配置文件(" + file + ")存在多个subnet节点，请手工操作！"})
+		return
+	}
+
+	strFormat := `subnet %s netmask %s {
+	range %s %s;
+	option routers %s;
+}`
+	str := fmt.Sprintf(strFormat,
+		matchs[0][2],
+		matchs[0][6],
+		info.StartIp,
+		info.EndIp,
+		info.Gateway)
+	text = strings.Replace(text, matchs[0][0], str, -1)
+
+	logger.Debugf("update dhcp config %s:%s", file, str)
+	var bytes = []byte(text)
+	errWrite := ioutil.WriteFile(file, bytes, 0666)
+	if errWrite != nil {
+		logger.Errorf("error:%s", errWrite.Error())
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errWrite.Error()})
+		return
+	}
+
+	//restart dhcp service
+	var cmd = "service cloudboot dhcpd restart"
+	logger.Debugf("restart dhcpd:%s", cmd)
+	restartBytes, err := util.ExecScript(cmd)
+	logger.Debugf("result:%s", string(restartBytes))
+
+	var runResult = "<br>执行脚本:" + cmd
+	runResult += "<br>" + "执行结果:" + string(restartBytes)
+
+	if err != nil {
+		runResult += "<br>" + "错误信息:" + err.Error()
+		logger.Errorf("error:%s", err.Error())
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "DHCP重启失败!" + runResult})
+		return
 	}
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})

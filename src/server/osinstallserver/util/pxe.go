@@ -35,6 +35,16 @@ func FileExist(filename string) bool {
 	return err == nil || os.IsExist(err)
 }
 
+func ReadFile(path string) (string, error) {
+	fi, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer fi.Close()
+	bytes, err := ioutil.ReadAll(fi)
+	return string(bytes), err
+}
+
 func GetPxeFileNameByMac(mac string) string {
 	mac = strings.Replace(mac, ":", "-", -1)
 	return "01-" + mac

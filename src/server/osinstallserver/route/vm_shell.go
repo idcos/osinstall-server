@@ -412,7 +412,7 @@ func RunTestConnectVmHost(repo model.Repo, logger logger.Logger, deviceId uint) 
 		return "", err
 	}
 
-	var cmdFormat = `LANG=C ssh -o BatchMode=yes -o ConnectTimeout=3 root@%s 'w'`
+	var cmdFormat = `LANG=C ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=3 root@%s 'w'`
 	var cmd = fmt.Sprintf(cmdFormat,
 		device.Ip)
 	logger.Debugf("test connect vm host:%s", cmd)

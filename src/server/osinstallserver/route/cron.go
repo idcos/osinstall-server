@@ -25,7 +25,7 @@ func CloudBootCron(conf *config.Config, logger logger.Logger, repo model.Repo) {
 	}, "InitBootOSIPForScanDeviceListProcessTask")
 	//update vm host resource
 	c.AddFunc("0 1 1 * * *", func() {
-		UpdateVmHostResource(logger, repo, conf)
+		UpdateVmHostResource(logger, repo, conf, 0)
 	}, "UpdateVmHostResourceTask")
 	//start
 	c.Start()
@@ -138,8 +138,8 @@ func InitBootOSIPForScanDeviceListProcess(logger logger.Logger, repo model.Repo)
 	return
 }
 
-func UpdateVmHostResource(logger logger.Logger, repo model.Repo, conf *config.Config) {
-	devices, err := repo.GetNeedCollectDeviceForVmHost()
+func UpdateVmHostResource(logger logger.Logger, repo model.Repo, conf *config.Config, deviceId uint) {
+	devices, err := repo.GetNeedCollectDeviceForVmHost(deviceId)
 	if err != nil {
 		logger.Errorf("error:%s", err.Error())
 		return

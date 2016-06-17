@@ -20,19 +20,20 @@ func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		return
 	}
 	var info struct {
-		Limit      uint
-		Offset     uint
-		Keyword    string
-		Company    string
-		Product    string
-		ModelName  string
-		CpuRule    string
-		Cpu        string
-		MemoryRule string
-		Memory     string
-		DiskRule   string
-		Disk       string
-		UserID     uint
+		Limit               uint
+		Offset              uint
+		Keyword             string
+		Company             string
+		Product             string
+		ModelName           string
+		CpuRule             string
+		Cpu                 string
+		MemoryRule          string
+		Memory              string
+		DiskRule            string
+		Disk                string
+		UserID              uint
+		IsShowEnteredDevice string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
@@ -48,9 +49,11 @@ func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	info.Memory = strings.TrimSpace(info.Memory)
 	info.DiskRule = strings.TrimSpace(info.DiskRule)
 	info.Disk = strings.TrimSpace(info.Disk)
-
+	info.IsShowEnteredDevice = strings.TrimSpace(info.IsShowEnteredDevice)
 	var where string
-	where = " and t1.device_id = 0 "
+	if info.IsShowEnteredDevice != "Yes" {
+		where = " and t1.device_id = 0 "
+	}
 
 	if info.UserID > uint(0) {
 		where += " and t1.user_id = '" + fmt.Sprintf("%d", info.UserID) + "'"

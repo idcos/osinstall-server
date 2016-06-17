@@ -801,7 +801,7 @@ type IVmHost interface {
 	GetDiskUsedSum(Where string) (uint, error)
 	CountVmDeviceByDeviceId(DeviceID uint) (uint, error)
 	GetMaxVncPort(Where string) (uint, error)
-	GetNeedCollectDeviceForVmHost() ([]Device, error)
+	GetNeedCollectDeviceForVmHost(DeviceID uint) ([]Device, error)
 }
 
 type VmDeviceLog struct {

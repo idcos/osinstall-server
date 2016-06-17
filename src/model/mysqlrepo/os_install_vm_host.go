@@ -65,9 +65,13 @@ func (repo *MySQLRepo) GetVmHostListWithPage(limit uint, offset uint, where stri
 	return result, err
 }
 
-func (repo *MySQLRepo) GetNeedCollectDeviceForVmHost() ([]model.Device, error) {
+func (repo *MySQLRepo) GetNeedCollectDeviceForVmHost(deviceId uint) ([]model.Device, error) {
+	var where string
+	if deviceId > 0 {
+		where = " and t1.id = " + fmt.Sprintf("%d", deviceId)
+	}
 	var result []model.Device
-	sql := "select t1.*,case when t2.id is null then 2 when t2.is_available = 'No' then 1 else 0 end as weight from devices t1 left join vm_hosts t2 on t1.sn = t2.sn where t1.`status` = 'success' and t1.is_support_vm = 'Yes' order by weight desc"
+	sql := "select t1.*,case when t2.id is null then 2 when t2.is_available = 'No' then 1 else 0 end as weight from devices t1 left join vm_hosts t2 on t1.sn = t2.sn where t1.`status` = 'success' " + where + " and t1.is_support_vm = 'Yes' order by weight desc"
 	err := repo.db.Raw(sql).Scan(&result).Error
 	return result, err
 }

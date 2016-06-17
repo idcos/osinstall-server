@@ -151,6 +151,6 @@ func CollectAndUpdateVmHostResource(ctx context.Context, w rest.ResponseWriter, 
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
-	UpdateVmHostResource(logger, repo, conf)
+	UpdateVmHostResource(logger, repo, conf, 0)
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
 }

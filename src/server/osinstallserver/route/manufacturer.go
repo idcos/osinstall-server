@@ -298,6 +298,7 @@ func GetScanDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		Motherboard string
 		Raid        string
 		Oob         string
+		IsVm        string
 		CreatedAt   utils.ISOTime
 		UpdatedAt   utils.ISOTime
 	}
@@ -321,6 +322,7 @@ func GetScanDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	device.Motherboard = mod.Motherboard
 	device.Raid = mod.Raid
 	device.Oob = mod.Oob
+	device.IsVm = mod.IsVm
 
 	device.CreatedAt = utils.ISOTime(mod.CreatedAt)
 	device.UpdatedAt = utils.ISOTime(mod.UpdatedAt)
@@ -367,6 +369,7 @@ func GetScanDeviceByDeviceId(ctx context.Context, w rest.ResponseWriter, r *rest
 		Motherboard string
 		Raid        string
 		Oob         string
+		IsVm        string
 		CreatedAt   utils.ISOTime
 		UpdatedAt   utils.ISOTime
 	}
@@ -390,6 +393,7 @@ func GetScanDeviceByDeviceId(ctx context.Context, w rest.ResponseWriter, r *rest
 	device.Motherboard = mod.Motherboard
 	device.Raid = mod.Raid
 	device.Oob = mod.Oob
+	device.IsVm = mod.IsVm
 
 	device.CreatedAt = utils.ISOTime(mod.CreatedAt)
 	device.UpdatedAt = utils.ISOTime(mod.UpdatedAt)
@@ -527,6 +531,7 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		Raid        string
 		Oob         string
 		DeviceID    uint
+		IsVm        string
 	}
 
 	var info struct {
@@ -547,6 +552,7 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		Raid        string
 		Oob         string
 		DeviceID    uint
+		IsVm        string
 	}
 
 	if err := r.DecodeJSONPayload(&infoFull); err != nil {
@@ -558,6 +564,7 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	infoFull.Company = strings.TrimSpace(infoFull.Company)
 	infoFull.Product = strings.TrimSpace(infoFull.Product)
 	infoFull.ModelName = strings.TrimSpace(infoFull.ModelName)
+	infoFull.IsVm = strings.TrimSpace(infoFull.IsVm)
 
 	info.Sn = infoFull.Sn
 	info.Company = infoFull.Company
@@ -571,6 +578,11 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	info.CpuSum = infoFull.CpuSum
 	info.MemorySum = infoFull.MemorySum
 	info.DiskSum = infoFull.DiskSum
+	info.IsVm = infoFull.IsVm
+	if info.IsVm != "Yes" {
+		info.IsVm = "No"
+	}
+
 	if infoFull.Cpu.Core != "" {
 		core, _ := strconv.Atoi(infoFull.Cpu.Core)
 		if core > 0 && info.CpuSum <= uint(0) {
@@ -674,14 +686,14 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 			return
 		}
 
-		_, errUpdate := repo.UpdateManufacturerById(id, info.Company, info.Product, info.ModelName, info.Sn, info.Ip, info.Mac, info.Nic, info.Cpu, info.CpuSum, info.Memory, info.MemorySum, info.Disk, info.DiskSum, info.Motherboard, info.Raid, info.Oob)
+		_, errUpdate := repo.UpdateManufacturerById(id, info.Company, info.Product, info.ModelName, info.Sn, info.Ip, info.Mac, info.Nic, info.Cpu, info.CpuSum, info.Memory, info.MemorySum, info.Disk, info.DiskSum, info.Motherboard, info.Raid, info.Oob, info.IsVm)
 		if errUpdate != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error()})
 			return
 		}
 
 	} else {
-		_, err := repo.AddManufacturer(info.DeviceID, info.Company, info.Product, info.ModelName, info.Sn, info.Ip, info.Mac, info.Nic, info.Cpu, info.CpuSum, info.Memory, info.MemorySum, info.Disk, info.DiskSum, info.Motherboard, info.Raid, info.Oob)
+		_, err := repo.AddManufacturer(info.DeviceID, info.Company, info.Product, info.ModelName, info.Sn, info.Ip, info.Mac, info.Nic, info.Cpu, info.CpuSum, info.Memory, info.MemorySum, info.Disk, info.DiskSum, info.Motherboard, info.Raid, info.Oob, info.IsVm)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 			return

@@ -78,6 +78,7 @@ type OSInstallAgent struct {
 	Product       string
 	ModelName     string
 	hardwareConfs []HardWareConf // base64 编码的硬件配置脚本
+	IsVm          string         //Whether it is a virtual machine
 }
 
 type nicInfo struct {
@@ -281,6 +282,7 @@ func (agent *OSInstallAgent) ReportProductInfo() error {
 		Motherboard motherboardInfo
 		Raid        string
 		Oob         string
+		IsVm        string
 	}
 
 	// get infoFull from script
@@ -294,6 +296,13 @@ func (agent *OSInstallAgent) ReportProductInfo() error {
 	agent.Company = strings.ToLower(jsonReq.Company)
 	agent.Product = jsonReq.Product
 	agent.ModelName = jsonReq.ModelName
+
+	//set whether it is a virtual machine
+	jsonReq.IsVm = strings.TrimSpace(jsonReq.IsVm)
+	if jsonReq.IsVm != "Yes" {
+		jsonReq.IsVm = "No"
+	}
+	agent.IsVm = jsonReq.IsVm
 
 	// set mac info to agent
 	for _, nic := range jsonReq.Nic {

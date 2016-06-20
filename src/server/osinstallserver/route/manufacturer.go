@@ -229,9 +229,10 @@ func ExportScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Re
 
 	var str string
 	var strTitle string
-	strTitle = "SN(必填),主机名(必填),IP(必填),操作系统(必填),硬件配置模板,系统安装模板(必填),位置(必填),财编,管理IP\n"
+	strTitle = "SN(必填),主机名(必填),IP(必填),操作系统(必填),硬件配置模板,系统安装模板(必填),位置(必填),财编,管理IP,是否支持安装虚拟机(Yes或No)\n"
 	for _, device := range mods {
 		str += device.Sn + ","
+		str += ","
 		str += ","
 		str += ","
 		str += ","

@@ -3319,8 +3319,16 @@ func ExportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
+	cd, err := iconv.Open("gbk", "utf-8") // convert utf-8 to gbk
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	defer cd.Close()
+
 	var str string
-	str = "SN,主机名,IP,操作系统,硬件配置模板,系统安装模板,位置,财编,管理IP,批次号,BootOS IP,带外IP,状态\n"
+	str = "SN,主机名,IP,操作系统,硬件配置模板,系统安装模板,位置,财编,管理IP,是否支持安装虚拟机,批次号,BootOS IP,带外IP,状态\n"
+	str = cd.ConvString(str)
 	for _, device := range mods {
 		var locationName string
 		if device.LocationID > uint(0) {
@@ -3349,32 +3357,26 @@ func ExportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			}
 		}
 
+		if device.IsSupportVm != "Yes" {
+			device.IsSupportVm = "No"
+		}
 		str += device.Sn + ","
-		str += device.Hostname + ","
+		str += cd.ConvString(device.Hostname) + ","
 		str += device.Ip + ","
-		str += device.OsName + ","
-		str += device.HardwareName + ","
-		str += device.SystemName + ","
-		str += locationName + ","
+		str += cd.ConvString(device.OsName) + ","
+		str += cd.ConvString(device.HardwareName) + ","
+		str += cd.ConvString(device.SystemName) + ","
+		str += cd.ConvString(locationName) + ","
 		str += device.AssetNumber + ","
 		str += device.ManageIp + ","
+		str += device.IsSupportVm + ","
 		str += device.BatchNumber + ","
 		str += bootosIP + ","
 		str += device.OobIp + ","
-		str += statusName + ","
+		str += cd.ConvString(statusName) + ","
 		str += "\n"
 	}
-
-	cd, err := iconv.Open("gbk", "utf-8") // convert utf-8 to gbk
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-		return
-	}
-	defer cd.Close()
-	gbkStr := cd.ConvString(str)
-
-	bytes := []byte(gbkStr)
-
+	bytes := []byte(str)
 	filename := "cloudboot-device-list.csv"
 	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename='%s';filename*=utf-8''%s", filename, filename))
 	w.Header().Add("Content-Type", "application/octet-stream")

@@ -157,6 +157,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		SystemName        string
 		Content           string
 		UserID            uint
+		IsSupportVm       string
 	}
 	var success []Device
 	var failure []Device
@@ -164,7 +165,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	for i := 1; i < length; i++ {
 		//result = append(result, ra[i][0])
 		var row Device
-		if len(ra[i]) != 9 {
+		if len(ra[i]) != 10 {
 			var br string
 			if row.Content != "" {
 				br = "<br />"
@@ -183,6 +184,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		row.Location = strings.TrimSpace(ra[i][6])
 		row.AssetNumber = strings.TrimSpace(ra[i][7])
 		row.ManageIp = strings.TrimSpace(ra[i][8])
+		row.IsSupportVm = strings.TrimSpace(ra[i][9])
 		row.UserID = session.ID
 
 		if len(row.Sn) > 255 {
@@ -263,6 +265,14 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 				br = "<br />"
 			}
 			row.Content += br + "位置不能为空!"
+		}
+
+		if row.IsSupportVm != "" && row.IsSupportVm != "Yes" && row.IsSupportVm != "No" {
+			var br string
+			if row.Content != "" {
+				br = "<br />"
+			}
+			row.Content += br + "是否支持虚拟机的参数格式不正确!"
 		}
 
 		//match manufacturer
@@ -713,7 +723,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		//result = append(result, ra[i][0])
 		var row Device
 
-		if len(ra[i]) != 9 {
+		if len(ra[i]) != 10 {
 			continue
 		}
 
@@ -726,6 +736,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		row.Location = strings.TrimSpace(ra[i][6])
 		row.AssetNumber = strings.TrimSpace(ra[i][7])
 		row.ManageIp = strings.TrimSpace(ra[i][8])
+		row.IsSupportVm = strings.TrimSpace(ra[i][9])
 		row.UserID = session.ID
 
 		if len(row.Sn) > 255 {
@@ -806,6 +817,18 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 				br = "<br />"
 			}
 			row.Content += br + "位置不能为空!"
+		}
+
+		if row.IsSupportVm != "" && row.IsSupportVm != "Yes" && row.IsSupportVm != "No" {
+			var br string
+			if row.Content != "" {
+				br = "<br />"
+			}
+			row.Content += br + "是否支持虚拟机的参数格式不正确!"
+		}
+
+		if row.IsSupportVm != "Yes" {
+			row.IsSupportVm = "No"
 		}
 
 		//match manufacturer
@@ -1173,7 +1196,6 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			return
 		} else {
 			status := "pre_install"
-			row.IsSupportVm = "No"
 			if countDevice > 0 {
 				id, err := repo.GetDeviceIdBySn(row.Sn)
 				if err != nil {

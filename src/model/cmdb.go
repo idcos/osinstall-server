@@ -420,6 +420,7 @@ type Manufacturer struct {
 	Oob         string
 	UserID      uint   `sql:"not null;default:0;"`
 	IsVm        string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
+	NicDevice   string
 }
 
 type ManufacturerFull struct {
@@ -444,6 +445,7 @@ type ManufacturerFull struct {
 	UserID      uint
 	OwnerName   string
 	IsVm        string
+	NicDevice   string
 }
 
 type IManufacturer interface {
@@ -453,8 +455,8 @@ type IManufacturer interface {
 	GetManufacturerByDeviceID(DeviceID uint) (*Manufacturer, error)
 	DeleteManufacturerById(Id uint) (*Manufacturer, error)
 	DeleteManufacturerBySn(Sn string) (*Manufacturer, error)
-	AddManufacturer(DeviceID uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string, IsVm string) (*Manufacturer, error)
-	UpdateManufacturerById(Id uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string, IsVm string) (*Manufacturer, error)
+	AddManufacturer(DeviceID uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string, IsVm string, NicDevice string) (*Manufacturer, error)
+	UpdateManufacturerById(Id uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string, IsVm string, NicDevice string) (*Manufacturer, error)
 	UpdateManufacturerDeviceIdById(id uint, deviceId uint) (*Manufacturer, error)
 	UpdateManufacturerIPById(id uint, ip string) (*Manufacturer, error)
 	GetManufacturerListWithPage(Limit uint, Offset uint, Where string) ([]ManufacturerFull, error)

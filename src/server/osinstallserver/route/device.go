@@ -2043,8 +2043,14 @@ func ReportInstallInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		return
 	}
 	if isMacAddress == true {
-		ReportInstallInfoForVm(ctx, w, info.Sn, info.Title, info.InstallProgress, info.InstallLog)
-		return
+		//get real sn from manufacturer by nic mac
+		manufacturerSn, err := repo.GetManufacturerSnByNicMacForVm(info.Sn)
+		if err != nil || manufacturerSn == "" {
+			ReportInstallInfoForVm(ctx, w, info.Sn, info.Title, info.InstallProgress, info.InstallLog)
+			return
+		} else {
+			info.Sn = manufacturerSn
+		}
 	}
 
 	if info.Sn == "" {
@@ -2227,6 +2233,23 @@ func ReportMacInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	info.Sn = strings.TrimSpace(info.Sn)
 	info.Mac = strings.TrimSpace(info.Mac)
 
+	//compatible vm api
+	isMacAddress, err := regexp.MatchString("^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+	if isMacAddress == true {
+		//get real sn from manufacturer by nic mac
+		manufacturerSn, err := repo.GetManufacturerSnByNicMacForVm(info.Sn)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备不存在!"})
+			return
+		} else {
+			info.Sn = manufacturerSn
+		}
+	}
+
 	if info.Sn == "" || info.Mac == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "SN和Mac参数不能为空!"})
 		return
@@ -2327,8 +2350,14 @@ func IsInPreInstallList(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 		return
 	}
 	if isMacAddress == true {
-		IsInPreInstallListForVm(ctx, w, info.Sn)
-		return
+		//get real sn from manufacturer by nic mac
+		manufacturerSn, err := repo.GetManufacturerSnByNicMacForVm(info.Sn)
+		if err != nil || manufacturerSn == "" {
+			IsInPreInstallListForVm(ctx, w, info.Sn)
+			return
+		} else {
+			info.Sn = manufacturerSn
+		}
 	}
 
 	deviceId, err := repo.GetDeviceIdBySn(info.Sn)
@@ -2472,21 +2501,6 @@ func GetSystemBySn(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	info.Sn = strings.TrimSpace(info.Sn)
 	info.Type = strings.TrimSpace(info.Type)
 
-	//compatible vm api
-	isMacAddress, err := regexp.MatchString("^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", info.Sn)
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
-		return
-	}
-	if isMacAddress == true {
-		GetSystemBySnForVm(ctx, w, r)
-		return
-	}
-
-	if info.Type == "" {
-		info.Type = "raw"
-	}
-
 	repo, ok := middleware.RepoFromContext(ctx)
 	if !ok {
 		if info.Type == "raw" {
@@ -2495,6 +2509,27 @@ func GetSystemBySn(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误", "Content": ""})
 		}
 		return
+	}
+
+	//compatible vm api
+	isMacAddress, err := regexp.MatchString("^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+	if isMacAddress == true {
+		//get real sn from manufacturer by nic mac
+		manufacturerSn, err := repo.GetManufacturerSnByNicMacForVm(info.Sn)
+		if err != nil || manufacturerSn == "" {
+			GetSystemBySnForVm(ctx, w, r)
+			return
+		} else {
+			info.Sn = manufacturerSn
+		}
+	}
+
+	if info.Type == "" {
+		info.Type = "raw"
 	}
 
 	if info.Sn == "" {
@@ -2537,21 +2572,6 @@ func GetNetworkBySn(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 	info.Sn = strings.TrimSpace(info.Sn)
 	info.Type = strings.TrimSpace(info.Type)
 
-	//compatible vm api
-	isMacAddress, err := regexp.MatchString("^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", info.Sn)
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
-		return
-	}
-	if isMacAddress == true {
-		GetNetworkBySnForVm(ctx, w, r)
-		return
-	}
-
-	if info.Type == "" {
-		info.Type = "raw"
-	}
-
 	repo, ok := middleware.RepoFromContext(ctx)
 	if !ok {
 		if info.Type == "raw" {
@@ -2560,6 +2580,27 @@ func GetNetworkBySn(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误", "Content": ""})
 		}
 		return
+	}
+
+	//compatible vm api
+	isMacAddress, err := regexp.MatchString("^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+	if isMacAddress == true {
+		//get real sn from manufacturer by nic mac
+		manufacturerSn, err := repo.GetManufacturerSnByNicMacForVm(info.Sn)
+		if err != nil || manufacturerSn == "" {
+			GetNetworkBySnForVm(ctx, w, r)
+			return
+		} else {
+			info.Sn = manufacturerSn
+		}
+	}
+
+	if info.Type == "" {
+		info.Type = "raw"
 	}
 
 	if info.Sn == "" {

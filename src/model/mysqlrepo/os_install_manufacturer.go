@@ -145,6 +145,14 @@ func (repo *MySQLRepo) GetManufacturerIdBySn(sn string) (uint, error) {
 	return mod.ID, err
 }
 
+func (repo *MySQLRepo) GetManufacturerSnByNicMacForVm(mac string) (string, error) {
+	var result model.Manufacturer
+	sql := "SELECT * from manufacturers where is_vm = 'Yes' and (sn = '" + mac + "' or nic like '%%\"Mac\":\"" + mac + "\"%%')"
+	err := repo.db.Raw(sql).Scan(&result).Error
+	return result.Sn, err
+
+}
+
 func (repo *MySQLRepo) GetManufacturerMacBySn(sn string) (string, error) {
 	mod := model.Manufacturer{Sn: sn}
 	err := repo.db.Unscoped().Where("sn = ?", sn).Find(&mod).Error

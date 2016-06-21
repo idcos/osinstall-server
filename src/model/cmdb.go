@@ -466,6 +466,7 @@ type IManufacturer interface {
 	GetManufacturerIdBySn(Sn string) (uint, error)
 	AssignManufacturerOnwer(Id uint, UserID uint) (*Manufacturer, error)
 	AssignManufacturerNewOnwer(NewUserID uint, OldUserID uint) error
+	GetManufacturerSnByNicMacForVm(Mac string) (string, error)
 }
 
 type VmDevice struct {

@@ -283,6 +283,7 @@ func (agent *OSInstallAgent) ReportProductInfo() error {
 		Raid        string
 		Oob         string
 		IsVm        string
+		NicDevice   string
 	}
 
 	// get infoFull from script

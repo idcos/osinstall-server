@@ -102,6 +102,12 @@ func (repo *MySQLRepo) GetManufacturerById(id uint) (*model.Manufacturer, error)
 	return &mod, err
 }
 
+func (repo *MySQLRepo) GetManufacturerBySn(sn string) (*model.Manufacturer, error) {
+	var mod model.Manufacturer
+	err := repo.db.Where("sn = ?", sn).Find(&mod).Error
+	return &mod, err
+}
+
 func (repo *MySQLRepo) GetManufacturerByDeviceId(deviceId uint) (*model.Manufacturer, error) {
 	var mod model.Manufacturer
 	err := repo.db.Where("device_id = ?", deviceId).Find(&mod).Error

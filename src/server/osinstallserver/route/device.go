@@ -2727,36 +2727,42 @@ func ValidateSn(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
+	manufacturer, err := repo.GetManufacturerBySn(info.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"})
+		return
+	}
+
 	if count > 0 {
 		session, err := GetSession(w, r)
 		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "参数错误" + err.Error()})
 			return
 		}
 
 		device, err := repo.GetDeviceBySn(info.Sn)
 		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "参数错误" + err.Error()})
 			return
 		}
 
 		if session.Role != "Administrator" {
 			if device.UserID != session.ID {
-				w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该设备已被录入，不能重复录入!"})
+				w.WriteJSON(map[string]interface{}{"Status": "failure", "Content": manufacturer, "Message": "该设备已被录入，不能重复录入!"})
 				return
 			}
 		}
 
 		if device.Status == "success" {
-			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该设备已安装成功，确定要重装？"})
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Content": manufacturer, "Message": "该设备已安装成功，确定要重装？"})
 			return
 		}
 
-		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该SN已存在，继续填写会覆盖旧的数据!"})
+		w.WriteJSON(map[string]interface{}{"Status": "failure", "Content": manufacturer, "Message": "该SN已存在，继续填写会覆盖旧的数据!"})
 		return
 
 	} else {
-		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "SN填写正确!"})
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Content": manufacturer, "Message": "SN填写正确!"})
 		return
 	}
 

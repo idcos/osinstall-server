@@ -451,6 +451,7 @@ type ManufacturerFull struct {
 type IManufacturer interface {
 	CountManufacturerByDeviceID(DeviceID uint) (uint, error)
 	GetManufacturerById(Id uint) (*Manufacturer, error)
+	GetManufacturerBySn(Sn string) (*Manufacturer, error)
 	GetManufacturerByDeviceId(DeviceID uint) (*Manufacturer, error)
 	GetManufacturerByDeviceID(DeviceID uint) (*Manufacturer, error)
 	DeleteManufacturerById(Id uint) (*Manufacturer, error)

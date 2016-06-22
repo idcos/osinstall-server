@@ -44,7 +44,7 @@ func run(c *cli.Context) error {
 		return errors.New("get sn failed")
 	}
 
-	if !utils.PingLoop("osinstall.", 30, 2) {
+	if !utils.PingLoop("osinstall", 30, 2) {
 		return errors.New("ping timeout")
 	}
 
@@ -100,7 +100,7 @@ func getSN() string {
 }
 
 func getXmlFile(sn string) error {
-	var url = fmt.Sprintf("http://osinstall./api/osinstall/v1/device/getSystemBySn?sn=%s",
+	var url = fmt.Sprintf("http://osinstall/api/osinstall/v1/device/getSystemBySn?sn=%s",
 		sn)
 
 	resp, err := http.Get(url)
@@ -131,7 +131,7 @@ func mountSamba() error {
 		utils.Logger.Debug(err.Error())
 	}
 
-	cmd = `net use Z: \\osinstall.\image`
+	cmd = `net use Z: \\osinstall\image`
 	utils.Logger.Debug(cmd)
 	if _, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())

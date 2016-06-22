@@ -58,7 +58,7 @@ func run(c *cli.Context) error {
 		}
 	}
 
-	if !utils.PingLoop("osinstall.", 300, 2) {
+	if !utils.PingLoop("osinstall", 300, 2) {
 		return errors.New("ping timeout")
 	}
 
@@ -102,7 +102,7 @@ func run(c *cli.Context) error {
 		utils.Logger.Error(err.Error())
 	}
 	time.Sleep(30 * time.Second)
-	if !utils.PingLoop("osinstall.", 300, 2) {
+	if !utils.PingLoop("osinstall", 300, 2) {
 		return errors.New("ping timeout")
 	}
 	utils.ReportProgress(0.8, sn, "修改网络配置", "change network")
@@ -177,7 +177,7 @@ func getNicInterfaceIndex(mac string) string {
 
 // http get 主机名，网络
 func getRestInfo(sn string) (*RestInfo, error) {
-	var url = fmt.Sprintf("http://osinstall./api/osinstall/v1/device/getNetworkBySn?sn=%s&type=json",
+	var url = fmt.Sprintf("http://osinstall/api/osinstall/v1/device/getNetworkBySn?sn=%s&type=json",
 		sn)
 
 	utils.Logger.Debug(url)

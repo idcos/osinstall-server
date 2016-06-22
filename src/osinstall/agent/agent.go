@@ -338,6 +338,10 @@ func (agent *OSInstallAgent) ReportProductInfo() error {
 
 // IsHaveHardWareConf 检查服务端是否此机器的硬件配置
 func (agent *OSInstallAgent) IsHaveHardWareConf() (bool, error) {
+	if agent.IsVm == "Yes" {
+		return true, nil
+	}
+
 	var url = agent.ServerAddr + isHaveHardwareConf
 	var skipHWConf = false
 	agent.Logger.Debugf("IsHaveHardWareConf url:%s\n", url)

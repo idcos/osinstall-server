@@ -1068,16 +1068,18 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			}
 		}
 
-		//validate host server info
-		countVm, errVm := repo.CountVmDeviceByDeviceId(device.ID)
-		if errVm != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVm.Error()})
-			return
-		}
-		if countVm > 0 {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该物理机下(SN:" + device.Sn + ")还存留有虚拟机，不允许修改信息。请先销毁虚拟机后再操作！"})
-			return
-		}
+		/*
+			//validate host server info
+			countVm, errVm := repo.CountVmDeviceByDeviceId(device.ID)
+			if errVm != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVm.Error()})
+				return
+			}
+			if countVm > 0 {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该物理机下(SN:" + device.Sn + ")还存留有虚拟机，不允许修改信息。请先销毁虚拟机后再操作！"})
+				return
+			}
+		*/
 	} else {
 		count, err := repo.CountDeviceByHostname(info.Hostname)
 		if err != nil {
@@ -1254,6 +1256,20 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		if errCallback != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCallback.Error()})
 			return
+		}
+
+		//delete vm info
+		countVm, errVm := repo.CountVmDeviceByDeviceId(device.ID)
+		if errVm != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVm.Error()})
+			return
+		}
+		if countVm > 0 {
+			err := repo.DeleteVmInfoByDeviceSn(info.Sn)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+				return
+			}
 		}
 	} else {
 		device, err := repo.AddDevice(batchNumber, info.Sn, info.Hostname, info.Ip, info.ManageIp, info.NetworkID, info.ManageNetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, status, info.IsSupportVm, info.UserID)
@@ -1452,16 +1468,18 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 				}
 			}
 
-			//validate host server info
-			countVm, errVm := repo.CountVmDeviceByDeviceId(device.ID)
-			if errVm != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVm.Error()})
-				return
-			}
-			if countVm > 0 {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该物理机下(SN:" + device.Sn + ")还存留有虚拟机，不允许修改信息。请先销毁虚拟机后再操作！"})
-				return
-			}
+			/*
+				//validate host server info
+				countVm, errVm := repo.CountVmDeviceByDeviceId(device.ID)
+				if errVm != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVm.Error()})
+					return
+				}
+				if countVm > 0 {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该物理机下(SN:" + device.Sn + ")还存留有虚拟机，不允许修改信息。请先销毁虚拟机后再操作！"})
+					return
+				}
+			*/
 
 		} else {
 			count, err := repo.CountDeviceByHostname(info.Hostname)
@@ -1668,6 +1686,20 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 			if errCallback != nil {
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCallback.Error()})
 				return
+			}
+
+			//delete vm info
+			countVm, errVm := repo.CountVmDeviceByDeviceId(device.ID)
+			if errVm != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVm.Error()})
+				return
+			}
+			if countVm > 0 {
+				err := repo.DeleteVmInfoByDeviceSn(info.Sn)
+				if err != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+					return
+				}
 			}
 		} else {
 			device, err := repo.AddDevice(batchNumber, info.Sn, info.Hostname, info.Ip, info.ManageIp, info.NetworkID, info.ManageNetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, status, info.IsSupportVm, info.UserID)
@@ -2751,6 +2783,16 @@ func ValidateSn(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 				w.WriteJSON(map[string]interface{}{"Status": "failure", "Content": manufacturer, "Message": "该设备已被录入，不能重复录入!"})
 				return
 			}
+		}
+
+		countVm, errVm := repo.CountVmDeviceByDeviceId(device.ID)
+		if errVm != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": errVm.Error()})
+			return
+		}
+		if countVm > 0 {
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "该物理机下还存留有虚拟机，重装会销毁这些虚拟机，确定要重装？"})
+			return
 		}
 
 		if device.Status == "success" {

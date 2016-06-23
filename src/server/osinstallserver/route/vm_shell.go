@@ -87,6 +87,7 @@ func RunCreateVm(ctx context.Context, vmDeviceId uint) error {
 
 	var cmdFormat = `LANG=C virt-install --connect qemu+ssh://root@%s/system \
 --name=%s \
+--os-type=windows \
 --vcpus=%d \
 --ram=%d \
 --hvm \

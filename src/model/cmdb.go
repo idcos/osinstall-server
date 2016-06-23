@@ -808,6 +808,7 @@ type IVmHost interface {
 	CountVmDeviceByDeviceId(DeviceID uint) (uint, error)
 	GetMaxVncPort(Where string) (uint, error)
 	GetNeedCollectDeviceForVmHost(DeviceID uint) ([]Device, error)
+	DeleteVmInfoByDeviceSn(Sn string) error
 }
 
 type VmDeviceLog struct {

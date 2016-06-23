@@ -123,3 +123,33 @@ func (repo *MySQLRepo) GetMaxVncPort(where string) (uint, error) {
 	}
 	return sum, nil
 }
+
+func (repo *MySQLRepo) DeleteVmInfoByDeviceSn(sn string) error {
+	var mod model.Device
+	err := repo.db.Unscoped().Where("sn = ?", sn).Find(&mod).Error
+	if err != nil {
+		return err
+	}
+
+	deviceID := mod.ID
+	//delete vm device log
+	var modelVmDeviceLog = model.VmDeviceLog{}
+	err = repo.db.Unscoped().Where("device_id in (select id from vm_devices where device_id = ?)", deviceID).Delete(&modelVmDeviceLog).Error
+	if err != nil {
+		return err
+	}
+	//delete vm device
+	var modelVmDevice = model.VmDevice{}
+	err = repo.db.Unscoped().Where("device_id = ?", deviceID).Delete(&modelVmDevice).Error
+	if err != nil {
+		return err
+	}
+	//delete vm host
+	var modelVmHost = model.VmHost{}
+	err = repo.db.Unscoped().Where("sn = ?", sn).Delete(&modelVmHost).Error
+	if err != nil {
+		return err
+	}
+	return nil
+
+}

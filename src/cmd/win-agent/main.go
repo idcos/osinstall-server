@@ -63,7 +63,11 @@ func run(c *cli.Context) error {
 	}
 
 	var sn = getSN()
-	// sn = "214245856"
+	isVm := isVirtualMachine()
+	if isVm {
+		sn = getMacAddress()
+	}
+
 	if sn == "" {
 		utils.Logger.Error("get sn failed!")
 	}
@@ -145,6 +149,56 @@ func getSN() string {
 	}
 
 	// fmt.Println(strings.Trim(regResult[1], "\r\n"))
+	var result string
+	result = strings.Trim(regResult[1], "\r\n")
+	result = strings.TrimSpace(result)
+	return result
+}
+
+//是否是虚拟机
+func isVirtualMachine() bool {
+	var cmd = `systeminfo`
+	var output string
+	utils.Logger.Debug(cmd)
+	if outputBytes, err := utils.ExecCmd(scriptFile, cmd); err != nil {
+		utils.Logger.Error(err.Error())
+	} else {
+		output = string(outputBytes)
+		utils.Logger.Debug(output)
+	}
+
+	isValidate, err := regexp.MatchString(`(?i)VMware|VirtualBox|KVM|Xen|Parallels`, output)
+	if err != nil {
+		utils.Logger.Error(err.Error())
+		return false
+	}
+
+	if isValidate {
+		return true
+	} else {
+		return false
+	}
+}
+
+// 获取Mac地址
+func getMacAddress() string {
+	var cmd = `wmic nic where "NetConnectionStatus=2" get MACAddress /VALUE`
+	var r = `(?i)MACAddress=(\S+)`
+	var output string
+	utils.Logger.Debug(cmd)
+	if outputBytes, err := utils.ExecCmd(scriptFile, cmd); err != nil {
+		utils.Logger.Error(err.Error())
+	} else {
+		output = string(outputBytes)
+		utils.Logger.Debug(output)
+	}
+
+	reg := regexp.MustCompile(r)
+	var regResult = reg.FindStringSubmatch(output)
+	if regResult == nil || len(regResult) != 2 {
+		return ""
+	}
+
 	var result string
 	result = strings.Trim(regResult[1], "\r\n")
 	result = strings.TrimSpace(result)

@@ -20,7 +20,7 @@ var rootPath = "X:\\Windows\\System32"
 var scriptFile = path.Join(rootPath, "temp-script.cmd")
 
 var date = time.Now().Format("2006-01-02")
-var version = "v1.2.1 (" + date + ")"
+var version = "v1.3 (" + date + ")"
 
 func main() {
 

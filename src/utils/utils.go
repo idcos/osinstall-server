@@ -105,8 +105,8 @@ func CallRestAPI(url string, jsonReq interface{}) ([]byte, error) {
 }
 
 // ReportProgress 上报执行结果
-func ReportProgress(installProgress float64, sn, title, installLog string) bool {
-	var url = "http://osinstall./api/osinstall/v1/report/deviceInstallInfo"
+func ReportProgress(installProgress float64, sn, title, installLog string, host string) bool {
+	var url = "http://" + host + "/api/osinstall/v1/report/deviceInstallInfo"
 	Logger.Debug("ReportProgress url:%s\n", url)
 	var jsonReq struct {
 		Sn              string

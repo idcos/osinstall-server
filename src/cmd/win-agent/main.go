@@ -30,7 +30,7 @@ type RestInfo struct {
 }
 
 var date = time.Now().Format("2006-01-02")
-var version = "v1.2.1 (" + date + ")"
+var version = "v1.3 (" + date + ")"
 
 func main() {
 
@@ -47,6 +47,7 @@ var rootPath = "c:/firstboot"
 var scriptFile = path.Join(rootPath, "temp-script.cmd")
 var preInstallScript = path.Join(rootPath, "preInstall.cmd")
 var postInstallScript = path.Join(rootPath, "postInstall.cmd")
+var serverHost = "osinstall" //cloudboot server host
 
 func run(c *cli.Context) error {
 	// init log
@@ -57,8 +58,13 @@ func run(c *cli.Context) error {
 			utils.Logger.Error("preinstall error: %s", err.Error())
 		}
 	}
+	//init cloudboot server host
+	serverIp := getDomainLookupIP(serverHost)
+	if serverIp != "" {
+		serverHost = serverIp
+	}
 
-	if !utils.PingLoop("osinstall", 300, 2) {
+	if !utils.PingLoop(serverHost, 300, 2) {
 		return errors.New("ping timeout")
 	}
 
@@ -72,7 +78,7 @@ func run(c *cli.Context) error {
 		utils.Logger.Error("get sn failed!")
 	}
 
-	restInfo, err := getRestInfo(sn)
+	restInfo, err := getRestInfo(sn, serverHost)
 	if err != nil {
 		utils.Logger.Error(err.Error())
 	}
@@ -91,12 +97,12 @@ func run(c *cli.Context) error {
 	if err = diskpart(); err != nil {
 		utils.Logger.Error(err.Error())
 	}
-	utils.ReportProgress(0.7, sn, "分区", "diskpart")
+	utils.ReportProgress(0.7, sn, "分区", "diskpart", serverHost)
 
 	if err = changeHostname(restInfo.Hostname); err != nil {
 		utils.Logger.Error(err.Error())
 	}
-	utils.ReportProgress(0.75, sn, "修改主机名", "change hostname")
+	utils.ReportProgress(0.75, sn, "修改主机名", "change hostname", serverHost)
 
 	if err = changeIP(nicInterfaceIndex, restInfo.Ip, restInfo.Netmask, restInfo.Gateway); err != nil {
 		utils.Logger.Error(err.Error())
@@ -105,18 +111,19 @@ func run(c *cli.Context) error {
 	if err = changeDNS(nicInterfaceIndex, dns); err != nil {
 		utils.Logger.Error(err.Error())
 	}
+
 	time.Sleep(30 * time.Second)
-	if !utils.PingLoop("osinstall", 300, 2) {
+	if !utils.PingLoop(serverHost, 300, 2) {
 		return errors.New("ping timeout")
 	}
-	utils.ReportProgress(0.8, sn, "修改网络配置", "change network")
+	utils.ReportProgress(0.8, sn, "修改网络配置", "change network", serverHost)
 
 	if err = changeReg(); err != nil {
 		utils.Logger.Error(err.Error())
 	}
-	utils.ReportProgress(0.9, sn, "修改注册表", "change reg")
+	utils.ReportProgress(0.9, sn, "修改注册表", "change reg", serverHost)
 
-	utils.ReportProgress(1.0, sn, "安装完成", "finish")
+	utils.ReportProgress(1.0, sn, "安装完成", "finish", serverHost)
 
 	if utils.CheckFileIsExist(postInstallScript) {
 		if _, err := utils.ExecScript(postInstallScript); err != nil {
@@ -205,6 +212,32 @@ func getMacAddress() string {
 	return result
 }
 
+//get domain's lookup ip
+func getDomainLookupIP(domain string) string {
+	var cmd = `ping ` + domain
+	var r = `(.+)(\s)(\d+)\.(\d+)\.(\d+)\.(\d+)([:|\s])(.+)TTL`
+	var output string
+	utils.Logger.Debug(cmd)
+	if outputBytes, err := utils.ExecCmd(scriptFile, cmd); err != nil {
+		utils.Logger.Error(err.Error())
+	} else {
+		output = string(outputBytes)
+		utils.Logger.Debug(output)
+	}
+
+	reg := regexp.MustCompile(r)
+	var regResult = reg.FindStringSubmatch(output)
+	if regResult == nil || len(regResult) != 9 {
+		return ""
+	}
+
+	var result = fmt.Sprintf("%s.%s.%s.%s", strings.TrimSpace(regResult[3]),
+		strings.TrimSpace(regResult[4]),
+		strings.TrimSpace(regResult[5]),
+		strings.TrimSpace(regResult[6]))
+	return result
+}
+
 // 网卡名称
 func getNicInterfaceIndex(mac string) string {
 	var cmd = fmt.Sprintf(`wmic nic where (MACAddress="%s" AND netConnectionStatus=2) get InterfaceIndex /value`, mac)
@@ -230,8 +263,9 @@ func getNicInterfaceIndex(mac string) string {
 }
 
 // http get 主机名，网络
-func getRestInfo(sn string) (*RestInfo, error) {
-	var url = fmt.Sprintf("http://osinstall/api/osinstall/v1/device/getNetworkBySn?sn=%s&type=json",
+func getRestInfo(sn string, host string) (*RestInfo, error) {
+	var url = fmt.Sprintf("http://%s/api/osinstall/v1/device/getNetworkBySn?sn=%s&type=json",
+		host,
 		sn)
 
 	utils.Logger.Debug(url)

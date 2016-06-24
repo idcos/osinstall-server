@@ -18,6 +18,7 @@ import (
 var xmlPath = "X:\\Windows\\System32\\unattended.xml"
 var rootPath = "X:\\Windows\\System32"
 var scriptFile = path.Join(rootPath, "temp-script.cmd")
+var serverHost = "osinstall" //cloudboot server host
 
 var date = time.Now().Format("2006-01-02")
 var version = "v1.3 (" + date + ")"
@@ -48,12 +49,18 @@ func run(c *cli.Context) error {
 		return errors.New("get sn failed")
 	}
 
-	if !utils.PingLoop("osinstall", 30, 2) {
+	//init cloudboot server host
+	serverIp := getDomainLookupIP(serverHost)
+	if serverIp != "" {
+		serverHost = serverIp
+	}
+
+	if !utils.PingLoop(serverHost, 30, 2) {
 		return errors.New("ping timeout")
 	}
 
 	// get xml for install windows
-	if err := getXmlFile(sn); err != nil {
+	if err := getXmlFile(sn, serverHost); err != nil {
 		return err
 	}
 
@@ -65,7 +72,7 @@ func run(c *cli.Context) error {
 	//load drive
 	loadDrive()
 
-	utils.ReportProgress(0.6, sn, "开始安装", "start install")
+	utils.ReportProgress(0.6, sn, "开始安装", "start install", serverHost)
 	// install windows
 	if err := installWindows(); err != nil {
 		return err
@@ -156,6 +163,32 @@ func getMacAddress() string {
 	return result
 }
 
+//get domain's lookup ip
+func getDomainLookupIP(domain string) string {
+	var cmd = `ping ` + domain
+	var r = `(.+)(\s)(\d+)\.(\d+)\.(\d+)\.(\d+)([:|\s])(.+)TTL`
+	var output string
+	utils.Logger.Debug(cmd)
+	if outputBytes, err := utils.ExecCmd(scriptFile, cmd); err != nil {
+		utils.Logger.Error(err.Error())
+	} else {
+		output = string(outputBytes)
+		utils.Logger.Debug(output)
+	}
+
+	reg := regexp.MustCompile(r)
+	var regResult = reg.FindStringSubmatch(output)
+	if regResult == nil || len(regResult) != 9 {
+		return ""
+	}
+
+	var result = fmt.Sprintf("%s.%s.%s.%s", strings.TrimSpace(regResult[3]),
+		strings.TrimSpace(regResult[4]),
+		strings.TrimSpace(regResult[5]),
+		strings.TrimSpace(regResult[6]))
+	return result
+}
+
 func loadDrive() {
 	var cmd = `Z:`
 	var output string
@@ -211,8 +244,9 @@ func loadDrive() {
 	return
 }
 
-func getXmlFile(sn string) error {
-	var url = fmt.Sprintf("http://osinstall/api/osinstall/v1/device/getSystemBySn?sn=%s",
+func getXmlFile(sn string, host string) error {
+	var url = fmt.Sprintf("http://%s/api/osinstall/v1/device/getSystemBySn?sn=%s",
+		host,
 		sn)
 
 	resp, err := http.Get(url)

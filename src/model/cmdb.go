@@ -151,6 +151,7 @@ type DeviceSystemNameInstallReport struct {
 // IDevice 设备操作接口
 type IDeviceInstallReport interface {
 	CopyDeviceToInstallReport(ID uint) error
+	CopyVmDeviceToInstallReport(ID uint) error
 	CountDeviceInstallReportByWhere(Where string) (uint, error)
 	GetDeviceHardwareNameInstallReport(Where string) ([]DeviceHardwareNameInstallReport, error)
 	GetDeviceProductNameInstallReport(Where string) ([]DeviceProductNameInstallReport, error)
@@ -417,7 +418,9 @@ type Manufacturer struct {
 	Motherboard string
 	Raid        string
 	Oob         string
-	UserID      uint `sql:"not null;default:0;"`
+	UserID      uint   `sql:"not null;default:0;"`
+	IsVm        string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
+	NicDevice   string
 }
 
 type ManufacturerFull struct {
@@ -441,17 +444,20 @@ type ManufacturerFull struct {
 	Oob         string
 	UserID      uint
 	OwnerName   string
+	IsVm        string
+	NicDevice   string
 }
 
 type IManufacturer interface {
 	CountManufacturerByDeviceID(DeviceID uint) (uint, error)
 	GetManufacturerById(Id uint) (*Manufacturer, error)
+	GetManufacturerBySn(Sn string) (*Manufacturer, error)
 	GetManufacturerByDeviceId(DeviceID uint) (*Manufacturer, error)
 	GetManufacturerByDeviceID(DeviceID uint) (*Manufacturer, error)
 	DeleteManufacturerById(Id uint) (*Manufacturer, error)
 	DeleteManufacturerBySn(Sn string) (*Manufacturer, error)
-	AddManufacturer(DeviceID uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string) (*Manufacturer, error)
-	UpdateManufacturerById(Id uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string) (*Manufacturer, error)
+	AddManufacturer(DeviceID uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string, IsVm string, NicDevice string) (*Manufacturer, error)
+	UpdateManufacturerById(Id uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string, IsVm string, NicDevice string) (*Manufacturer, error)
 	UpdateManufacturerDeviceIdById(id uint, deviceId uint) (*Manufacturer, error)
 	UpdateManufacturerIPById(id uint, ip string) (*Manufacturer, error)
 	GetManufacturerListWithPage(Limit uint, Offset uint, Where string) ([]ManufacturerFull, error)
@@ -463,6 +469,7 @@ type IManufacturer interface {
 	GetManufacturerIdBySn(Sn string) (uint, error)
 	AssignManufacturerOnwer(Id uint, UserID uint) (*Manufacturer, error)
 	AssignManufacturerNewOnwer(NewUserID uint, OldUserID uint) error
+	GetManufacturerSnByNicMacForVm(Mac string) (string, error)
 }
 
 type VmDevice struct {
@@ -473,6 +480,7 @@ type VmDevice struct {
 	Ip                    string
 	NetworkID             uint
 	OsID                  uint
+	SystemID              uint
 	CpuCoresNumber        uint
 	CpuHotPlug            string
 	CpuPassthrough        string
@@ -494,6 +502,10 @@ type VmDevice struct {
 	DisplayPassword       string
 	DisplayUpdatePassword string
 	Status                string
+	UserID                uint
+	VncPort               string
+	InstallProgress       float64
+	RunStatus             string
 }
 
 type VmDeviceFull struct {
@@ -506,7 +518,9 @@ type VmDeviceFull struct {
 	NetworkID             uint
 	NetworkName           string
 	OsID                  uint
+	SystemID              uint
 	OsName                string
+	SystemName            string
 	CpuCoresNumber        uint
 	CpuHotPlug            string
 	CpuPassthrough        string
@@ -528,6 +542,10 @@ type VmDeviceFull struct {
 	DisplayPassword       string
 	DisplayUpdatePassword string
 	Status                string
+	UserID                uint
+	VncPort               string
+	InstallProgress       float64
+	RunStatus             string
 }
 
 type IVmDevice interface {
@@ -545,12 +563,17 @@ type IVmDevice interface {
 	GetVmDeviceIdByMac(Mac string) (uint, error)
 	DeleteVmDeviceById(Id uint) (*VmDevice, error)
 	ReInstallVmDeviceById(Id uint) (*VmDevice, error)
+	UpdateVmInstallInfoById(ID uint, status string, installProgress float64) (*VmDevice, error)
+	UpdateVmRunStatusById(ID uint, runStatus string) (*VmDevice, error)
+	GetSystemByVmMac(mac string) (*SystemConfig, error)
+	GetNetworkByVmMac(mac string) (*Network, error)
 	AddVmDevice(DeviceID uint,
 		Hostname string,
 		Mac string,
 		Ip string,
 		NetworkID uint,
 		OsID uint,
+		SystemID uint,
 		CpuCoresNumber uint,
 		CpuHotPlug string,
 		CpuPassthrough string,
@@ -571,7 +594,10 @@ type IVmDevice interface {
 		DisplayType string,
 		DisplayPassword string,
 		DisplayUpdatePassword string,
-		Status string) (VmDevice, error)
+		Status string,
+		UserID uint,
+		VncPort string,
+		RunStatus string) (VmDevice, error)
 	UpdateVmDeviceById(ID uint,
 		DeviceID uint,
 		Hostname string,
@@ -579,6 +605,7 @@ type IVmDevice interface {
 		Ip string,
 		NetworkID uint,
 		OsID uint,
+		SystemID uint,
 		CpuCoresNumber uint,
 		CpuHotPlug string,
 		CpuPassthrough string,
@@ -599,7 +626,10 @@ type IVmDevice interface {
 		DisplayType string,
 		DisplayPassword string,
 		DisplayUpdatePassword string,
-		Status string) (VmDevice, error)
+		Status string,
+		UserID uint,
+		VncPort string,
+		RunStatus string) (VmDevice, error)
 }
 
 // Mac mac地址
@@ -672,4 +702,136 @@ type IDeviceInstallCallback interface {
 	AddDeviceInstallCallback(DeviceID uint, CallbackType string, Content string, RunTime string, RunResult string, RunStatus string) (*DeviceInstallCallback, error)
 	UpdateDeviceInstallCallbackByID(Id uint, DeviceID uint, CallbackType string, Content string, RunTime string, RunResult string, RunStatus string) (*DeviceInstallCallback, error)
 	UpdateDeviceInstallCallbackRunInfoByID(Id uint, RunTime string, RunResult string, RunStatus string) (*DeviceInstallCallback, error)
+}
+
+type DhcpSubnet struct {
+	gorm.Model
+	StartIp string `sql:"not null;"`
+	EndIp   string `sql:"not null;"`
+	Gateway string `sql:"not null;"`
+}
+
+type IDhcpSubnet interface {
+	CountDhcpSubnet() (uint, error)
+	GetDhcpSubnetListWithPage(Limit uint, Offset uint) ([]DhcpSubnet, error)
+	GetDhcpSubnetById(Id uint) (*DhcpSubnet, error)
+	UpdateDhcpSubnetById(Id uint, StartIp string, EndIp string, Gateway string) (*DhcpSubnet, error)
+	DeleteDhcpSubnetById(Id uint) (*DhcpSubnet, error)
+	AddDhcpSubnet(StartIp string, EndIp string, Gateway string) (*DhcpSubnet, error)
+}
+
+type PlatformConfig struct {
+	gorm.Model
+	Name    string `sql:"not null;unique;"`
+	Content string `sql:"type:longtext;"`
+}
+
+type IPlatformConfig interface {
+	CountPlatformConfigByName(Name string) (uint, error)
+	CountPlatformConfigByNameAndId(Name string, ID uint) (uint, error)
+	CountPlatformConfig() (uint, error)
+	GetPlatformConfigListWithPage(Limit uint, Offset uint) ([]PlatformConfig, error)
+	GetPlatformConfigIdByName(Name string) (uint, error)
+	GetPlatformConfigById(Id uint) (*PlatformConfig, error)
+	UpdatePlatformConfigById(Id uint, Name string, Pxe string) (*PlatformConfig, error)
+	DeletePlatformConfigById(Id uint) (*PlatformConfig, error)
+	AddPlatformConfig(Name string, Content string) (*PlatformConfig, error)
+	GetPlatformConfigByName(Name string) (*PlatformConfig, error)
+}
+
+type VmHost struct {
+	gorm.Model
+	Sn              string `sql:"not null;"`
+	CpuSum          uint   `sql:"type:int(11);default:0;"`
+	CpuUsed         uint   `sql:"type:int(11);default:0;"`
+	CpuAvailable    uint   `sql:"type:int(11);default:0;"`
+	MemorySum       uint   `sql:"type:int(11);default:0;"`
+	MemoryUsed      uint   `sql:"type:int(11);default:0;"`
+	MemoryAvailable uint   `sql:"type:int(11);default:0;"`
+	DiskSum         uint   `sql:"type:int(11);default:0;"`
+	DiskUsed        uint   `sql:"type:int(11);default:0;"`
+	DiskAvailable   uint   `sql:"type:int(11);default:0;"`
+	VmNum           uint   `sql:"type:int(11);default:0;"`
+	IsAvailable     string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
+	Remark          string `sql:"type:text"`
+}
+
+type VmHostFull struct {
+	ID                uint
+	DeviceID          uint
+	Sn                string
+	Hostname          string
+	Ip                string
+	ManageIp          string
+	NetworkID         uint
+	ManageNetworkID   uint
+	OsID              uint
+	HardwareID        uint
+	SystemID          uint
+	LocationID        uint
+	AssetNumber       string
+	Status            string
+	NetworkName       string
+	ManageNetworkName string
+	OsName            string
+	SystemName        string
+	HardwareName      string
+	IsSupportVm       string
+	CpuSum            uint
+	CpuUsed           uint
+	CpuAvailable      uint
+	MemorySum         uint
+	MemoryUsed        uint
+	MemoryAvailable   uint
+	DiskSum           uint
+	DiskUsed          uint
+	DiskAvailable     uint
+	VmNum             uint
+	IsAvailable       string
+	Remark            string
+}
+
+type IVmHost interface {
+	CountVmHostBySn(Sn string) (uint, error)
+	CountVmHost(Where string) (int, error)
+	GetVmHostListWithPage(Limit uint, Offset uint, Where string) ([]VmHostFull, error)
+	GetVmHostById(Id uint) (*VmHost, error)
+	UpdateVmHostById(Id uint, CpuSum uint, CpuUsed uint, CpuAvailable uint, MemorySum uint, MemoryUsed uint, MemoryAvailable uint, DiskSum uint, DiskUsed uint, DiskAvailable uint, IsAvailable string, Remark string, VmNum uint) (*VmHost, error)
+	UpdateVmHostCpuMemoryDiskVmNumById(Id uint, CpuSum uint, CpuUsed uint, CpuAvailable uint, MemorySum uint, MemoryUsed uint, MemoryAvailable uint, DiskSum uint, DiskUsed uint, DiskAvailable uint, VmNum uint, IsAvailable string) (*VmHost, error)
+	DeleteVmHostById(Id uint) (*VmHost, error)
+	DeleteVmHostBySn(Sn string) (*VmHost, error)
+	AddVmHost(Sn string, CpuSum uint, CpuUsed uint, CpuAvailable uint, MemorySum uint, MemoryUsed uint, MemoryAvailable uint, DiskSum uint, DiskUsed uint, DiskAvailable uint, IsAvailable string, Remark string, VmNum uint) (*VmHost, error)
+	GetVmHostBySn(Sn string) (*VmHost, error)
+	GetCpuUsedSum(Where string) (uint, error)
+	GetMemoryUsedSum(Where string) (uint, error)
+	GetDiskUsedSum(Where string) (uint, error)
+	CountVmDeviceByDeviceId(DeviceID uint) (uint, error)
+	GetMaxVncPort(Where string) (uint, error)
+	GetNeedCollectDeviceForVmHost(DeviceID uint) ([]Device, error)
+	DeleteVmInfoByDeviceSn(Sn string) error
+}
+
+type VmDeviceLog struct {
+	gorm.Model
+	DeviceID  uint   `sql:"not null;"`
+	Title     string `sql:"not null;"`
+	Type      string `sql:"not null;default:'install';"`
+	Content   string `sql:"type:text;"` //pxe信息
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type IVmDeviceLog interface {
+	CountVmDeviceLogByDeviceID(DeviceID uint) (uint, error)
+	CountVmDeviceLogByDeviceIDAndType(DeviceID uint, Type string) (uint, error)
+	CountVmDeviceLog() (uint, error)
+	GetVmDeviceLogListByDeviceID(DeviceID uint, Order string) ([]VmDeviceLog, error)
+	GetLastVmDeviceLogByDeviceID(DeviceID uint) (VmDeviceLog, error)
+	GetVmDeviceLogListByDeviceIDAndType(DeviceID uint, Type string, Order string, MaxID uint) ([]VmDeviceLog, error)
+	GetVmDeviceLogById(Id uint) (*VmDeviceLog, error)
+	DeleteVmDeviceLogById(Id uint) (*VmDeviceLog, error)
+	DeleteVmDeviceLogByDeviceIDAndType(DeviceID uint, Type string) (*VmDeviceLog, error)
+	DeleteVmDeviceLogByDeviceID(DeviceID uint) (*VmDeviceLog, error)
+	AddVmDeviceLog(DeviceID uint, Title string, Type string, Content string) (*VmDeviceLog, error)
+	UpdateVmDeviceLogTypeByDeviceIdAndType(deviceID uint, Type string, NewType string) ([]VmDeviceLog, error)
 }

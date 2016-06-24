@@ -387,7 +387,7 @@ mediaType: application/json
 
 /device/scan/list:
   post:
-    description: 获取【资源池】【发现新设备】列表
+    description: 获取【资源池】设备列表信息
     queryParameters:
       Limit:
         description: 页容量
@@ -431,6 +431,10 @@ mediaType: application/json
         required: false
       Disk:
         description: 硬盘大小，单位 GB
+        type: string
+        required: false
+      IsShowEnteredDevice:
+        description: 是否显示已录入到设备列表的信息，默认为No，要显示请传 Yes
         type: string
         required: false
     responses:

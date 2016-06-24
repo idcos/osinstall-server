@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"utils/ping"
 
 	"github.com/astaxie/beego/logs"
@@ -104,8 +105,8 @@ func CallRestAPI(url string, jsonReq interface{}) ([]byte, error) {
 }
 
 // ReportProgress 上报执行结果
-func ReportProgress(installProgress float64, sn, title, installLog string) bool {
-	var url = "http://osinstall./api/osinstall/v1/report/deviceInstallInfo"
+func ReportProgress(installProgress float64, sn, title, installLog string, host string) bool {
+	var url = "http://" + host + "/api/osinstall/v1/report/deviceInstallInfo"
 	Logger.Debug("ReportProgress url:%s\n", url)
 	var jsonReq struct {
 		Sn              string
@@ -156,4 +157,43 @@ func PingLoop(host string, pkgCnt int, timeout int) bool {
 		}
 	}
 	return false
+}
+
+func ListDir(dirPth string) (files []string, err error) {
+	files = make([]string, 0, 10)
+	dir, err := ioutil.ReadDir(dirPth)
+	if err != nil {
+		return nil, err
+	}
+	PthSep := string(os.PathSeparator)
+	for _, fi := range dir {
+		if !fi.IsDir() {
+			continue
+		}
+		files = append(files, dirPth+PthSep+fi.Name())
+	}
+	return files, nil
+}
+
+func ListFiles(dirPth string, suffix string, onlyReturnFileName bool) (files []string, err error) {
+	files = make([]string, 0, 10)
+	dir, err := ioutil.ReadDir(dirPth)
+	if err != nil {
+		return nil, err
+	}
+	PthSep := string(os.PathSeparator)
+	suffix = strings.ToUpper(suffix) //忽略后缀匹配的大小写
+	for _, fi := range dir {
+		if fi.IsDir() { // 忽略目录
+			continue
+		}
+		if strings.HasSuffix(strings.ToUpper(fi.Name()), suffix) { //匹配文件
+			if onlyReturnFileName == true {
+				files = append(files, fi.Name())
+			} else {
+				files = append(files, dirPth+PthSep+fi.Name())
+			}
+		}
+	}
+	return files, nil
 }

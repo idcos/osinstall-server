@@ -20,19 +20,20 @@ func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		return
 	}
 	var info struct {
-		Limit      uint
-		Offset     uint
-		Keyword    string
-		Company    string
-		Product    string
-		ModelName  string
-		CpuRule    string
-		Cpu        string
-		MemoryRule string
-		Memory     string
-		DiskRule   string
-		Disk       string
-		UserID     uint
+		Limit               uint
+		Offset              uint
+		Keyword             string
+		Company             string
+		Product             string
+		ModelName           string
+		CpuRule             string
+		Cpu                 string
+		MemoryRule          string
+		Memory              string
+		DiskRule            string
+		Disk                string
+		UserID              uint
+		IsShowEnteredDevice string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
@@ -48,9 +49,11 @@ func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	info.Memory = strings.TrimSpace(info.Memory)
 	info.DiskRule = strings.TrimSpace(info.DiskRule)
 	info.Disk = strings.TrimSpace(info.Disk)
-
+	info.IsShowEnteredDevice = strings.TrimSpace(info.IsShowEnteredDevice)
 	var where string
-	where = " and t1.device_id = 0 "
+	if info.IsShowEnteredDevice != "Yes" {
+		where = " and t1.device_id = 0 "
+	}
 
 	if info.UserID > uint(0) {
 		where += " and t1.user_id = '" + fmt.Sprintf("%d", info.UserID) + "'"
@@ -89,10 +92,10 @@ func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 				str = " or "
 			}
 			where += str + " t1.sn = '" + v + "' or t1.ip = '" + v + "' or t1.company = '" + v + "' or t1.product = '" + v + "' or t1.model_name = '" + v + "'"
-			isValidate, _ := regexp.MatchString("^((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)$", info.Keyword)
-			if isValidate {
-				where += " or t1.nic like '%%\"" + info.Keyword + "\"%%' "
-			}
+		}
+		isValidate, _ := regexp.MatchString("^((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)$", info.Keyword)
+		if isValidate {
+			where += " or t1.nic like '%%\"" + info.Keyword + "\"%%' "
 		}
 		where += " ) "
 	}
@@ -211,6 +214,10 @@ func ExportScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Re
 			}
 			where += str + " t1.sn = '" + v + "' or t1.ip = '" + v + "' or t1.company = '" + v + "' or t1.product = '" + v + "' or t1.model_name = '" + v + "'"
 		}
+		isValidate, _ := regexp.MatchString("^((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)$", info.Keyword)
+		if isValidate {
+			where += " or t1.nic like '%%\"" + info.Keyword + "\"%%' "
+		}
 		where += " ) "
 	}
 
@@ -221,9 +228,11 @@ func ExportScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Re
 	}
 
 	var str string
-	str = "SN(必填),主机名(必填),IP(必填),操作系统(必填),硬件配置模板,系统安装模板(必填),位置(必填),财编,管理IP\n"
+	var strTitle string
+	strTitle = "SN(必填),主机名(必填),IP(必填),操作系统(必填),硬件配置模板,系统安装模板(必填),位置(必填),财编,管理IP,是否支持安装虚拟机(Yes或No)\n"
 	for _, device := range mods {
 		str += device.Sn + ","
+		str += ","
 		str += ","
 		str += ","
 		str += ","
@@ -240,9 +249,9 @@ func ExportScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Re
 		return
 	}
 	defer cd.Close()
-	gbkStr := cd.ConvString(str)
+	gbkStr := cd.ConvString(strTitle)
 
-	bytes := []byte(gbkStr)
+	bytes := []byte(gbkStr + str)
 
 	filename := "idcos-osinstall-scan-device.csv"
 	w.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename='%s';filename*=utf-8''%s", filename, filename))
@@ -289,6 +298,8 @@ func GetScanDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		Motherboard string
 		Raid        string
 		Oob         string
+		IsVm        string
+		NicDevice   string
 		CreatedAt   utils.ISOTime
 		UpdatedAt   utils.ISOTime
 	}
@@ -312,6 +323,8 @@ func GetScanDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	device.Motherboard = mod.Motherboard
 	device.Raid = mod.Raid
 	device.Oob = mod.Oob
+	device.IsVm = mod.IsVm
+	device.NicDevice = mod.NicDevice
 
 	device.CreatedAt = utils.ISOTime(mod.CreatedAt)
 	device.UpdatedAt = utils.ISOTime(mod.UpdatedAt)
@@ -358,6 +371,8 @@ func GetScanDeviceByDeviceId(ctx context.Context, w rest.ResponseWriter, r *rest
 		Motherboard string
 		Raid        string
 		Oob         string
+		IsVm        string
+		NicDevice   string
 		CreatedAt   utils.ISOTime
 		UpdatedAt   utils.ISOTime
 	}
@@ -381,6 +396,8 @@ func GetScanDeviceByDeviceId(ctx context.Context, w rest.ResponseWriter, r *rest
 	device.Motherboard = mod.Motherboard
 	device.Raid = mod.Raid
 	device.Oob = mod.Oob
+	device.IsVm = mod.IsVm
+	device.NicDevice = mod.NicDevice
 
 	device.CreatedAt = utils.ISOTime(mod.CreatedAt)
 	device.UpdatedAt = utils.ISOTime(mod.UpdatedAt)
@@ -518,6 +535,8 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		Raid        string
 		Oob         string
 		DeviceID    uint
+		IsVm        string
+		NicDevice   string
 	}
 
 	var info struct {
@@ -538,6 +557,8 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		Raid        string
 		Oob         string
 		DeviceID    uint
+		IsVm        string
+		NicDevice   string
 	}
 
 	if err := r.DecodeJSONPayload(&infoFull); err != nil {
@@ -549,6 +570,8 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	infoFull.Company = strings.TrimSpace(infoFull.Company)
 	infoFull.Product = strings.TrimSpace(infoFull.Product)
 	infoFull.ModelName = strings.TrimSpace(infoFull.ModelName)
+	infoFull.IsVm = strings.TrimSpace(infoFull.IsVm)
+	infoFull.NicDevice = strings.TrimSpace(infoFull.NicDevice)
 
 	info.Sn = infoFull.Sn
 	info.Company = infoFull.Company
@@ -562,6 +585,12 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	info.CpuSum = infoFull.CpuSum
 	info.MemorySum = infoFull.MemorySum
 	info.DiskSum = infoFull.DiskSum
+	info.IsVm = infoFull.IsVm
+	info.NicDevice = infoFull.NicDevice
+	if info.IsVm != "Yes" {
+		info.IsVm = "No"
+	}
+
 	if infoFull.Cpu.Core != "" {
 		core, _ := strconv.Atoi(infoFull.Cpu.Core)
 		if core > 0 && info.CpuSum <= uint(0) {
@@ -665,14 +694,14 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 			return
 		}
 
-		_, errUpdate := repo.UpdateManufacturerById(id, info.Company, info.Product, info.ModelName, info.Sn, info.Ip, info.Mac, info.Nic, info.Cpu, info.CpuSum, info.Memory, info.MemorySum, info.Disk, info.DiskSum, info.Motherboard, info.Raid, info.Oob)
+		_, errUpdate := repo.UpdateManufacturerById(id, info.Company, info.Product, info.ModelName, info.Sn, info.Ip, info.Mac, info.Nic, info.Cpu, info.CpuSum, info.Memory, info.MemorySum, info.Disk, info.DiskSum, info.Motherboard, info.Raid, info.Oob, info.IsVm, info.NicDevice)
 		if errUpdate != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error()})
 			return
 		}
 
 	} else {
-		_, err := repo.AddManufacturer(info.DeviceID, info.Company, info.Product, info.ModelName, info.Sn, info.Ip, info.Mac, info.Nic, info.Cpu, info.CpuSum, info.Memory, info.MemorySum, info.Disk, info.DiskSum, info.Motherboard, info.Raid, info.Oob)
+		_, err := repo.AddManufacturer(info.DeviceID, info.Company, info.Product, info.ModelName, info.Sn, info.Ip, info.Mac, info.Nic, info.Cpu, info.CpuSum, info.Memory, info.MemorySum, info.Disk, info.DiskSum, info.Motherboard, info.Raid, info.Oob, info.IsVm, info.NicDevice)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 			return

@@ -71,8 +71,8 @@ func (repo *MySQLRepo) CountManufacturerByWhere(where string) (int, error) {
 	return count, nil
 }
 
-func (repo *MySQLRepo) AddManufacturer(deviceId uint, company string, product string, modelName string, sn string, ip string, mac string, nic string, cpu string, cpuSum uint, memory string, memorySum uint, disk string, diskSum uint, motherboard string, raid string, oob string) (*model.Manufacturer, error) {
-	mod := model.Manufacturer{DeviceID: deviceId, Company: company, Product: product, ModelName: modelName, Sn: sn, Ip: ip, Mac: mac, Nic: nic, Cpu: cpu, CpuSum: cpuSum, Memory: memory, MemorySum: memorySum, Disk: disk, DiskSum: diskSum, Motherboard: motherboard, Raid: raid, Oob: oob}
+func (repo *MySQLRepo) AddManufacturer(deviceId uint, company string, product string, modelName string, sn string, ip string, mac string, nic string, cpu string, cpuSum uint, memory string, memorySum uint, disk string, diskSum uint, motherboard string, raid string, oob string, isVm string, nicDevice string) (*model.Manufacturer, error) {
+	mod := model.Manufacturer{DeviceID: deviceId, Company: company, Product: product, ModelName: modelName, Sn: sn, Ip: ip, Mac: mac, Nic: nic, Cpu: cpu, CpuSum: cpuSum, Memory: memory, MemorySum: memorySum, Disk: disk, DiskSum: diskSum, Motherboard: motherboard, Raid: raid, Oob: oob, IsVm: isVm, NicDevice: nicDevice}
 	err := repo.db.Create(&mod).Error
 	return &mod, err
 }
@@ -102,6 +102,12 @@ func (repo *MySQLRepo) GetManufacturerById(id uint) (*model.Manufacturer, error)
 	return &mod, err
 }
 
+func (repo *MySQLRepo) GetManufacturerBySn(sn string) (*model.Manufacturer, error) {
+	var mod model.Manufacturer
+	err := repo.db.Where("sn = ?", sn).Find(&mod).Error
+	return &mod, err
+}
+
 func (repo *MySQLRepo) GetManufacturerByDeviceId(deviceId uint) (*model.Manufacturer, error) {
 	var mod model.Manufacturer
 	err := repo.db.Where("device_id = ?", deviceId).Find(&mod).Error
@@ -114,9 +120,9 @@ func (repo *MySQLRepo) GetManufacturerByDeviceID(deviceId uint) (*model.Manufact
 	return &mod, err
 }
 
-func (repo *MySQLRepo) UpdateManufacturerById(id uint, company string, product string, modelName string, sn string, ip string, mac string, nic string, cpu string, cpuSum uint, memory string, memorySum uint, disk string, diskSum uint, motherboard string, raid string, oob string) (*model.Manufacturer, error) {
+func (repo *MySQLRepo) UpdateManufacturerById(id uint, company string, product string, modelName string, sn string, ip string, mac string, nic string, cpu string, cpuSum uint, memory string, memorySum uint, disk string, diskSum uint, motherboard string, raid string, oob string, isVm string, nicDevice string) (*model.Manufacturer, error) {
 	mod := model.Manufacturer{Company: company, Product: product, ModelName: modelName}
-	err := repo.db.First(&mod, id).Update("company", company).Update("product", product).Update("model_name", modelName).Update("sn", sn).Update("ip", ip).Update("mac", mac).Update("nic", nic).Update("cpu", cpu).Update("cpu_sum", cpuSum).Update("memory", memory).Update("memory_sum", memorySum).Update("disk", disk).Update("disk_sum", diskSum).Update("motherboard", motherboard).Update("raid", raid).Update("oob", oob).Error
+	err := repo.db.First(&mod, id).Update("company", company).Update("product", product).Update("model_name", modelName).Update("sn", sn).Update("ip", ip).Update("mac", mac).Update("nic", nic).Update("cpu", cpu).Update("cpu_sum", cpuSum).Update("memory", memory).Update("memory_sum", memorySum).Update("disk", disk).Update("disk_sum", diskSum).Update("motherboard", motherboard).Update("raid", raid).Update("oob", oob).Update("is_vm", isVm).Update("nic_device", nicDevice).Error
 	return &mod, err
 }
 
@@ -143,6 +149,14 @@ func (repo *MySQLRepo) GetManufacturerIdBySn(sn string) (uint, error) {
 	mod := model.Manufacturer{Sn: sn}
 	err := repo.db.Unscoped().Where("sn = ?", sn).Find(&mod).Error
 	return mod.ID, err
+}
+
+func (repo *MySQLRepo) GetManufacturerSnByNicMacForVm(mac string) (string, error) {
+	var result model.Manufacturer
+	sql := "SELECT * from manufacturers where is_vm = 'Yes' and (sn = '" + mac + "' or nic like '%%\"Mac\":\"" + mac + "\"%%')"
+	err := repo.db.Raw(sql).Scan(&result).Error
+	return result.Sn, err
+
 }
 
 func (repo *MySQLRepo) GetManufacturerMacBySn(sn string) (string, error) {

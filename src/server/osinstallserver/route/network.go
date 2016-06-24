@@ -51,7 +51,6 @@ func ValidateIp(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	//fmt.Println("done")
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "匹配成功", "Content": network})
 }
 
@@ -376,8 +375,6 @@ func AddNetwork(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "网关格式不正确!", "Content": ""})
 		return
 	}
-
-	//fmt.Println("test")
 
 	//处理网段
 	network, err := util.GetCidrInfo(info.Network)

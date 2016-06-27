@@ -43,7 +43,7 @@ var (
 [Logger]
 color = false
 level = debug
-logFile = /var/log/osinstall-agent.log
+logFile = /var/log/cloudboot-agent.log
 `
 
 	defaultLoopInterval = 60
@@ -116,17 +116,17 @@ func New() (*OSInstallAgent, error) {
 		Logger: log,
 	}
 
-	var data []byte
-	// get sn
-	agent.Logger.Debug("START to get SN")
-	if data, err = execScript(GetSNScript); err != nil {
-		agent.Logger.Error(data)
-		agent.Logger.Error(err)
-		return nil, fmt.Errorf("get SN error: \n#%s\n%v\n%s", GetSNScript, err, string(data))
-	}
-	agent.Sn = string(data)
-	agent.Sn = strings.Trim(agent.Sn, "\n")
-	agent.Logger.Debugf("SN: %s", agent.Sn)
+	// var data []byte
+	// // get sn
+	// agent.Logger.Debug("START to get SN")
+	// if data, err = execScript(GetSNScript); err != nil {
+	// 	agent.Logger.Error(data)
+	// 	agent.Logger.Error(err)
+	// 	return nil, fmt.Errorf("get SN error: \n#%s\n%v\n%s", GetSNScript, err, string(data))
+	// }
+	// agent.Sn = string(data)
+	// agent.Sn = strings.Trim(agent.Sn, "\n")
+	// agent.Logger.Debugf("SN: %s", agent.Sn)
 
 	// get mac addr by sysinfo.sh
 	// get mac addr
@@ -294,6 +294,11 @@ func (agent *OSInstallAgent) ReportProductInfo() error {
 	}
 
 	// set company to agent
+	agent.Logger.Debug("Start to get SN")
+	agent.Sn = strings.Trim(jsonReq.Sn, "\n")
+	agent.Sn = strings.TrimSpace(agent.Sn)
+	agent.Logger.Debugf("SN: %s", agent.Sn)
+
 	agent.Company = strings.ToLower(jsonReq.Company)
 	agent.Product = jsonReq.Product
 	agent.ModelName = jsonReq.ModelName

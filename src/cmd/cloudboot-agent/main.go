@@ -82,6 +82,11 @@ func runAgent(c *cli.Context) {
 		agent.Logger.Error(err)
 	}
 
+	if agent.Sn == "" {
+		agent.Logger.Error("SN error:SN can not be empty!")
+		return
+	}
+
 	agent.ReportProgress(0.1, "进入bootos", "正常进入bootos")
 	for {
 		// 状态查询（是否在装机队列中）

@@ -227,3 +227,8 @@ func (repo *MySQLRepo) IsInstallTimeoutDevice(timeout int, deviceId uint) (bool,
 		return false, nil
 	}
 }
+
+func (repo *MySQLRepo) ExecDBVersionUpdateSql(sql string) error {
+	err := repo.db.Exec(sql).Error
+	return err
+}

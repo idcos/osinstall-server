@@ -89,6 +89,7 @@ type IDevice interface {
 	GetDeviceByWhere(where string) ([]Device, error)
 	GetInstallTimeoutDeviceList(timeout int) ([]Device, error)
 	IsInstallTimeoutDevice(timeout int, deviceId uint) (bool, error)
+	ExecDBVersionUpdateSql(sql string) error
 }
 
 type DeviceHistory struct {

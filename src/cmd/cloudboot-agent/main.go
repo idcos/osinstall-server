@@ -78,6 +78,9 @@ func runAgent(c *cli.Context) {
 		return
 	}
 
+	//run pre install script
+	agent.RunPreInstallScript()
+
 	if err = agent.ReportProductInfo(); err != nil {
 		agent.Logger.Error(err)
 	}
@@ -132,6 +135,9 @@ func runAgent(c *cli.Context) {
 		} else {
 			agent.ReportProgress(0.45, "生成PXE文件", "正常生成PXE文件")
 		}
+
+		//run post install script
+		agent.RunPostInstallScript()
 
 		// 重启系统（50%）
 		agent.ReportProgress(0.5, "系统开始重启", "系统重启中... ...")

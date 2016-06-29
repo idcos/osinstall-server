@@ -33,9 +33,13 @@ const (
 
 	APIVersion = "v1"
 
-	ProductInfoScript = `/usr/local/bin/sysinfo.sh`
-	On                = "1"
-	Off               = "0"
+	ProductInfoScript       = `/usr/local/bin/sysinfo.sh`
+	On                      = "1"
+	Off                     = "0"
+	PreInstallScript        = "/tmp/preInstall.cmd"
+	PostInstallScript       = "/tmp/postInstall.cmd"
+	RegexpPreInstallScript  = `PRE=([^ ]+)`
+	RegexpPostInstallScript = `POST=([^ ]+)`
 )
 
 var (
@@ -173,6 +177,112 @@ func New() (*OSInstallAgent, error) {
 	agent.Logger.Debugf("DEVELOPER: %s", agent.DevelopeMode)
 
 	return agent, nil
+}
+
+//run pre install script
+func (agent *OSInstallAgent) RunPreInstallScript() {
+	agent.Logger.Debug("START to get PreInstallScript")
+	url, err := getCmdlineArgs(RegexpPreInstallScript)
+	url = strings.Trim(url, "\n")
+	url = strings.TrimSpace(url)
+	if err != nil {
+		agent.Logger.Error(err.Error())
+		return
+	}
+	agent.Logger.Infof("script:%s", url)
+	if url == "" {
+		return
+	}
+
+	agent.Logger.Debugf("START to wget %s", url)
+	script, err := wget(url)
+	if err != nil {
+		agent.Logger.Error(err.Error())
+		return
+	}
+	agent.Logger.Debugf("script:%s", script)
+
+	agent.Logger.Debugf("write to file %s:%s", PreInstallScript, script)
+	var bytes = []byte(script)
+	errWrite := ioutil.WriteFile(PreInstallScript, bytes, 0666)
+	if errWrite != nil {
+		agent.Logger.Error(errWrite.Error())
+		return
+	}
+
+	//chmod 755 PreInstallScript
+	cmd := `chmod 755 ` + PreInstallScript
+	agent.Logger.Debugf("exec:%s", cmd)
+	data, errRun := execScript(cmd)
+	if errRun != nil {
+		agent.Logger.Error(errRun.Error())
+		return
+	}
+	agent.Logger.Debugf("result:%s", string(data))
+
+	//run PreInstallScript
+	cmd = PreInstallScript
+	agent.Logger.Debugf("exec:%s", cmd)
+	data, errRun = execScript(cmd)
+	if errRun != nil {
+		agent.Logger.Error(errRun.Error())
+		return
+	}
+	agent.Logger.Debugf("result:%s", string(data))
+	return
+}
+
+//run post install script
+func (agent *OSInstallAgent) RunPostInstallScript() {
+	agent.Logger.Debug("START to get PostInstallScript")
+	url, err := getCmdlineArgs(RegexpPostInstallScript)
+	url = strings.Trim(url, "\n")
+	url = strings.TrimSpace(url)
+	if err != nil {
+		agent.Logger.Error(err.Error())
+		return
+	}
+	agent.Logger.Infof("script:%s", url)
+	if url == "" {
+		return
+	}
+
+	agent.Logger.Debugf("START to wget %s", url)
+	script, err := wget(url)
+	if err != nil {
+		agent.Logger.Error(err.Error())
+		return
+	}
+	agent.Logger.Debugf("script:%s", script)
+
+	agent.Logger.Debugf("write to file %s:%s", PostInstallScript, script)
+	var bytes = []byte(script)
+	errWrite := ioutil.WriteFile(PostInstallScript, bytes, 0666)
+	if errWrite != nil {
+		agent.Logger.Error(errWrite.Error())
+		return
+	}
+
+	//chmod 755 PostInstallScript
+	cmd := `chmod 755 ` + PostInstallScript
+	agent.Logger.Debugf("exec:%s", cmd)
+	data, errRun := execScript(cmd)
+	if errRun != nil {
+		agent.Logger.Error(errRun.Error())
+		return
+	}
+	agent.Logger.Debugf("result:%s", string(data))
+
+	//run PostInstallScript
+	cmd = PostInstallScript
+	agent.Logger.Debugf("exec:%s", cmd)
+	data, errRun = execScript(cmd)
+	if errRun != nil {
+		agent.Logger.Error(errRun.Error())
+		return
+	}
+	agent.Logger.Debugf("result:%s", string(data))
+	return
 }
 
 // IsInInstallQueue 检查是否在装机队列中 （定时执行）
@@ -618,6 +728,19 @@ func callRestAPI(url string, jsonReq interface{}) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+func wget(url string) (string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
 }
 
 // execScript 执行脚本

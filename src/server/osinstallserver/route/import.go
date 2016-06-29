@@ -329,7 +329,8 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 					br = "<br />"
 				}
 				row.Content += br + "该设备已被其他人录入，不能重复录入!"
-			} else {
+			}
+			/*else {
 				if device.Status == "success" {
 					var br string
 					if row.Content != "" {
@@ -338,6 +339,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 					row.Content += br + "该设备已安装成功，请使用【单台录入】的功能重新录入并安装"
 				}
 			}
+			*/
 
 			//hostname
 			countHostname, err := repo.CountDeviceByHostnameAndId(row.Hostname, ID)
@@ -1213,6 +1215,25 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 				if errLog != nil {
 					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
 					return
+				}
+
+				//init manufactures device_id
+				countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(row.Sn)
+				if errCountManufacturer != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCountManufacturer.Error()})
+					return
+				}
+				if countManufacturer > 0 {
+					manufacturerId, errGetManufacturerBySn := repo.GetManufacturerIdBySn(row.Sn)
+					if errGetManufacturerBySn != nil {
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errGetManufacturerBySn.Error()})
+						return
+					}
+					_, errUpdate := repo.UpdateManufacturerDeviceIdById(manufacturerId, id)
+					if errUpdate != nil {
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error()})
+						return
+					}
 				}
 
 				//delete host server info

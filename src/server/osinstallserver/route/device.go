@@ -1251,6 +1251,25 @@ func AddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			return
 		}
 
+		//init manufactures device_id
+		countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(info.Sn)
+		if errCountManufacturer != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCountManufacturer.Error()})
+			return
+		}
+		if countManufacturer > 0 {
+			manufacturerId, errGetManufacturerBySn := repo.GetManufacturerIdBySn(info.Sn)
+			if errGetManufacturerBySn != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errGetManufacturerBySn.Error()})
+				return
+			}
+			_, errUpdate := repo.UpdateManufacturerDeviceIdById(manufacturerId, id)
+			if errUpdate != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error()})
+				return
+			}
+		}
+
 		//callback script
 		errCallback := SaveDeviceInstallCallback(ctx, device.ID, "after_install", info.Callback)
 		if errCallback != nil {
@@ -1679,6 +1698,25 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 			if errAddLog != nil {
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
 				return
+			}
+
+			//init manufactures device_id
+			countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(info.Sn)
+			if errCountManufacturer != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCountManufacturer.Error()})
+				return
+			}
+			if countManufacturer > 0 {
+				manufacturerId, errGetManufacturerBySn := repo.GetManufacturerIdBySn(info.Sn)
+				if errGetManufacturerBySn != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errGetManufacturerBySn.Error()})
+					return
+				}
+				_, errUpdate := repo.UpdateManufacturerDeviceIdById(manufacturerId, id)
+				if errUpdate != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error()})
+					return
+				}
 			}
 
 			//callback script
@@ -3230,6 +3268,25 @@ func ImportDeviceForOpenApi(ctx context.Context, w rest.ResponseWriter, r *rest.
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 			return
+		}
+
+		//init manufactures device_id
+		countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(row.Sn)
+		if errCountManufacturer != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCountManufacturer.Error()})
+			return
+		}
+		if countManufacturer > 0 {
+			manufacturerId, errGetManufacturerBySn := repo.GetManufacturerIdBySn(row.Sn)
+			if errGetManufacturerBySn != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errGetManufacturerBySn.Error()})
+				return
+			}
+			_, errUpdate := repo.UpdateManufacturerDeviceIdById(manufacturerId, id)
+			if errUpdate != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error()})
+				return
+			}
 		}
 
 		//delete host server info

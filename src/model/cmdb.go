@@ -402,51 +402,53 @@ type IMac interface {
 
 type Manufacturer struct {
 	gorm.Model
-	DeviceID    uint   `sql:"not null;"`
-	Company     string `sql:"not null;"`
-	Product     string
-	ModelName   string
-	Sn          string
-	Ip          string
-	Mac         string
-	Nic         string
-	Cpu         string
-	CpuSum      uint `sql:"type:int(11);default:0;"`
-	Memory      string
-	MemorySum   uint `sql:"type:int(11);default:0;"`
-	Disk        string
-	DiskSum     uint `sql:"type:int(11);default:0;"`
-	Motherboard string
-	Raid        string
-	Oob         string
-	UserID      uint   `sql:"not null;default:0;"`
-	IsVm        string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
-	NicDevice   string
+	DeviceID         uint   `sql:"not null;"`
+	Company          string `sql:"not null;"`
+	Product          string
+	ModelName        string
+	Sn               string
+	Ip               string
+	Mac              string
+	Nic              string
+	Cpu              string
+	CpuSum           uint `sql:"type:int(11);default:0;"`
+	Memory           string
+	MemorySum        uint `sql:"type:int(11);default:0;"`
+	Disk             string
+	DiskSum          uint `sql:"type:int(11);default:0;"`
+	Motherboard      string
+	Raid             string
+	Oob              string
+	UserID           uint   `sql:"not null;default:0;"`
+	IsVm             string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
+	IsShowInScanList string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
+	NicDevice        string
 }
 
 type ManufacturerFull struct {
-	ID          uint
-	DeviceID    uint
-	Company     string
-	Product     string
-	ModelName   string
-	Sn          string
-	Ip          string
-	Mac         string
-	Nic         string
-	Cpu         string
-	CpuSum      uint
-	Memory      string
-	MemorySum   uint
-	Disk        string
-	DiskSum     uint
-	Motherboard string
-	Raid        string
-	Oob         string
-	UserID      uint
-	OwnerName   string
-	IsVm        string
-	NicDevice   string
+	ID               uint
+	DeviceID         uint
+	Company          string
+	Product          string
+	ModelName        string
+	Sn               string
+	Ip               string
+	Mac              string
+	Nic              string
+	Cpu              string
+	CpuSum           uint
+	Memory           string
+	MemorySum        uint
+	Disk             string
+	DiskSum          uint
+	Motherboard      string
+	Raid             string
+	Oob              string
+	UserID           uint
+	OwnerName        string
+	IsVm             string
+	NicDevice        string
+	IsShowInScanList string
 }
 
 type IManufacturer interface {
@@ -457,8 +459,9 @@ type IManufacturer interface {
 	GetManufacturerByDeviceID(DeviceID uint) (*Manufacturer, error)
 	DeleteManufacturerById(Id uint) (*Manufacturer, error)
 	DeleteManufacturerBySn(Sn string) (*Manufacturer, error)
-	AddManufacturer(DeviceID uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string, IsVm string, NicDevice string) (*Manufacturer, error)
-	UpdateManufacturerById(Id uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string, IsVm string, NicDevice string) (*Manufacturer, error)
+	AddManufacturer(DeviceID uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string, IsVm string, NicDevice string, IsShowInScanList string) (*Manufacturer, error)
+	UpdateManufacturerById(Id uint, Company string, Product string, ModelName string, Sn string, Ip string, Mac string, Nic string, Cpu string, CpuSum uint, Memory string, MemorySum uint, Disk string, DiskSum uint, Motherboard string, Raid string, Oob string, IsVm string, NicDevice string, IsShowInScanList string) (*Manufacturer, error)
+	UpdateManufacturerIsShowInScanListById(id uint, IsShowInScanList string) (*Manufacturer, error)
 	UpdateManufacturerDeviceIdById(id uint, deviceId uint) (*Manufacturer, error)
 	UpdateManufacturerIPById(id uint, ip string) (*Manufacturer, error)
 	GetManufacturerListWithPage(Limit uint, Offset uint, Where string) ([]ManufacturerFull, error)

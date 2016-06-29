@@ -56,6 +56,7 @@ alter table cloudboot.manufacturers modify column ~~raid~~ LONGTEXT;
 alter table cloudboot.manufacturers modify column ~~oob~~ LONGTEXT;
 
 ALTER TABLE ~~manufacturers~~ ADD ~~is_vm~~ ENUM('Yes','No') NOT NULL DEFAULT 'No' ;
+ALTER TABLE ~~manufacturers~~ ADD ~~is_show_in_scan_list~~ ENUM('Yes','No') NOT NULL DEFAULT 'Yes' ;
 ALTER TABLE ~~manufacturers~~ ADD ~~nic_device~~ longtext NULL DEFAULT NULL;
 ALTER TABLE ~~devices~~ CHANGE ~~is_support_vm~~ ~~is_support_vm~~ ENUM('Yes','No') CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT 'No' COMMENT '是否支持安装虚拟机';
 UPDATE ~~devices~~ set ~~is_support_vm~~ = 'No';

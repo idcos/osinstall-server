@@ -321,10 +321,10 @@ func GetScanDeviceById(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	device.Disk = mod.Disk
 	device.DiskSum = mod.DiskSum
 	device.Motherboard = mod.Motherboard
-	device.Raid = mod.Raid
+	device.Raid = strings.Replace(mod.Raid, "\n", "<br>", -1)
 	device.Oob = mod.Oob
 	device.IsVm = mod.IsVm
-	device.NicDevice = mod.NicDevice
+	device.NicDevice = strings.Replace(mod.NicDevice, "\n", "<br>", -1)
 
 	device.CreatedAt = utils.ISOTime(mod.CreatedAt)
 	device.UpdatedAt = utils.ISOTime(mod.UpdatedAt)
@@ -394,10 +394,10 @@ func GetScanDeviceByDeviceId(ctx context.Context, w rest.ResponseWriter, r *rest
 	device.Disk = mod.Disk
 	device.DiskSum = mod.DiskSum
 	device.Motherboard = mod.Motherboard
-	device.Raid = mod.Raid
+	device.Raid = strings.Replace(mod.Raid, "\n", "<br>", -1)
 	device.Oob = mod.Oob
 	device.IsVm = mod.IsVm
-	device.NicDevice = mod.NicDevice
+	device.NicDevice = strings.Replace(mod.NicDevice, "\n", "<br>", -1)
 
 	device.CreatedAt = utils.ISOTime(mod.CreatedAt)
 	device.UpdatedAt = utils.ISOTime(mod.UpdatedAt)

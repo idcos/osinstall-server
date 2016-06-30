@@ -57,6 +57,10 @@ mediaType: application/json
         description: 用户ID，user表ID
         type: number
         required: false
+      IsSupportVm:
+        description: 是否支持安装虚拟机(Yes|No)，默认为 No
+        type: string
+        required: false
       AccessToken:
         description: 调用登录API时，生成的授权AccessToken
         type: string
@@ -118,6 +122,10 @@ mediaType: application/json
         required: true
       AssetNumber:
         description: 财编
+        type: string
+        required: false
+      IsSupportVm:
+        description: 是否支持安装虚拟机(Yes|No)，默认为 No
         type: string
         required: false
       AccessToken:
@@ -368,6 +376,10 @@ mediaType: application/json
       UserID:
         description: 用户ID，默认为0，可以不传
         type: number
+        required: false
+      IsSupportVm:
+        description: 是否支持安装虚拟机(Yes|No)，默认为 No
+        type: string
         required: false
       AccessToken:
         description: 调用登录API时，生成的授权AccessToken

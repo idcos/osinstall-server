@@ -61,6 +61,7 @@ func UpdateSystemConfigById(ctx context.Context, w rest.ResponseWriter, r *rest.
 
 	info.Name = strings.TrimSpace(info.Name)
 	info.Content = strings.TrimSpace(info.Content)
+	info.Content = strings.Replace(info.Content, "\r\n", "\n", -1)
 
 	info.AccessToken = strings.TrimSpace(info.AccessToken)
 	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)
@@ -170,6 +171,7 @@ func AddSystemConfig(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 
 	info.Name = strings.TrimSpace(info.Name)
 	info.Content = strings.TrimSpace(info.Content)
+	info.Content = strings.Replace(info.Content, "\r\n", "\n", -1)
 
 	info.AccessToken = strings.TrimSpace(info.AccessToken)
 	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)

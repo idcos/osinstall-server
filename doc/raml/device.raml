@@ -57,6 +57,10 @@ mediaType: application/json
         description: 用户ID，user表ID
         type: number
         required: false
+      IsSupportVm:
+        description: 是否支持安装虚拟机(Yes|No)，默认为 No
+        type: string
+        required: false
       AccessToken:
         description: 调用登录API时，生成的授权AccessToken
         type: string
@@ -118,6 +122,10 @@ mediaType: application/json
         required: true
       AssetNumber:
         description: 财编
+        type: string
+        required: false
+      IsSupportVm:
+        description: 是否支持安装虚拟机(Yes|No)，默认为 No
         type: string
         required: false
       AccessToken:
@@ -369,6 +377,10 @@ mediaType: application/json
         description: 用户ID，默认为0，可以不传
         type: number
         required: false
+      IsSupportVm:
+        description: 是否支持安装虚拟机(Yes|No)，默认为 No
+        type: string
+        required: false
       AccessToken:
         description: 调用登录API时，生成的授权AccessToken
         type: string
@@ -387,7 +399,7 @@ mediaType: application/json
 
 /device/scan/list:
   post:
-    description: 获取【资源池】【发现新设备】列表
+    description: 获取【资源池】设备列表信息
     queryParameters:
       Limit:
         description: 页容量
@@ -431,6 +443,10 @@ mediaType: application/json
         required: false
       Disk:
         description: 硬盘大小，单位 GB
+        type: string
+        required: false
+      IsShowEnteredDevice:
+        description: 是否显示已录入到设备列表的信息，默认为No，要显示请传 Yes
         type: string
         required: false
     responses:

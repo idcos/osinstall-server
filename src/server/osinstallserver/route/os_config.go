@@ -69,6 +69,7 @@ func UpdateOsConfigById(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 
 	info.Name = strings.TrimSpace(info.Name)
 	info.Pxe = strings.TrimSpace(info.Pxe)
+	info.Pxe = strings.Replace(info.Pxe, "\r\n", "\n", -1)
 
 	if info.Name == "" || info.Pxe == "" {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
@@ -173,6 +174,7 @@ func AddOsConfig(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 
 	info.Name = strings.TrimSpace(info.Name)
 	info.Pxe = strings.TrimSpace(info.Pxe)
+	info.Pxe = strings.Replace(info.Pxe, "\r\n", "\n", -1)
 
 	info.AccessToken = strings.TrimSpace(info.AccessToken)
 	_, errVerify := VerifyAccessPurview(info.AccessToken, ctx, true, w, r)

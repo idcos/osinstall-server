@@ -20,16 +20,17 @@ import (
 )
 
 func UploadDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	w.Header().Add("Content-type", "text/html; charset=utf-8")
 	r.ParseForm()
 	file, handle, err := r.FormFile("file")
 	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		w.Write([]byte("{\"Message\":\"" + err.Error() + "\",\"Status\":\"error\"}"))
 		return
 	}
 
 	cd, err := iconv.Open("UTF-8", "GBK")
 	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		w.Write([]byte("{\"Message\":\"" + err.Error() + "\",\"Status\":\"error\"}"))
 		return
 	}
 	defer cd.Close()
@@ -38,7 +39,7 @@ func UploadDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	if !util.FileExist(dir) {
 		err := os.MkdirAll(dir, 0777)
 		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+			w.Write([]byte("{\"Message\":\"" + err.Error() + "\",\"Status\":\"error\"}"))
 			return
 		}
 	}
@@ -62,12 +63,19 @@ func UploadDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	f, err := os.OpenFile(dir+filename, os.O_WRONLY|os.O_CREATE, 0666)
 	io.Copy(f, file)
 	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		w.Write([]byte("{\"Message\":\"" + err.Error() + "\",\"Status\":\"error\"}"))
 		return
 	}
 	defer f.Close()
 	defer file.Close()
-	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
+
+	data := map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result}
+	json, err := json.Marshal(data)
+	if err != nil {
+		w.Write([]byte("{\"Message\":\"" + err.Error() + "\",\"Status\":\"error\"}"))
+		return
+	}
+	w.Write([]byte(json))
 	return
 }
 
@@ -149,6 +157,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		SystemName        string
 		Content           string
 		UserID            uint
+		IsSupportVm       string
 	}
 	var success []Device
 	var failure []Device
@@ -156,7 +165,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	for i := 1; i < length; i++ {
 		//result = append(result, ra[i][0])
 		var row Device
-		if len(ra[i]) != 9 {
+		if len(ra[i]) != 10 {
 			var br string
 			if row.Content != "" {
 				br = "<br />"
@@ -175,6 +184,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		row.Location = strings.TrimSpace(ra[i][6])
 		row.AssetNumber = strings.TrimSpace(ra[i][7])
 		row.ManageIp = strings.TrimSpace(ra[i][8])
+		row.IsSupportVm = strings.TrimSpace(ra[i][9])
 		row.UserID = session.ID
 
 		if len(row.Sn) > 255 {
@@ -257,6 +267,14 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 			row.Content += br + "位置不能为空!"
 		}
 
+		if row.IsSupportVm != "" && row.IsSupportVm != "Yes" && row.IsSupportVm != "No" {
+			var br string
+			if row.Content != "" {
+				br = "<br />"
+			}
+			row.Content += br + "是否支持虚拟机的参数格式不正确!"
+		}
+
 		//match manufacturer
 		countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(row.Sn)
 		if errCountManufacturer != nil {
@@ -269,6 +287,20 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 				br = "<br />"
 			}
 			row.Content += br + "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"
+		}
+
+		//validate ip from vm device
+		countVmIp, errVmIp := repo.CountVmDeviceByIp(row.Ip)
+		if errVmIp != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVmIp.Error()})
+			return
+		}
+		if countVmIp > 0 {
+			var br string
+			if row.Content != "" {
+				br = "<br />"
+			}
+			row.Content += br + row.Ip + " 该IP已被虚拟机使用!"
 		}
 
 		countDevice, err := repo.CountDeviceBySn(row.Sn)
@@ -297,7 +329,8 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 					br = "<br />"
 				}
 				row.Content += br + "该设备已被其他人录入，不能重复录入!"
-			} else {
+			}
+			/*else {
 				if device.Status == "success" {
 					var br string
 					if row.Content != "" {
@@ -306,6 +339,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 					row.Content += br + "该设备已安装成功，请使用【单台录入】的功能重新录入并安装"
 				}
 			}
+			*/
 
 			//hostname
 			countHostname, err := repo.CountDeviceByHostnameAndId(row.Hostname, ID)
@@ -351,6 +385,20 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 					}
 					row.Content += br + "该管理IP已存在!"
 				}
+			}
+
+			//validate host server info
+			countVm, errVm := repo.CountVmDeviceByDeviceId(row.ID)
+			if errVm != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVm.Error()})
+				return
+			}
+			if countVm > 0 {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "该物理机下(SN:" + device.Sn + ")还存留有虚拟机，不允许修改信息。请先销毁虚拟机后再操作！"
 			}
 
 		} else {
@@ -677,7 +725,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		//result = append(result, ra[i][0])
 		var row Device
 
-		if len(ra[i]) != 9 {
+		if len(ra[i]) != 10 {
 			continue
 		}
 
@@ -690,6 +738,7 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		row.Location = strings.TrimSpace(ra[i][6])
 		row.AssetNumber = strings.TrimSpace(ra[i][7])
 		row.ManageIp = strings.TrimSpace(ra[i][8])
+		row.IsSupportVm = strings.TrimSpace(ra[i][9])
 		row.UserID = session.ID
 
 		if len(row.Sn) > 255 {
@@ -772,6 +821,18 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			row.Content += br + "位置不能为空!"
 		}
 
+		if row.IsSupportVm != "" && row.IsSupportVm != "Yes" && row.IsSupportVm != "No" {
+			var br string
+			if row.Content != "" {
+				br = "<br />"
+			}
+			row.Content += br + "是否支持虚拟机的参数格式不正确!"
+		}
+
+		if row.IsSupportVm != "Yes" {
+			row.IsSupportVm = "No"
+		}
+
 		//match manufacturer
 		countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(row.Sn)
 		if errCountManufacturer != nil {
@@ -784,6 +845,20 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 				br = "<br />"
 			}
 			row.Content += br + "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"
+		}
+
+		//validate ip from vm device
+		countVmIp, errVmIp := repo.CountVmDeviceByIp(row.Ip)
+		if errVmIp != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVmIp.Error()})
+			return
+		}
+		if countVmIp > 0 {
+			var br string
+			if row.Content != "" {
+				br = "<br />"
+			}
+			row.Content += br + row.Ip + " 该IP已被虚拟机使用!"
 		}
 
 		countDevice, err := repo.CountDeviceBySn(row.Sn)
@@ -858,6 +933,20 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 					}
 					row.Content += br + "SN:" + row.Sn + "该管理IP已存在!"
 				}
+			}
+
+			//validate host server info
+			countVm, errVm := repo.CountVmDeviceByDeviceId(row.ID)
+			if errVm != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVm.Error()})
+				return
+			}
+			if countVm > 0 {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "该物理机下(SN:" + device.Sn + ")还存留有虚拟机，不允许修改信息。请先销毁虚拟机后再操作！"
 			}
 		} else {
 			//hostname
@@ -1109,7 +1198,6 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			return
 		} else {
 			status := "pre_install"
-			row.IsSupportVm = "Yes"
 			if countDevice > 0 {
 				id, err := repo.GetDeviceIdBySn(row.Sn)
 				if err != nil {
@@ -1126,6 +1214,32 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 				_, errLog := repo.UpdateDeviceLogTypeByDeviceIdAndType(id, "install", "install_history")
 				if errLog != nil {
 					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
+					return
+				}
+
+				//init manufactures device_id
+				countManufacturer, errCountManufacturer := repo.CountManufacturerBySn(row.Sn)
+				if errCountManufacturer != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errCountManufacturer.Error()})
+					return
+				}
+				if countManufacturer > 0 {
+					manufacturerId, errGetManufacturerBySn := repo.GetManufacturerIdBySn(row.Sn)
+					if errGetManufacturerBySn != nil {
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errGetManufacturerBySn.Error()})
+						return
+					}
+					_, errUpdate := repo.UpdateManufacturerDeviceIdById(manufacturerId, id)
+					if errUpdate != nil {
+						w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error()})
+						return
+					}
+				}
+
+				//delete host server info
+				_, errDeleteHost := repo.DeleteVmHostBySn(deviceOld.Sn)
+				if errDeleteHost != nil {
+					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDeleteHost.Error()})
 					return
 				}
 

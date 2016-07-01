@@ -12,9 +12,9 @@ import (
 )
 
 type OsInstallServer struct {
-	conf    *config.Config
+	Conf    *config.Config
 	Log     logger.Logger
-	repo    model.Repo
+	Repo    model.Repo
 	handler http.Handler
 }
 
@@ -39,9 +39,9 @@ func NewServer(confPath string, setup PipelineSetupFunc) (*OsInstallServer, erro
 	api.SetApp(router)
 
 	server := &OsInstallServer{
-		conf:    conf,
+		Conf:    conf,
 		Log:     log,
-		repo:    repo,
+		Repo:    repo,
 		handler: api.MakeHandler(),
 	}
 

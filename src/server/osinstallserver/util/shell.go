@@ -2,7 +2,11 @@ package util
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
+	"golang.org/x/net/context"
 	"io/ioutil"
+	"middleware"
 	"os"
 	"os/exec"
 )
@@ -34,4 +38,41 @@ func ExecScript(script string) ([]byte, error) {
 
 	err = cmd.Wait()
 	return output.Bytes(), err
+}
+
+func IconvFile(filename string, fromCode string, toCode string, ctx context.Context) error {
+	if filename == "" || fromCode == "" || toCode == "" {
+		return errors.New("参数错误")
+	}
+
+	logger, ok := middleware.LoggerFromContext(ctx)
+	if !ok {
+		return errors.New("内部服务器错误")
+	}
+
+	if !FileExist(filename) {
+		return errors.New(filename + "文件不存在")
+	}
+	newFilename := filename + "_" + toCode
+	cmd := fmt.Sprintf("iconv -t %s -f %s -c  %s > %s", toCode, fromCode, filename, newFilename)
+	logger.Debugf("run script: %s", cmd)
+	bytes, err := ExecScript(cmd)
+	logger.Debugf("run result: %s", string(bytes))
+	if err != nil {
+		logger.Errorf("run error:%s", err.Error())
+		return err
+	}
+
+	//delete old file
+	errRemove := os.Remove(filename)
+	if errRemove != nil {
+		return errRemove
+	}
+
+	//rename
+	errRename := os.Rename(newFilename, filename)
+	if errRename != nil {
+		return errRename
+	}
+	return nil
 }

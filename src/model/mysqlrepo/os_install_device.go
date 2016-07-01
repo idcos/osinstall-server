@@ -159,7 +159,7 @@ func (repo *MySQLRepo) GetDeviceListWithPage(limit uint, offset uint, where stri
 	*/
 
 	var result []model.DeviceFull
-	sql := "SELECT t1.*,t2.network as network_name,t6.network as manage_network_name,t3.name as os_name,concat(t4.company,'-',t4.model_name) as hardware_name,t5.name as system_name,t7.username as owner_name FROM devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join hardwares t4 on t1.hardware_id = t4.id left join system_configs t5 on t1.system_id = t5.id left join manage_networks t6 on t1.manage_network_id = t6.id left join `users` t7 on t1.user_id = t7.id " + where + " order by t1.id DESC"
+	sql := "SELECT t1.*,t2.network as network_name,t6.network as manage_network_name,t3.name as os_name,concat(t4.company,'-',t4.model_name) as hardware_name,t5.name as system_name,t7.username as owner_name,t8.ip as bootos_ip,t8.oob as oob_ip FROM devices t1 left join networks t2 on t1.network_id = t2.id left join os_configs t3 on t1.os_id = t3.id left join hardwares t4 on t1.hardware_id = t4.id left join system_configs t5 on t1.system_id = t5.id left join manage_networks t6 on t1.manage_network_id = t6.id left join `users` t7 on t1.user_id = t7.id left join manufacturers t8 on t1.`sn` = t8.`sn` " + where + " order by t1.id DESC"
 
 	if offset > 0 {
 		sql += " limit " + fmt.Sprintf("%d", offset) + "," + fmt.Sprintf("%d", limit)
@@ -205,4 +205,30 @@ func (repo *MySQLRepo) GetNetworkBySn(sn string) (*model.Network, error) {
 	var mod model.Network
 	err := repo.db.Joins("inner join devices on devices.network_id = networks.id").Where("devices.sn = ?", sn).Find(&mod).Error
 	return &mod, err
+}
+
+func (repo *MySQLRepo) GetInstallTimeoutDeviceList(timeout int) ([]model.Device, error) {
+	var result []model.Device
+	sql := "select t3.* from (select device_id,max(id) as id from device_logs where type = 'install' and device_id in (select id from devices where status = 'installing') group by device_id ) t1 inner join device_logs t2 on t1.id = t2.id and (UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(t2.created_at)) >= " + fmt.Sprintf("%d", timeout) + " inner join devices t3 on t1.device_id = t3.id"
+	err := repo.db.Raw(sql).Scan(&result).Error
+	return result, err
+}
+
+func (repo *MySQLRepo) IsInstallTimeoutDevice(timeout int, deviceId uint) (bool, error) {
+	sql := "select count(t3.id) as count from (select device_id,max(id) as id from device_logs where type = 'install' and device_id = " + fmt.Sprintf("%d", deviceId) + " and device_id in (select id from devices where status = 'installing') group by device_id ) t1 inner join device_logs t2 on t1.id = t2.id and (UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(t2.created_at)) >= " + fmt.Sprintf("%d", timeout) + " inner join devices t3 on t1.device_id = t3.id"
+	row := repo.db.DB().QueryRow(sql)
+	var count = -1
+	if err := row.Scan(&count); err != nil {
+		return false, err
+	}
+	if count > 0 {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
+func (repo *MySQLRepo) ExecDBVersionUpdateSql(sql string) error {
+	err := repo.db.Exec(sql).Error
+	return err
 }

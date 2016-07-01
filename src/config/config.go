@@ -21,8 +21,14 @@ type Config struct {
 	OsInstall struct {
 		PxeConfigDir string `ini:"pxeConfigDir"`
 	}
+	Vm struct {
+		Storage string `ini:"storage"`
+	}
 	Rsa struct {
 		PublicKey  string `ini:"publicKey"`
 		PrivateKey string `ini:"privateKey"`
+	}
+	Cron struct {
+		InstallTimeout int `ini:"installTimeout"`
 	}
 }

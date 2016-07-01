@@ -7,12 +7,13 @@ import (
 	"net/http"
 	"os"
 	"server/osinstallserver"
+	"server/osinstallserver/route"
 	"server/osinstallserver/util"
 	"time"
 )
 
 var date = time.Now().Format("2006-01-02")
-var version = "v1.2.1 (" + date + ")"
+var version = "v1.3 (" + date + ")"
 var name = "cloudboot-server"
 var description = "cloudboot server"
 var usage = "CloudJ server install tool"
@@ -60,6 +61,9 @@ func runServer(c *cli.Context) {
 	}
 
 	srvr.Log.Info("The server is running.")
+
+	//cron
+	route.CloudBootCron(srvr.Conf, srvr.Log, srvr.Repo)
 
 	if err := http.Serve(l4, srvr); err != nil {
 		srvr.Log.Error(err)

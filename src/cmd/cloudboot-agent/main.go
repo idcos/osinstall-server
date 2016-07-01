@@ -8,7 +8,7 @@ import (
 )
 
 var date = time.Now().Format("2006-01-02")
-var version = "v1.2.1 (" + date + ")"
+var version = "v1.3 (" + date + ")"
 var name = "cloudboot-agent"
 var description = "cloudboot agent"
 
@@ -78,8 +78,16 @@ func runAgent(c *cli.Context) {
 		return
 	}
 
+	//run pre install script
+	agent.RunPreInstallScript()
+
 	if err = agent.ReportProductInfo(); err != nil {
 		agent.Logger.Error(err)
+	}
+
+	if agent.Sn == "" {
+		agent.Logger.Error("SN error:SN can not be empty!")
+		return
 	}
 
 	agent.ReportProgress(0.1, "进入bootos", "正常进入bootos")
@@ -127,6 +135,9 @@ func runAgent(c *cli.Context) {
 		} else {
 			agent.ReportProgress(0.45, "生成PXE文件", "正常生成PXE文件")
 		}
+
+		//run post install script
+		agent.RunPostInstallScript()
 
 		// 重启系统（50%）
 		agent.ReportProgress(0.5, "系统开始重启", "系统重启中... ...")

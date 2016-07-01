@@ -33,9 +33,13 @@ const (
 
 	APIVersion = "v1"
 
-	ProductInfoScript = `/usr/local/bin/sysinfo.sh`
-	On                = "1"
-	Off               = "0"
+	ProductInfoScript       = `/usr/local/bin/sysinfo.sh`
+	On                      = "1"
+	Off                     = "0"
+	PreInstallScript        = "/tmp/preInstall.cmd"
+	PostInstallScript       = "/tmp/postInstall.cmd"
+	RegexpPreInstallScript  = `PRE=([^ ]+)`
+	RegexpPostInstallScript = `POST=([^ ]+)`
 )
 
 var (
@@ -43,7 +47,7 @@ var (
 [Logger]
 color = false
 level = debug
-logFile = /var/log/osinstall-agent.log
+logFile = /var/log/cloudboot-agent.log
 `
 
 	defaultLoopInterval = 60
@@ -78,6 +82,7 @@ type OSInstallAgent struct {
 	Product       string
 	ModelName     string
 	hardwareConfs []HardWareConf // base64 编码的硬件配置脚本
+	IsVm          string         //Whether it is a virtual machine
 }
 
 type nicInfo struct {
@@ -115,17 +120,17 @@ func New() (*OSInstallAgent, error) {
 		Logger: log,
 	}
 
-	var data []byte
-	// get sn
-	agent.Logger.Debug("START to get SN")
-	if data, err = execScript(GetSNScript); err != nil {
-		agent.Logger.Error(data)
-		agent.Logger.Error(err)
-		return nil, fmt.Errorf("get SN error: \n#%s\n%v\n%s", GetSNScript, err, string(data))
-	}
-	agent.Sn = string(data)
-	agent.Sn = strings.Trim(agent.Sn, "\n")
-	agent.Logger.Debugf("SN: %s", agent.Sn)
+	// var data []byte
+	// // get sn
+	// agent.Logger.Debug("START to get SN")
+	// if data, err = execScript(GetSNScript); err != nil {
+	// 	agent.Logger.Error(data)
+	// 	agent.Logger.Error(err)
+	// 	return nil, fmt.Errorf("get SN error: \n#%s\n%v\n%s", GetSNScript, err, string(data))
+	// }
+	// agent.Sn = string(data)
+	// agent.Sn = strings.Trim(agent.Sn, "\n")
+	// agent.Logger.Debugf("SN: %s", agent.Sn)
 
 	// get mac addr by sysinfo.sh
 	// get mac addr
@@ -172,6 +177,112 @@ func New() (*OSInstallAgent, error) {
 	agent.Logger.Debugf("DEVELOPER: %s", agent.DevelopeMode)
 
 	return agent, nil
+}
+
+//run pre install script
+func (agent *OSInstallAgent) RunPreInstallScript() {
+	agent.Logger.Debug("START to get PreInstallScript")
+	url, err := getCmdlineArgs(RegexpPreInstallScript)
+	url = strings.Trim(url, "\n")
+	url = strings.TrimSpace(url)
+	if err != nil {
+		agent.Logger.Error(err.Error())
+		return
+	}
+	agent.Logger.Infof("script:%s", url)
+	if url == "" {
+		return
+	}
+
+	agent.Logger.Debugf("START to wget %s", url)
+	script, err := wget(url)
+	if err != nil {
+		agent.Logger.Error(err.Error())
+		return
+	}
+	agent.Logger.Debugf("script:%s", script)
+
+	agent.Logger.Debugf("write to file %s:%s", PreInstallScript, script)
+	var bytes = []byte(script)
+	errWrite := ioutil.WriteFile(PreInstallScript, bytes, 0666)
+	if errWrite != nil {
+		agent.Logger.Error(errWrite.Error())
+		return
+	}
+
+	//chmod 755 PreInstallScript
+	cmd := `chmod 755 ` + PreInstallScript
+	agent.Logger.Debugf("exec:%s", cmd)
+	data, errRun := execScript(cmd)
+	if errRun != nil {
+		agent.Logger.Error(errRun.Error())
+		return
+	}
+	agent.Logger.Debugf("result:%s", string(data))
+
+	//run PreInstallScript
+	cmd = PreInstallScript
+	agent.Logger.Debugf("exec:%s", cmd)
+	data, errRun = execScript(cmd)
+	if errRun != nil {
+		agent.Logger.Error(errRun.Error())
+		return
+	}
+	agent.Logger.Debugf("result:%s", string(data))
+	return
+}
+
+//run post install script
+func (agent *OSInstallAgent) RunPostInstallScript() {
+	agent.Logger.Debug("START to get PostInstallScript")
+	url, err := getCmdlineArgs(RegexpPostInstallScript)
+	url = strings.Trim(url, "\n")
+	url = strings.TrimSpace(url)
+	if err != nil {
+		agent.Logger.Error(err.Error())
+		return
+	}
+	agent.Logger.Infof("script:%s", url)
+	if url == "" {
+		return
+	}
+
+	agent.Logger.Debugf("START to wget %s", url)
+	script, err := wget(url)
+	if err != nil {
+		agent.Logger.Error(err.Error())
+		return
+	}
+	agent.Logger.Debugf("script:%s", script)
+
+	agent.Logger.Debugf("write to file %s:%s", PostInstallScript, script)
+	var bytes = []byte(script)
+	errWrite := ioutil.WriteFile(PostInstallScript, bytes, 0666)
+	if errWrite != nil {
+		agent.Logger.Error(errWrite.Error())
+		return
+	}
+
+	//chmod 755 PostInstallScript
+	cmd := `chmod 755 ` + PostInstallScript
+	agent.Logger.Debugf("exec:%s", cmd)
+	data, errRun := execScript(cmd)
+	if errRun != nil {
+		agent.Logger.Error(errRun.Error())
+		return
+	}
+	agent.Logger.Debugf("result:%s", string(data))
+
+	//run PostInstallScript
+	cmd = PostInstallScript
+	agent.Logger.Debugf("exec:%s", cmd)
+	data, errRun = execScript(cmd)
+	if errRun != nil {
+		agent.Logger.Error(errRun.Error())
+		return
+	}
+	agent.Logger.Debugf("result:%s", string(data))
+	return
 }
 
 // IsInInstallQueue 检查是否在装机队列中 （定时执行）
@@ -281,6 +392,8 @@ func (agent *OSInstallAgent) ReportProductInfo() error {
 		Motherboard motherboardInfo
 		Raid        string
 		Oob         string
+		IsVm        string
+		NicDevice   string
 	}
 
 	// get infoFull from script
@@ -291,9 +404,21 @@ func (agent *OSInstallAgent) ReportProductInfo() error {
 	}
 
 	// set company to agent
+	agent.Logger.Debug("Start to get SN")
+	agent.Sn = strings.Trim(jsonReq.Sn, "\n")
+	agent.Sn = strings.TrimSpace(agent.Sn)
+	agent.Logger.Debugf("SN: %s", agent.Sn)
+
 	agent.Company = strings.ToLower(jsonReq.Company)
 	agent.Product = jsonReq.Product
 	agent.ModelName = jsonReq.ModelName
+
+	//set whether it is a virtual machine
+	jsonReq.IsVm = strings.TrimSpace(jsonReq.IsVm)
+	if jsonReq.IsVm != "Yes" {
+		jsonReq.IsVm = "No"
+	}
+	agent.IsVm = jsonReq.IsVm
 
 	// set mac info to agent
 	for _, nic := range jsonReq.Nic {
@@ -328,6 +453,10 @@ func (agent *OSInstallAgent) ReportProductInfo() error {
 
 // IsHaveHardWareConf 检查服务端是否此机器的硬件配置
 func (agent *OSInstallAgent) IsHaveHardWareConf() (bool, error) {
+	if agent.IsVm == "Yes" {
+		return true, nil
+	}
+
 	var url = agent.ServerAddr + isHaveHardwareConf
 	var skipHWConf = false
 	agent.Logger.Debugf("IsHaveHardWareConf url:%s\n", url)
@@ -599,6 +728,19 @@ func callRestAPI(url string, jsonReq interface{}) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+func wget(url string) (string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
 }
 
 // execScript 执行脚本

@@ -4,21 +4,144 @@ baseUri: /api/osinstall/{version}
 version: v1
 mediaType: application/json
 
-
-/vm/create:
+/vm/host/list:
   post:
-    description: 批量创建虚拟机，执行成功后返回成功状态及创建的虚拟机列表；执行失败返回失败状态及失败原因
+    description: 获取宿主机列表
     queryParameters:
-      Devices:
-        description: 物理宿主机信息，如：[{Sn:"testsn1"},{Sn:"testsn2"}]
-        type: array
+      Limit:
+        description: 页容量
+        type: number
         required: true
-      VmNumber:
-        description: 要安装的虚拟机个数
+      Offset:
+        description: 从第几行开始
+        type: number
+        required: true
+      Keyword:
+        description: 搜索关键字，可根据sn,hostname,ip,安装批次号搜索；搜索多条信息以\n隔开
+        type: string
+        required: false
+      BatchNumber:
+        description: 批次号
+        type: string
+        required: false
+      OsID:
+        description: os_config表ID
+        type: number
+        required: false
+      HardwareID:
+        description: hardware表ID
+        type: number
+        required: false
+      SystemID:
+        description: system_config表ID
+        type: number
+        required: false
+      Status:
+        description: 状态(pre_install 待安装,installing 安装中,success 安装成功,failure 安装失败)
+        type: number
+        required: false
+      StartUpdatedAt:
+        description: 更新时间(开始)
+        type: string
+        required: false
+      EndUpdatedAt:
+        description: 更新时间(结束)
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":{
+                  "list":{}
+                  "recordCount":100
+                },
+              }
+
+/vm/list:
+  post:
+    description: 获取虚拟机列表
+    queryParameters:
+      Limit:
+        description: 页容量
+        type: number
+        required: true
+      Offset:
+        description: 从第几行开始
+        type: number
+        required: true
+      Keyword:
+        description: 搜索关键字，可根据mac,hostname,ip搜索；搜索多条信息以\n隔开
+        type: string
+        required: false
+      OsID:
+        description: os_config表ID
+        type: number
+        required: false
+      Status:
+        description: 状态(pre_create 等待创建，creating 创建中，create_failure 创建失败，pre_install 待安装,installing 安装中,success 安装成功,failure 安装失败)
+        type: number
+        required: false
+      RunStatus:
+        description: 运行状态(running 运行中,running 已停止)
+        type: number
+        required: false
+      StartUpdatedAt:
+        description: 更新时间(开始)
+        type: string
+        required: false
+      EndUpdatedAt:
+        description: 更新时间(结束)
+        type: string
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "Status": "success",
+                "Message": "",
+                "Content":{
+                  "list":{}
+                  "recordCount":100
+                },
+              }
+
+/vm/add:
+  post:
+    description: 添加并创建虚拟机
+    queryParameters:
+      Hostname:
+        description: 主机名
+        type: string
+        required: true
+      Mac:
+        description: Mac地址
+        type: string
+        required: true
+      Ip:
+        description: IP
+        type: string
+        required: true
+      Sn:
+        description: 宿主机SN
+        type: string
+        required: true
+      NetworkID:
+        description: 网络资源表(networks)ID
         type: number
         required: true
       OsID:
-        description: 操作系统表(os_config)ID
+        description: PXE模板表(os_config)ID
+        type: number
+        required: true
+      SystemID:
+        description: 系统表(system_config)ID
         type: number
         required: true
       CpuCoresNumber:
@@ -33,6 +156,14 @@ mediaType: application/json
         description: 磁盘大小，单位为GB，默认为60
         type: number
         required: false
+      UserID:
+        description: 用户ID，user表ID
+        type: number
+        required: false
+      AccessToken:
+        description: 调用登录API时，生成的授权AccessToken
+        type: string
+        required: true
       
     responses:
       200:

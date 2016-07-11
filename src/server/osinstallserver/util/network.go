@@ -3,12 +3,13 @@ package util
 import (
 	"errors"
 	"fmt"
+	"logger"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
-func GetCidrInfo(network string) (map[string]string, error) {
+func GetCidrInfo(network string, logger logger.Logger) (map[string]string, error) {
 	network = strings.TrimSpace(network)
 	result := make(map[string]string)
 	list := strings.Split(network, "/")
@@ -25,7 +26,10 @@ func GetCidrInfo(network string) (map[string]string, error) {
 		return result, errors.New("IP格式不正确")
 	}
 
+	logger.Debugf("get network info:%s", network)
+
 	minIp, maxIp := GetCidrIpRange(network)
+	logger.Debugf("get ip range:%s~%s", minIp, maxIp)
 	result["MinIP"] = minIp
 	result["MaxIP"] = maxIp
 
@@ -33,8 +37,16 @@ func GetCidrInfo(network string) (map[string]string, error) {
 	if err != nil {
 		return result, err
 	}
+
+	logger.Debugf("get mask:%d", mask)
+	if mask <= 0 || mask >= 32 {
+		logger.Error("掩码位不正确!")
+		return result, errors.New("掩码位不正确!")
+	}
+
 	result["Mask"] = GetCidrIpMask(mask)
 	result["IPNum"] = fmt.Sprintf("%d", GetCidrHostNum(mask))
+	logger.Debugf("ip nums:%s", result["IPNum"])
 	return result, nil
 }
 

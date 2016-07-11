@@ -96,6 +96,12 @@ func UpdateNetworkById(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
+	logger, ok := middleware.LoggerFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
 	var info struct {
 		ID          uint
 		Network     string
@@ -178,7 +184,7 @@ func UpdateNetworkById(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	//网段发生更改的情况下，重新分配IP
 	if oldNetwork.Network != info.Network {
 		//处理网段
-		network, err := util.GetCidrInfo(info.Network)
+		network, err := util.GetCidrInfo(info.Network, logger)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 			return
@@ -271,6 +277,12 @@ func GetCidrInfoByNetwork(ctx context.Context, w rest.ResponseWriter, r *rest.Re
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
+	logger, ok := middleware.LoggerFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
 	var info struct {
 		Network string
 	}
@@ -281,7 +293,7 @@ func GetCidrInfoByNetwork(ctx context.Context, w rest.ResponseWriter, r *rest.Re
 	info.Network = strings.TrimSpace(info.Network)
 
 	//处理网段
-	network, err := util.GetCidrInfo(info.Network)
+	network, err := util.GetCidrInfo(info.Network, logger)
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 		return
@@ -317,6 +329,11 @@ func GetNotUsedIPListByNetworkId(ctx context.Context, w rest.ResponseWriter, r *
 //添加
 func AddNetwork(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+	logger, ok := middleware.LoggerFromContext(ctx)
 	if !ok {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
@@ -377,7 +394,7 @@ func AddNetwork(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	//处理网段
-	network, err := util.GetCidrInfo(info.Network)
+	network, err := util.GetCidrInfo(info.Network, logger)
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 		return

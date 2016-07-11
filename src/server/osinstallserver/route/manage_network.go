@@ -98,6 +98,11 @@ func UpdateManageNetworkById(ctx context.Context, w rest.ResponseWriter, r *rest
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+	logger, ok := middleware.LoggerFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
 	var info struct {
 		ID          uint
 		Network     string
@@ -180,7 +185,7 @@ func UpdateManageNetworkById(ctx context.Context, w rest.ResponseWriter, r *rest
 	//网段发生更改的情况下，重新分配IP
 	if oldNetwork.Network != info.Network {
 		//处理网段
-		network, err := util.GetCidrInfo(info.Network)
+		network, err := util.GetCidrInfo(info.Network, logger)
 		if err != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 			return
@@ -273,6 +278,11 @@ func AddManageNetwork(ctx context.Context, w rest.ResponseWriter, r *rest.Reques
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+	logger, ok := middleware.LoggerFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
 	var info struct {
 		Network     string
 		Netmask     string
@@ -329,7 +339,7 @@ func AddManageNetwork(ctx context.Context, w rest.ResponseWriter, r *rest.Reques
 	}
 
 	//处理网段
-	network, err := util.GetCidrInfo(info.Network)
+	network, err := util.GetCidrInfo(info.Network, logger)
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 		return

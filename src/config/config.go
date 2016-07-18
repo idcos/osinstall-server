@@ -31,4 +31,7 @@ type Config struct {
 	Cron struct {
 		InstallTimeout int `ini:"installTimeout"`
 	}
+	ActiveMQ struct {
+		Server string `ini:"server"`
+	}
 }

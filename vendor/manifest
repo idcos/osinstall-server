@@ -110,6 +110,12 @@
 			"repository": "https://github.com/jakecoffman/cron",
 			"revision": "275d5b11d4d33013ff591751835185fc5c23cfe9",
 			"branch": "master"
+		},
+		{
+			"importpath": "github.com/go-stomp/stomp",
+			"repository": "https://github.com/go-stomp/stomp",
+			"revision": "64f6322840b955feb307a22abbeef6606215b40a",
+			"branch": "master"
 		}
 	]
 }

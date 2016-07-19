@@ -8,7 +8,6 @@ import (
 	"golang.org/x/net/context"
 	"middleware"
 	"regexp"
-	"server/osinstallserver/util"
 	"strconv"
 	"strings"
 	"utils"
@@ -576,17 +575,6 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	infoFull.IsVm = strings.TrimSpace(infoFull.IsVm)
 	infoFull.NicDevice = strings.TrimSpace(infoFull.NicDevice)
 
-	logger, ok := middleware.LoggerFromContext(ctx)
-	if !ok {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
-		return
-	}
-	conf, ok := middleware.ConfigFromContext(ctx)
-	if !ok {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
-		return
-	}
-
 	info.Sn = infoFull.Sn
 	info.Company = infoFull.Company
 	info.Product = infoFull.Product
@@ -721,31 +709,6 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 			return
 		}
-	}
-
-	//send activemq message
-	attributes := make(map[string]interface{})
-	attributes["Company"] = info.Company
-	attributes["Product"] = info.Product
-	attributes["ModelName"] = info.ModelName
-	attributes["Sn"] = info.Sn
-	attributes["Ip"] = info.Ip
-	attributes["Mac"] = info.Mac
-	attributes["Nic"] = infoFull.Nic
-	attributes["Cpu"] = infoFull.Cpu
-	attributes["CpuSum"] = info.CpuSum
-	attributes["Memory"] = infoFull.Memory
-	attributes["MemorySum"] = info.MemorySum
-	attributes["Disk"] = infoFull.Disk
-	attributes["DiskSum"] = info.DiskSum
-	attributes["Motherboard"] = infoFull.Motherboard
-	attributes["Raid"] = info.Raid
-	attributes["Oob"] = info.Oob
-	attributes["IsVm"] = info.IsVm
-	attributes["NicDevice"] = info.NicDevice
-	send := util.SendActiveMQMessage(conf, logger, attributes)
-	if send != true {
-		logger.Error("send activeMQ failure")
 	}
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})

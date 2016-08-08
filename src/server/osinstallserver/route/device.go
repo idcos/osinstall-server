@@ -870,6 +870,17 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 			return
 		}
 
+		//validate user from manufacturer
+		manufacturer, err := repo.GetManufacturerBySn(info.Sn)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+			return
+		}
+		if session.Role != "Administrator" && manufacturer.UserID != session.ID {
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "您无权操作其他人的设备!"})
+			return
+		}
+
 		//validate ip from vm device
 		countVmIp, errVmIp := repo.CountVmDeviceByIp(info.Ip)
 		if errVmIp != nil {
@@ -2212,6 +2223,13 @@ func ValidateSn(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
 		return
 	}
+
+	session, err := GetSession(w, r)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
 	var info struct {
 		Sn string
 	}
@@ -2248,6 +2266,13 @@ func ValidateSn(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"})
 		return
+	}
+	//validate user from manufacturer
+	if session.Role != "Administrator" {
+		if manufacturer.UserID != session.ID {
+			w.WriteJSON(map[string]interface{}{"Status": "failure", "Content": manufacturer, "Message": "您无权操作其他人的设备!"})
+			return
+		}
 	}
 
 	if count > 0 {
@@ -2416,6 +2441,17 @@ func ImportDeviceForOpenApi(ctx context.Context, w rest.ResponseWriter, r *rest.
 	}
 	if countManufacturer <= 0 {
 		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"})
+		return
+	}
+
+	//validate user from manufacturer
+	manufacturer, err := repo.GetManufacturerBySn(row.Sn)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+	if accessTokenUser.Role != "Administrator" && manufacturer.UserID != accessTokenUser.ID {
+		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "您无权操作其他人的设备!"})
 		return
 	}
 

@@ -21,7 +21,7 @@ var scriptFile = path.Join(rootPath, "temp-script.cmd")
 var serverHost = "osinstall" //cloudboot server host
 
 var date = time.Now().Format("2006-01-02")
-var version = "v1.3 (" + date + ")"
+var version = "v1.3.1 (" + date + ")"
 
 func main() {
 

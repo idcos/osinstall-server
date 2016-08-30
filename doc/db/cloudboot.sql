@@ -391,7 +391,7 @@ CREATE TABLE IF NOT EXISTS `platform_configs` (
 
 INSERT INTO `platform_configs` (`id`, `created_at`, `updated_at`, `deleted_at`, `name`, `content`) VALUES
 (1, '2016-05-30 09:32:47', '2016-05-30 09:32:47', NULL, 'IsShowVmFunction', ''),
-(2, '2016-05-30 09:32:47', '2016-05-30 09:32:47', NULL, 'Version', 'v1.3');
+(2, '2016-05-30 09:32:47', '2016-05-30 09:32:47', NULL, 'Version', 'v1.3.1');
 
 -- --------------------------------------------------------
 

@@ -288,6 +288,21 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 			}
 			row.Content += br + "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"
 		}
+		if countManufacturer > 0 {
+			//validate user from manufacturer
+			manufacturer, err := repo.GetManufacturerBySn(row.Sn)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+				return
+			}
+			if session.Role != "Administrator" && manufacturer.UserID != session.ID {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "您无权操作其他人的设备!"
+			}
+		}
 
 		//validate ip from vm device
 		countVmIp, errVmIp := repo.CountVmDeviceByIp(row.Ip)
@@ -845,6 +860,21 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 				br = "<br />"
 			}
 			row.Content += br + "未在【资源池管理】里匹配到该SN，请先将该设备加电并进入BootOS!"
+		}
+		if countManufacturer > 0 {
+			//validate user from manufacturer
+			manufacturer, err := repo.GetManufacturerBySn(row.Sn)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+				return
+			}
+			if session.Role != "Administrator" && manufacturer.UserID != session.ID {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "您无权操作其他人的设备!"
+			}
 		}
 
 		//validate ip from vm device

@@ -43,13 +43,11 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/network/getNotUsedIPListByNetworkId", route.GetNotUsedIPListByNetworkId))
 
 	//Device
-	routes = append(routes, rest.Post("/api/osinstall/v1/device/add", route.AddDevice))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchAdd", route.BatchAddDevice))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchUpdate", route.BatchUpdateDevice))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/list", route.GetDeviceList))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/view", route.GetDeviceById))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/viewFull", route.GetFullDeviceById))
-	routes = append(routes, rest.Post("/api/osinstall/v1/device/delete", route.DeleteDeviceById))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/getNumByStatus", route.GetDeviceNumByStatus))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchReInstall", route.BatchReInstall))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchDelete", route.BatchDelete))

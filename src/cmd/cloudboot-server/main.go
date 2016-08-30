@@ -13,7 +13,7 @@ import (
 )
 
 var date = time.Now().Format("2006-01-02")
-var version = "v1.3 (" + date + ")"
+var version = "v1.3.1 (" + date + ")"
 var name = "cloudboot-server"
 var description = "cloudboot server"
 var usage = "CloudJ server install tool"

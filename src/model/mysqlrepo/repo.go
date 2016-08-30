@@ -64,6 +64,7 @@ func NewRepo(conf *config.Config, log logger.Logger) (*MySQLRepo, error) {
 
 	db, err := gorm.Open("mysql", connection)
 	if err != nil {
+		log.Errorf("database connection failed:%s", err.Error())
 		return nil, err
 	}
 	db.LogMode(true)

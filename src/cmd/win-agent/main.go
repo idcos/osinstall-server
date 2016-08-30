@@ -30,7 +30,7 @@ type RestInfo struct {
 }
 
 var date = time.Now().Format("2006-01-02")
-var version = "v1.3 (" + date + ")"
+var version = "v1.3.1 (" + date + ")"
 
 func main() {
 

@@ -86,7 +86,7 @@ CREATE TABLE ~~platform_configs~~ (
   UNIQUE KEY ~~name~~ (~~name~~)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
 insert into platform_configs(~~created_at~~,~~updated_at~~,~~name~~,~~content~~) values('2016-05-30 17:32:47','2016-05-30 17:32:47','IsShowVmFunction','');
-insert into platform_configs(~~created_at~~,~~updated_at~~,~~name~~,~~content~~) values('2016-05-30 17:32:47','2016-05-30 17:32:47','Version','v1.3');
+insert into platform_configs(~~created_at~~,~~updated_at~~,~~name~~,~~content~~) values('2016-05-30 17:32:47','2016-05-30 17:32:47','Version','v1.3.1');
 
 CREATE TABLE ~~vm_hosts~~ (
   ~~id~~ int(11) unsigned NOT NULL AUTO_INCREMENT,

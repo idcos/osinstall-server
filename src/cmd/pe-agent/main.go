@@ -315,7 +315,11 @@ func installWindows() error {
 }
 
 func copyFirstBoot() error {
-	var cmd = `xcopy /s /e /y /i Z:\windows\firstboot C:\firstboot`
+	var dir = "C:/firstboot"
+	if !utils.CheckFileIsExist("c:/windows") {
+		dir = "D:/firstboot"
+	}
+	var cmd = fmt.Sprintf(`xcopy /s /e /y /i Z:\windows\firstboot %s`, dir)
 	utils.Logger.Debug(cmd)
 	if _, err := utils.ExecCmd(scriptFile, cmd); err != nil {
 		utils.Logger.Error(err.Error())

@@ -12,7 +12,7 @@ import (
 	"time"
 	"utils"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 var xmlPath = "X:\\Windows\\System32\\unattended.xml"

@@ -8,6 +8,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/BurntSushi/toml",
+			"repository": "https://github.com/BurntSushi/toml",
+			"revision": "99064174e013895bbd9b025c31100bd1d9b590ca",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/Sirupsen/logrus",
 			"repository": "https://github.com/Sirupsen/logrus",
 			"revision": "fe6f2b03125e4fcafb21406381010e363a072c80",
@@ -30,12 +36,6 @@
 			"importpath": "github.com/belogik/goes",
 			"repository": "https://github.com/belogik/goes",
 			"revision": "e54d722c3aff588e4c737fe11c07359019240824",
-			"branch": "master"
-		},
-		{
-			"importpath": "github.com/codegangsta/cli",
-			"repository": "https://github.com/codegangsta/cli",
-			"revision": "71f57d300dd6a780ac1856c005c4b518cfd498ec",
 			"branch": "master"
 		},
 		{
@@ -105,6 +105,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/urfave/cli",
+			"repository": "https://github.com/urfave/cli",
+			"revision": "0bdeddeeb0f650497d603c4ad7b20cfe685682f6",
+			"branch": "master"
+		},
+		{
 			"importpath": "golang.org/x/net/context",
 			"repository": "https://go.googlesource.com/net",
 			"revision": "042ba42fa6633b34205efc66ba5719cd3afd8d38",
@@ -116,6 +122,12 @@
 			"repository": "https://gopkg.in/ini.v1",
 			"revision": "060d7da055ba6ec5ea7a31f116332fe5efa04ce0",
 			"branch": "v1"
+		},
+		{
+			"importpath": "gopkg.in/yaml.v2",
+			"repository": "https://gopkg.in/yaml.v2",
+			"revision": "a5b47d31c556af34a302ce5d659e6fea44d90de0",
+			"branch": "v2"
 		}
 	]
 }

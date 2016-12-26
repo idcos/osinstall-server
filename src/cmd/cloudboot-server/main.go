@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/codegangsta/cli"
 	"net"
 	"net/http"
 	"os"
@@ -10,6 +9,8 @@ import (
 	"server/osinstallserver/route"
 	"server/osinstallserver/util"
 	"time"
+
+	"github.com/urfave/cli"
 )
 
 var date = time.Now().Format("2006-01-02")

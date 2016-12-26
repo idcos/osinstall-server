@@ -15,7 +15,7 @@ import (
 	"utils"
 
 	"github.com/axgle/mahonia"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 type RestInfo struct {

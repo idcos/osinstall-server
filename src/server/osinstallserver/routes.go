@@ -150,5 +150,7 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/dhcp/subnet/save", route.SaveDhcpSubnet))
 
 	//resources pool
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchPowerOn", route.BatchPowerOn))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchReStart", route.BatchReStart))
+
 }

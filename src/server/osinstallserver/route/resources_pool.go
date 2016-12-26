@@ -23,6 +23,57 @@ type BatchOperateInfo struct {
 	Password    string
 }
 
+func BatchPowerOn(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, _ := middleware.RepoFromContext(ctx)
+	logger, _ := middleware.LoggerFromContext(ctx)
+
+	var infos []BatchOperateInfo
+	if err := r.DecodeJSONPayload(&infos); err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("参数错误: %s", err.Error())})
+		return
+	}
+
+	//check permission
+	isValidated, infos := CheckPermissionForBatchOperate(ctx, w, r, infos, true, true)
+	if isValidated != true {
+		return
+	}
+
+	for _, info := range infos {
+		info.Sn = strings.TrimSpace(info.Sn)
+		_, errInfo := repo.GetManufacturerBySn(info.Sn)
+		if errInfo != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errInfo.Error()})
+			return
+		}
+
+		status, err := util.GetDevicePowerStatusFromIpmitool(repo, logger, info.OobIp, info.Username, info.Password)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+			return
+		}
+		if status != "off" {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("该设备已开机，无法执行开机指令(SN: %s)", info.Sn)})
+			return
+		}
+
+		runErr := util.PowerOnDeviceFromIpmitool(repo, logger, info.OobIp, info.Username, info.Password)
+		if runErr != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("通过IPMI开机失败: %s", runErr.Error()) + "(SN:" + info.Sn + ")"})
+			return
+		}
+
+		// TODO add device log
+		// _, errAddLog := repo.AddDeviceLog(0, "设备开机", "manage", "设备开机", info.Sn) // use english
+		// if errAddLog != nil {
+		// 	w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+		// 	return
+		// }
+	}
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
+}
+
 func BatchReStart(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	repo, _ := middleware.RepoFromContext(ctx)
 	logger, _ := middleware.LoggerFromContext(ctx)

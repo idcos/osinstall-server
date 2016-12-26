@@ -1,13 +1,9 @@
 package osinstallserver
 
 import (
-	//"encoding/base64"
-	//"fmt"
-	"github.com/AlexanderChen1989/go-json-rest/rest"
-	//"golang.org/x/net/context"
-	//"middleware"
-	//"net/http"
 	"server/osinstallserver/route"
+
+	"github.com/AlexanderChen1989/go-json-rest/rest"
 )
 
 var routes []*rest.Route
@@ -152,4 +148,7 @@ func init() {
 	//DHCPSubnet
 	routes = append(routes, rest.Post("/api/osinstall/v1/dhcp/subnet/list", route.GetDhcpSubnetList))
 	routes = append(routes, rest.Post("/api/osinstall/v1/dhcp/subnet/save", route.SaveDhcpSubnet))
+
+	//resources pool
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchReStart", route.BatchReStart))
 }

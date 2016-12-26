@@ -1,0 +1,15 @@
+{
+    "version": "0.1.0",
+    "tool": "gb build",
+    "package": "build",
+    "variables": [
+        {
+            "variable": "Date",
+            "value": "{{.date}}"
+        },
+        {
+            "variable": "Commit",
+            "value": "{{.gitCommit}}"
+        }
+    ]
+}

@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/jinzhu/gorm"
 	"time"
+
+	"github.com/jinzhu/gorm"
 )
 
 type DeviceFull struct {
@@ -423,6 +424,7 @@ type Manufacturer struct {
 	IsVm             string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
 	IsShowInScanList string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
 	NicDevice        string
+	Status           string
 }
 
 type ManufacturerFull struct {

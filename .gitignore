@@ -10,6 +10,7 @@ _test
 bin
 pkg
 doc/doc
+.vscode
 
 # Architecture specific extensions/prefixes
 *.[568vq]

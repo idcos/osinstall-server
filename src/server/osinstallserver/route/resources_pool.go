@@ -187,6 +187,57 @@ func BatchStartFromPxe(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
 }
 
+func BatchPowerOff(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, _ := middleware.RepoFromContext(ctx)
+	logger, _ := middleware.LoggerFromContext(ctx)
+
+	var infos []BatchOperateInfo
+	if err := r.DecodeJSONPayload(&infos); err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("参数错误: %s", err.Error())})
+		return
+	}
+
+	//check permission
+	isValidated, infos := CheckPermissionForBatchOperate(ctx, w, r, infos, true, true)
+	if isValidated != true {
+		return
+	}
+
+	for _, info := range infos {
+		info.Sn = strings.TrimSpace(info.Sn)
+		_, errInfo := repo.GetManufacturerBySn(info.Sn)
+		if errInfo != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errInfo.Error()})
+			return
+		}
+
+		status, err := util.GetDevicePowerStatusFromIpmitool(repo, logger, info.OobIp, info.Username, info.Password)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+			return
+		}
+		if status != "on" {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("该设备已关机，无法执行关机指令(SN: %s)", info.Sn)})
+			return
+		}
+
+		runErr := util.PowerOffDeviceFromIpmitool(repo, logger, info.OobIp, info.Username, info.Password)
+		if runErr != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("通过IPMI关机失败: %s", runErr.Error()) + "(SN:" + info.Sn + ")"})
+			return
+		}
+
+		// TODO add device log
+		// _, errAddLog := repo.AddDeviceLog(0, "设备关机", "manage", "设备关机", info.Sn)
+		// if errAddLog != nil {
+		// 	w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+		// 	return
+		// }
+	}
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
+}
+
 func CheckPermissionForBatchOperate(ctx context.Context, w rest.ResponseWriter, r *rest.Request, infos []BatchOperateInfo, isCheckOnline bool, isCheckBatchOperateNum bool) (bool, []BatchOperateInfo) {
 	repo, _ := middleware.RepoFromContext(ctx)
 	logger, _ := middleware.LoggerFromContext(ctx)

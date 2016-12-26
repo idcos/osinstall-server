@@ -151,6 +151,7 @@ func init() {
 
 	//resources pool
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchPowerOn", route.BatchPowerOn))
+	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchPowerOff", route.BatchPowerOff))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchReStart", route.BatchReStart))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchStartFromPxe", route.BatchStartFromPxe))
 

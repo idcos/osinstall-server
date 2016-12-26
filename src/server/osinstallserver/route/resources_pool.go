@@ -125,6 +125,68 @@ func BatchReStart(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
 }
 
+func BatchStartFromPxe(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, _ := middleware.RepoFromContext(ctx)
+	logger, _ := middleware.LoggerFromContext(ctx)
+
+	var infos []BatchOperateInfo
+	if err := r.DecodeJSONPayload(&infos); err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("参数错误: %s", err.Error())})
+		return
+	}
+
+	//check permission
+	isValidated, infos := CheckPermissionForBatchOperate(ctx, w, r, infos, true, true)
+	if isValidated != true {
+		return
+	}
+
+	for _, info := range infos {
+		info.Sn = strings.TrimSpace(info.Sn)
+		_, errInfo := repo.GetManufacturerBySn(info.Sn)
+		if errInfo != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errInfo.Error()})
+			return
+		}
+
+		status, err := util.GetDevicePowerStatusFromIpmitool(repo, logger, info.OobIp, info.Username, info.Password)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+			return
+		}
+		if status == "" {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("从PXE启动失败，无法连接到设备(SN: %s)", info.Sn)})
+			return
+		}
+		runErr := util.BootDeviceToPXEFromIpmitool(repo, logger, info.OobIp, info.Username, info.Password)
+		if runErr != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("通过IPMI从PXE启动失败: %s", runErr.Error()) + "(SN:" + info.Sn + ")"})
+			return
+		}
+		if status == "on" {
+			runErr := util.RestartDeviceFromIpmitool(repo, logger, info.OobIp, info.Username, info.Password)
+			if runErr != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("通过IPMI重启失败: %s", runErr.Error()) + "(SN:" + info.Sn + ")"})
+				return
+			}
+		} else if status == "off" {
+			runErr := util.PowerOnDeviceFromIpmitool(repo, logger, info.OobIp, info.Username, info.Password)
+			if runErr != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("通过IPMI开机失败: %s", runErr.Error()) + "(SN:" + info.Sn + ")"})
+				return
+			}
+		}
+		// TODO add device log
+		// _, errAddLog := repo.AddDeviceLog(0, "设备从PXE启动", "manage", "设备从PXE启动", info.Sn) // TODO use english
+		// if errAddLog != nil {
+		// 	w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+		// 	return
+		// }
+	}
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
+}
+
 func CheckPermissionForBatchOperate(ctx context.Context, w rest.ResponseWriter, r *rest.Request, infos []BatchOperateInfo, isCheckOnline bool, isCheckBatchOperateNum bool) (bool, []BatchOperateInfo) {
 	repo, _ := middleware.RepoFromContext(ctx)
 	logger, _ := middleware.LoggerFromContext(ctx)

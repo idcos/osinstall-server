@@ -93,3 +93,20 @@ func RestartDeviceFromIpmitool(repo model.Repo, logger logger.Logger, ip string,
 	}
 	return nil
 }
+
+func BootDeviceToPXEFromIpmitool(repo model.Repo, logger logger.Logger, ip string, username string, password string) error {
+	if ip == "" || username == "" || password == "" {
+		return errors.New("OOB IP、用户名、密码不能为空")
+	}
+
+	cmd := fmt.Sprintf(`ipmitool -I lanplus -H %s -U %s -P %s chassis bootdev pxe`, ip, username, password)
+	//cmd = fmt.Sprintf(`/usr/local/Cellar/ipmitool/1.8.13/bin/ipmitool -I lanplus -H %s -U %s -P %s chassis bootdev pxe`, ip, username, password)
+	logger.Debug(cmd)
+	bytes, err := ExecScript(cmd)
+	logger.Debug(string(bytes))
+	if err != nil {
+		logger.Errorf("error:%s", err.Error())
+		return fmt.Errorf("通过IPMI从PXE启动失败: %s", err.Error())
+	}
+	return nil
+}

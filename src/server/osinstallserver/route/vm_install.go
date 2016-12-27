@@ -4,8 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/AlexanderChen1989/go-json-rest/rest"
-	"golang.org/x/net/context"
 	"math"
 	"middleware"
 	"model"
@@ -15,6 +13,9 @@ import (
 	"strconv"
 	"strings"
 	"utils"
+
+	"github.com/AlexanderChen1989/go-json-rest/rest"
+	"golang.org/x/net/context"
 )
 
 func AddVmDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
@@ -731,6 +732,7 @@ func GetVmDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 	if info.Keyword != "" {
 		where += " and ( "
 		info.Keyword = strings.Replace(info.Keyword, "\n", ",", -1)
+		info.Keyword = strings.Replace(info.Keyword, " ", ",", -1)
 		info.Keyword = strings.Replace(info.Keyword, ";", ",", -1)
 		list := strings.Split(info.Keyword, ",")
 		for k, v := range list {

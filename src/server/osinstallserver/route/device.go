@@ -2,21 +2,21 @@ package route
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
-	"github.com/AlexanderChen1989/go-json-rest/rest"
-	"github.com/qiniu/iconv"
-	"golang.org/x/net/context"
 	"middleware"
+	"model"
+	"os"
 	"regexp"
 	"server/osinstallserver/util"
 	"strconv"
 	"strings"
-	//"net/http"
-	"encoding/json"
-	"model"
-	"os"
 	"time"
 	"utils"
+
+	"github.com/AlexanderChen1989/go-json-rest/rest"
+	"github.com/qiniu/iconv"
+	"golang.org/x/net/context"
 )
 
 //重装
@@ -646,6 +646,7 @@ func GetDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	if info.Keyword != "" {
 		where += " and ( "
 		info.Keyword = strings.Replace(info.Keyword, "\n", ",", -1)
+		info.Keyword = strings.Replace(info.Keyword, " ", ",", -1)
 		info.Keyword = strings.Replace(info.Keyword, ";", ",", -1)
 		list := strings.Split(info.Keyword, ",")
 		for k, v := range list {

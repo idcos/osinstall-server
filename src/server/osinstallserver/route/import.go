@@ -1,22 +1,22 @@
 package route
 
 import (
-	"fmt"
-	"github.com/AlexanderChen1989/go-json-rest/rest"
-	"golang.org/x/net/context"
-	"middleware"
-	//"server/osinstallserver/util"
 	"crypto/md5"
 	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/qiniu/iconv"
+	"fmt"
 	"io"
+	"middleware"
 	"os"
 	"regexp"
 	"server/osinstallserver/util"
 	"strings"
 	"time"
+
+	"github.com/AlexanderChen1989/go-json-rest/rest"
+	"github.com/qiniu/iconv"
+	"golang.org/x/net/context"
 )
 
 func UploadDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {

@@ -31,6 +31,7 @@ type Repo struct {
 }
 
 type OsInstall struct {
+	HTTPPort     int
 	PxeConfigDir string `ini:"pxeConfigDir"`
 }
 

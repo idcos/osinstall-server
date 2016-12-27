@@ -62,15 +62,18 @@ func runServer(conf *config.Config) (err error) {
 		return err
 	}
 
-	addr := ":8083"
+	port := conf.OsInstall.HTTPPort
+	if port <= 0 {
+		port = 8083 // default port
+	}
 
-	l4, err := net.Listen("tcp4", addr)
+	l4, err := net.Listen("tcp4", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
-	log.Infof("The HTTP server is running at http://localhost:%d", 8083)
+	log.Infof("The HTTP server is running at http://localhost:%d", port)
 
 	//cron
 	route.CloudBootCron(srvr.Conf, log, srvr.Repo)

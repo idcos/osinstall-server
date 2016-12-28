@@ -52,7 +52,7 @@ func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	info.Disk = strings.TrimSpace(info.Disk)
 	info.IsShowEnteredDevice = strings.TrimSpace(info.IsShowEnteredDevice)
 	var where string
-	if info.IsShowEnteredDevice != "Yes" {
+	if info.IsShowEnteredDevice == "No" || info.IsShowEnteredDevice == "" {
 		where = " and t1.is_show_in_scan_list = 'Yes' "
 	}
 

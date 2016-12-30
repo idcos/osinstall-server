@@ -1,6 +1,7 @@
 package main
 
 import (
+	"build"
 	"config"
 	"config/jsonconf"
 	"fmt"
@@ -11,13 +12,12 @@ import (
 	"server/osinstallserver"
 	"server/osinstallserver/route"
 	"server/osinstallserver/util"
-	"time"
 
 	"github.com/urfave/cli"
 )
 
-var date = time.Now().Format("2006-01-02")
-var version = "v1.3.1 (" + date + ")"
+// var date = time.Now().Format("2006-01-02")
+// var version = "v1.3.1 (" + date + ")"
 var name = "cloudboot-server"
 var description = "cloudboot server"
 var usage = "CloudJ server install tool"
@@ -27,7 +27,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = name
 	app.Usage = usage
-	app.Version = version
+	app.Version = build.Version("v1.3.1")
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{

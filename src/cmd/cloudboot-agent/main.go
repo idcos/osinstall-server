@@ -1,15 +1,15 @@
 package main
 
 import (
+	"build"
 	"os"
 	"osinstall/agent"
-	"time"
 
 	"github.com/urfave/cli"
 )
 
-var date = time.Now().Format("2006-01-02")
-var version = "v1.3.1 (" + date + ")"
+// var date = time.Now().Format("2006-01-02")
+// var version = "v1.3.1 (" + date + ")"
 var name = "cloudboot-agent"
 var description = "cloudboot agent"
 
@@ -19,7 +19,7 @@ var description = "cloudboot agent"
 func main() {
 	app := cli.NewApp()
 	app.Name = name
-	app.Version = version
+	app.Version = build.Version("v1.3.1")
 	// app.Commands = []cli.Command{
 	// 	{
 	// 		Name:  "start",

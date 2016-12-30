@@ -1,6 +1,7 @@
 package main
 
 import (
+	"build"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,13 +30,13 @@ type RestInfo struct {
 	HWADDR   string
 }
 
-var date = time.Now().Format("2006-01-02")
-var version = "v1.3.1 (" + date + ")"
+// var date = time.Now().Format("2006-01-02")
+// var version = "v1.3.1 (" + date + ")"
 
 func main() {
 
 	app := cli.NewApp()
-	app.Version = version
+	app.Version = build.Version("v1.3.1")
 	app.Action = func(c *cli.Context) {
 		run(c)
 	}

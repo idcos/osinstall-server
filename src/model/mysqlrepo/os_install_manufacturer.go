@@ -194,3 +194,13 @@ func (repo *MySQLRepo) GetManufacturerMacBySn(sn string) (string, error) {
 
 	return mac, nil
 }
+
+func (repo *MySQLRepo) UpdateManufacturerBootosLastActiveTimeBySn(sn string, time string) (*model.Manufacturer, error) {
+	id, err := repo.GetManufacturerIdBySn(sn)
+	if err != nil {
+		return nil, err
+	}
+	mod := model.Manufacturer{Sn: sn, BootosLastActiveTime: time}
+	errUpdate := repo.db.First(&mod, id).Update("bootos_last_active_time", time).Error
+	return &mod, errUpdate
+}

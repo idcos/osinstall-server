@@ -1,19 +1,18 @@
 package route
 
 import (
-	//"encoding/base64"
-	"github.com/AlexanderChen1989/go-json-rest/rest"
-	"github.com/gorilla/sessions"
-	"golang.org/x/net/context"
-	"middleware"
-	//"net/http"
 	"errors"
 	"fmt"
+	"middleware"
 	"model"
 	"server/osinstallserver/util"
 	"strings"
 	"time"
 	"utils"
+
+	"github.com/AlexanderChen1989/go-json-rest/rest"
+	"github.com/gorilla/sessions"
+	"golang.org/x/net/context"
 )
 
 var store = sessions.NewCookieStore([]byte("idcos-osinstall"))

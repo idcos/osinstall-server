@@ -3,14 +3,15 @@ package route
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/AlexanderChen1989/go-json-rest/rest"
-	"github.com/qiniu/iconv"
-	"golang.org/x/net/context"
 	"middleware"
 	"regexp"
 	"strconv"
 	"strings"
 	"utils"
+
+	"github.com/AlexanderChen1989/go-json-rest/rest"
+	"github.com/qiniu/iconv"
+	"golang.org/x/net/context"
 )
 
 func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
@@ -51,7 +52,7 @@ func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	info.Disk = strings.TrimSpace(info.Disk)
 	info.IsShowEnteredDevice = strings.TrimSpace(info.IsShowEnteredDevice)
 	var where string
-	if info.IsShowEnteredDevice != "Yes" {
+	if info.IsShowEnteredDevice == "No" || info.IsShowEnteredDevice == "" {
 		where = " and t1.is_show_in_scan_list = 'Yes' "
 	}
 
@@ -81,6 +82,7 @@ func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	if info.Keyword != "" {
 		where += " and ( "
 		info.Keyword = strings.Replace(info.Keyword, "\n", ",", -1)
+		info.Keyword = strings.Replace(info.Keyword, " ", ",", -1)
 		info.Keyword = strings.Replace(info.Keyword, ";", ",", -1)
 		list := strings.Split(info.Keyword, ",")
 		for k, v := range list {

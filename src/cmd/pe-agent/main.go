@@ -1,6 +1,7 @@
 package main
 
 import (
+	"build"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -9,10 +10,9 @@ import (
 	"path"
 	"regexp"
 	"strings"
-	"time"
 	"utils"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 var xmlPath = "X:\\Windows\\System32\\unattended.xml"
@@ -20,13 +20,17 @@ var rootPath = "X:\\Windows\\System32"
 var scriptFile = path.Join(rootPath, "temp-script.cmd")
 var serverHost = "osinstall" //cloudboot server host
 
+<<<<<<< HEAD
 var date = time.Now().Format("2006-01-02")
 var version = "v1.3.1 (" + date + ")"
+=======
+// var date = time.Now().Format("2006-01-02")
+// var version = "v1.3.1 (" + date + ")"
+>>>>>>> 4b8fe28897ded5a6ddfdf308a826092b86433a52
 
 func main() {
-
 	app := cli.NewApp()
-	app.Version = version
+	app.Version = build.Version("v1.3.1")
 	app.Action = func(c *cli.Context) {
 		if err := run(c); err != nil {
 			utils.Logger.Error(err.Error())

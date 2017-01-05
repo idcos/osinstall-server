@@ -2,19 +2,18 @@ package route
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/AlexanderChen1989/go-json-rest/rest"
 	"github.com/qiniu/iconv"
 	"golang.org/x/net/context"
 	"middleware"
+	"model"
+	"os"
 	"regexp"
 	"server/osinstallserver/util"
 	"strconv"
 	"strings"
-	//"net/http"
-	"encoding/json"
-	"model"
-	"os"
 	"time"
 	"utils"
 )
@@ -87,9 +86,29 @@ func BatchReInstall(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 			return
 		}
 
-		_, err := repo.ReInstallDeviceById(info.ID)
+		logContent := make(map[string]interface{})
+		logContent["data"] = device
+		json, err := json.Marshal(logContent)
 		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
+			return
+		}
+
+		_, errAddLog := repo.AddDeviceLog(info.ID, "重装设备", "operate", string(json))
+		if errAddLog != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
+			return
+		}
+
+		_, errLog := repo.UpdateDeviceLogTypeByDeviceIdAndType(info.ID, "install", "install_history")
+		if errLog != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
+			return
+		}
+
+		_, errUpdate := repo.ReInstallDeviceById(info.ID)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errUpdate.Error()})
 			return
 		}
 
@@ -117,35 +136,6 @@ func BatchReInstall(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDeleteHost.Error()})
 			return
 		}
-
-		logContent := make(map[string]interface{})
-		logContent["data"] = device
-		json, err := json.Marshal(logContent)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + err.Error()})
-			return
-		}
-
-		_, errAddLog := repo.AddDeviceLog(info.ID, "重装设备", "operate", string(json))
-		if errAddLog != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errAddLog.Error()})
-			return
-		}
-
-		_, errLog := repo.UpdateDeviceLogTypeByDeviceIdAndType(info.ID, "install", "install_history")
-		if errLog != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
-			return
-		}
-
-		/*
-			//删除LOG
-			_, errLog := repo.DeleteDeviceLogByDeviceID(info.ID)
-			if errLog != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
-				return
-			}
-		*/
 	}
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
@@ -255,15 +245,6 @@ func BatchCancelInstall(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
 			return
 		}
-
-		/*
-			//删除LOG
-			_, errLog := repo.DeleteDeviceLogByDeviceID(info.ID)
-			if errLog != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
-				return
-			}
-		*/
 	}
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功"})
@@ -646,6 +627,7 @@ func GetDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	if info.Keyword != "" {
 		where += " and ( "
 		info.Keyword = strings.Replace(info.Keyword, "\n", ",", -1)
+		info.Keyword = strings.Replace(info.Keyword, " ", ",", -1)
 		info.Keyword = strings.Replace(info.Keyword, ";", ",", -1)
 		list := strings.Split(info.Keyword, ",")
 		for k, v := range list {
@@ -1492,15 +1474,15 @@ func BatchUpdateDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		logContent := make(map[string]interface{})
 		logContent["data_old"] = device
 
-		deviceNew, errUpdate := repo.UpdateDeviceById(info.ID, device.BatchNumber, device.Sn, info.Hostname, info.Ip, info.ManageIp, info.NetworkID, info.ManageNetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, device.Status, info.IsSupportVm, info.UserID)
-		if errUpdate != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdate.Error()})
-			return
-		}
-
 		_, errLog := repo.UpdateDeviceLogTypeByDeviceIdAndType(info.ID, "install", "install_history")
 		if errLog != nil {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
+			return
+		}
+
+		deviceNew, errUpdate := repo.UpdateDeviceById(info.ID, device.BatchNumber, device.Sn, info.Hostname, info.Ip, info.ManageIp, info.NetworkID, info.ManageNetworkID, info.OsID, info.HardwareID, info.SystemID, location, info.LocationID, info.AssetNumber, device.Status, info.IsSupportVm, info.UserID)
+		if errUpdate != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "操作失败:" + errUpdate.Error()})
 			return
 		}
 

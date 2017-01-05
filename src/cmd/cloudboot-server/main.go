@@ -1,19 +1,23 @@
 package main
 
 import (
+	"build"
+	"config"
+	"config/jsonconf"
 	"fmt"
-	"github.com/codegangsta/cli"
+	"logger"
 	"net"
 	"net/http"
 	"os"
 	"server/osinstallserver"
 	"server/osinstallserver/route"
 	"server/osinstallserver/util"
-	"time"
+
+	"github.com/urfave/cli"
 )
 
-var date = time.Now().Format("2006-01-02")
-var version = "v1.3.1 (" + date + ")"
+var date = "2017.01.05"
+var version = "v1.4.1 (" + date + ")"
 var name = "cloudboot-server"
 var description = "cloudboot server"
 var usage = "CloudJ server install tool"
@@ -23,7 +27,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = name
 	app.Usage = usage
-	app.Version = version
+	app.Version = build.Version("v1.3.1")
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
@@ -32,41 +36,48 @@ func main() {
 			Usage: "config file",
 		},
 	}
-	app.Action = func(c *cli.Context) {
+	app.Action = func(c *cli.Context) (err error) {
 		configFile = c.String("c")
-		runServer(c)
+		if !util.FileExist(configFile) {
+			return cli.NewExitError(fmt.Sprintf("The configuration file does not exist: %s", configFile), -1)
+		}
+		conf, err := jsonconf.New(configFile).Load()
+		if err != nil {
+			return cli.NewExitError(err.Error(), -1)
+		}
+		if err = runServer(conf); err != nil {
+			return cli.NewExitError(err.Error(), -1)
+		}
+		return nil
 	}
 
 	app.Run(os.Args)
 }
 
-func runServer(c *cli.Context) {
-	if !util.FileExist(configFile) {
-		fmt.Println("The config file(" + configFile + ") is not exist!")
-		return
-	}
+func runServer(conf *config.Config) (err error) {
+	log := logger.NewBeeLogger(conf)
 
-	srvr, err := osinstallserver.NewServer(configFile, osinstallserver.DevPipeline)
+	srvr, err := osinstallserver.NewServer(log, conf, osinstallserver.DevPipeline)
 	if err != nil {
-		srvr.Log.Error(err)
-		return
+		return err
 	}
 
-	addr := ":8083"
+	port := 8083
 
-	l4, err := net.Listen("tcp4", addr)
+	l4, err := net.Listen("tcp4", fmt.Sprintf(":%d", port))
 	if err != nil {
-		srvr.Log.Error(err)
-		return
+		log.Error(err)
+		return err
 	}
 
-	srvr.Log.Info("The server is running.")
+	log.Infof("The HTTP server is running at http://localhost:%d", port)
 
 	//cron
-	route.CloudBootCron(srvr.Conf, srvr.Log, srvr.Repo)
+	route.CloudBootCron(srvr.Conf, log, srvr.Repo)
 
 	if err := http.Serve(l4, srvr); err != nil {
-		srvr.Log.Error(err)
-		return
+		log.Error(err)
+		return err
 	}
+	return nil
 }

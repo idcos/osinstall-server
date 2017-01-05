@@ -10,7 +10,7 @@ _test
 bin
 pkg
 doc/doc
-src/cmd/cloudboot-license-create-tool/
+.vscode
 
 # Architecture specific extensions/prefixes
 *.[568vq]

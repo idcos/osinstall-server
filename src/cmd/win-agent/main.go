@@ -1,6 +1,7 @@
 package main
 
 import (
+	"build"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,7 +16,7 @@ import (
 	"utils"
 
 	"github.com/axgle/mahonia"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 type RestInfo struct {
@@ -29,13 +30,18 @@ type RestInfo struct {
 	HWADDR   string
 }
 
+<<<<<<< HEAD
 var date = time.Now().Format("2006-01-02")
 var version = "v1.3.1 (" + date + ")"
+=======
+// var date = time.Now().Format("2006-01-02")
+// var version = "v1.3.1 (" + date + ")"
+>>>>>>> 4b8fe28897ded5a6ddfdf308a826092b86433a52
 
 func main() {
 
 	app := cli.NewApp()
-	app.Version = version
+	app.Version = build.Version("v1.3.1")
 	app.Action = func(c *cli.Context) {
 		run(c)
 	}

@@ -2,7 +2,6 @@ package osinstallserver
 
 import (
 	"config"
-	"config/jsonconf"
 	"logger"
 	"model"
 	"model/mysqlrepo"
@@ -18,14 +17,11 @@ type OsInstallServer struct {
 	handler http.Handler
 }
 
-func NewServer(confPath string, setup PipelineSetupFunc) (*OsInstallServer, error) {
-	conf, err := jsonconf.New(confPath).Load()
-	if err != nil {
-		return nil, err
-	}
-	log := logger.NewBeeLogger(conf)
+// NewServer 实例化http server
+func NewServer(log logger.Logger, conf *config.Config, setup PipelineSetupFunc) (*OsInstallServer, error) {
 	repo, err := mysqlrepo.NewRepo(conf, log)
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 
@@ -35,17 +31,19 @@ func NewServer(confPath string, setup PipelineSetupFunc) (*OsInstallServer, erro
 
 	// routes a global
 	router, err := rest.MakeRouter(routes...)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
 
 	api.SetApp(router)
 
-	server := &OsInstallServer{
+	return &OsInstallServer{
 		Conf:    conf,
 		Log:     log,
 		Repo:    repo,
 		handler: api.MakeHandler(),
-	}
-
-	return server, nil
+	}, nil
 }
 
 func (server *OsInstallServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {

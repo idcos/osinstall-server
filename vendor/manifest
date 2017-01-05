@@ -8,9 +8,28 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/BurntSushi/toml",
+			"repository": "https://github.com/BurntSushi/toml",
+			"revision": "99064174e013895bbd9b025c31100bd1d9b590ca",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/Sirupsen/logrus",
 			"repository": "https://github.com/Sirupsen/logrus",
 			"revision": "fe6f2b03125e4fcafb21406381010e363a072c80",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/astaxie/beego/logs",
+			"repository": "https://github.com/astaxie/beego",
+			"revision": "88c5dfa6ead42e624c2e7d9e04eab6cb2d07412a",
+			"branch": "master",
+			"path": "/logs"
+		},
+		{
+			"importpath": "github.com/axgle/mahonia",
+			"repository": "https://github.com/axgle/mahonia",
+			"revision": "c528b747d92d41ca581a7acf3e604c396fc7c034",
 			"branch": "master"
 		},
 		{
@@ -50,10 +69,28 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/jakecoffman/cron",
+			"repository": "https://github.com/jakecoffman/cron",
+			"revision": "275d5b11d4d33013ff591751835185fc5c23cfe9",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/jinzhu/gorm",
 			"repository": "https://github.com/jinzhu/gorm",
 			"revision": "2f9abdcf0231d7b14d38203efb1708db718e2fa1",
 			"branch": "master"
+		},
+		{
+			"importpath": "github.com/patrickmn/go-cache",
+			"repository": "https://github.com/patrickmn/go-cache",
+			"revision": "1881a9bccb818787f68c52bfba648c6cf34c34fa",
+			"branch": "HEAD"
+		},
+		{
+			"importpath": "github.com/qiniu/iconv",
+			"repository": "https://github.com/qiniu/iconv",
+			"revision": "e9ee0ddd1a3a29262740aa08ed8ac740f23bc4a0",
+			"branch": "develop"
 		},
 		{
 			"importpath": "github.com/smartystreets/goconvey",
@@ -65,6 +102,12 @@
 			"importpath": "github.com/takama/daemon",
 			"repository": "https://github.com/takama/daemon",
 			"revision": "9bef40d68556a337a610e5bcc06c6c99948ec199",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/urfave/cli",
+			"repository": "https://github.com/urfave/cli",
+			"revision": "0bdeddeeb0f650497d603c4ad7b20cfe685682f6",
 			"branch": "master"
 		},
 		{
@@ -112,10 +155,10 @@
 			"branch": "master"
 		},
 		{
-			"importpath": "github.com/go-stomp/stomp",
-			"repository": "https://github.com/go-stomp/stomp",
-			"revision": "64f6322840b955feb307a22abbeef6606215b40a",
-			"branch": "master"
+			"importpath": "gopkg.in/yaml.v2",
+			"repository": "https://gopkg.in/yaml.v2",
+			"revision": "a5b47d31c556af34a302ce5d659e6fea44d90de0",
+			"branch": "v2"
 		}
 	]
 }

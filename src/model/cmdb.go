@@ -403,54 +403,56 @@ type IMac interface {
 
 type Manufacturer struct {
 	gorm.Model
-	DeviceID         uint   `sql:"not null;"`
-	Company          string `sql:"not null;"`
-	Product          string
-	ModelName        string
-	Sn               string
-	Ip               string
-	Mac              string
-	Nic              string
-	Cpu              string
-	CpuSum           uint `sql:"type:int(11);default:0;"`
-	Memory           string
-	MemorySum        uint `sql:"type:int(11);default:0;"`
-	Disk             string
-	DiskSum          uint `sql:"type:int(11);default:0;"`
-	Motherboard      string
-	Raid             string
-	Oob              string
-	UserID           uint   `sql:"not null;default:0;"`
-	IsVm             string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
-	IsShowInScanList string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
-	NicDevice        string
-	Status           string
+	DeviceID             uint   `sql:"not null;"`
+	Company              string `sql:"not null;"`
+	Product              string
+	ModelName            string
+	Sn                   string
+	Ip                   string
+	Mac                  string
+	Nic                  string
+	Cpu                  string
+	CpuSum               uint `sql:"type:int(11);default:0;"`
+	Memory               string
+	MemorySum            uint `sql:"type:int(11);default:0;"`
+	Disk                 string
+	DiskSum              uint `sql:"type:int(11);default:0;"`
+	Motherboard          string
+	Raid                 string
+	Oob                  string
+	UserID               uint   `sql:"not null;default:0;"`
+	IsVm                 string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
+	IsShowInScanList     string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
+	NicDevice            string
+	Status               string
+	BootosLastActiveTime string
 }
 
 type ManufacturerFull struct {
-	ID               uint
-	DeviceID         uint
-	Company          string
-	Product          string
-	ModelName        string
-	Sn               string
-	Ip               string
-	Mac              string
-	Nic              string
-	Cpu              string
-	CpuSum           uint
-	Memory           string
-	MemorySum        uint
-	Disk             string
-	DiskSum          uint
-	Motherboard      string
-	Raid             string
-	Oob              string
-	UserID           uint
-	OwnerName        string
-	IsVm             string
-	NicDevice        string
-	IsShowInScanList string
+	ID                   uint
+	DeviceID             uint
+	Company              string
+	Product              string
+	ModelName            string
+	Sn                   string
+	Ip                   string
+	Mac                  string
+	Nic                  string
+	Cpu                  string
+	CpuSum               uint
+	Memory               string
+	MemorySum            uint
+	Disk                 string
+	DiskSum              uint
+	Motherboard          string
+	Raid                 string
+	Oob                  string
+	UserID               uint
+	OwnerName            string
+	IsVm                 string
+	NicDevice            string
+	IsShowInScanList     string
+	BootosLastActiveTime string
 }
 
 type IManufacturer interface {
@@ -476,6 +478,7 @@ type IManufacturer interface {
 	AssignManufacturerOnwer(Id uint, UserID uint) (*Manufacturer, error)
 	AssignManufacturerNewOnwer(NewUserID uint, OldUserID uint) error
 	GetManufacturerSnByNicMacForVm(Mac string) (string, error)
+	UpdateManufacturerBootosLastActiveTimeBySn(Sn string, time string) (*Manufacturer, error)
 }
 
 type VmDevice struct {

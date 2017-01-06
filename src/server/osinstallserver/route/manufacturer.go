@@ -35,6 +35,7 @@ func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		Disk                string
 		UserID              uint
 		IsShowEnteredDevice string
+		IsShowActiveDevice  string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
@@ -54,6 +55,10 @@ func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	var where string
 	if info.IsShowEnteredDevice == "No" || info.IsShowEnteredDevice == "" {
 		where = " and t1.is_show_in_scan_list = 'Yes' "
+	}
+
+	if info.IsShowActiveDevice == "Yes" {
+		where += " and (UNIX_TIMESTAMP(now()) - UNIX_TIMESTAMP(t1.bootos_last_active_time)) <= 1800 "
 	}
 
 	if info.UserID > uint(0) {

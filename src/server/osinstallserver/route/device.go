@@ -1832,6 +1832,7 @@ func ReportMacInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 
 func IsInPreInstallList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	w.Header().Add("Content-type", "application/json; charset=utf-8")
+	logger, _ := middleware.LoggerFromContext(ctx)
 	repo, ok := middleware.RepoFromContext(ctx)
 	if !ok {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误", "Content": ""})
@@ -1868,6 +1869,12 @@ func IsInPreInstallList(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 		} else {
 			info.Sn = manufacturerSn
 		}
+	}
+
+	var lastActiveTime = time.Now().Format("2006-01-02 15:04:05")
+	_, errTime := repo.UpdateManufacturerBootosLastActiveTimeBySn(info.Sn, lastActiveTime)
+	if errTime != nil {
+		logger.Errorf("update bootos last active time error:%s", errTime.Error())
 	}
 
 	deviceId, err := repo.GetDeviceIdBySn(info.Sn)

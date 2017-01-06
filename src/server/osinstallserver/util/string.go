@@ -1,7 +1,8 @@
 package util
 
 import (
-//"strings"
+	//"strings"
+	"errors"
 )
 
 func SubString(str string, begin int, length int) string {
@@ -24,4 +25,29 @@ func SubString(str string, begin int, length int) string {
 
 	// 返回子串
 	return string(rs[begin:end])
+}
+
+func CutArray(arr []string, length int) ([]string, []string, error) {
+	var newArr []string
+	var lostArr []string
+	if len(arr) < length {
+		return newArr, lostArr, errors.New("长度不够切分")
+	}
+	for i, value := range arr {
+		if (i + 1) <= length {
+			newArr = append(newArr, value)
+		} else {
+			lostArr = append(lostArr, value)
+		}
+	}
+	return newArr, lostArr, nil
+}
+
+func IsInArray(str string, arr []string) bool {
+	for _, value := range arr {
+		if str == value {
+			return true
+		}
+	}
+	return false
 }

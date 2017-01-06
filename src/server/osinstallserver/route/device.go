@@ -724,6 +724,26 @@ func GetDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 	result := make(map[string]interface{})
 	result["list"] = rows
 
+	var noDataKeywords []string
+	if info.Keyword != "" {
+		list := strings.Split(info.Keyword, ",")
+		if len(list) > 1 {
+			for _, v := range list {
+				v = strings.TrimSpace(v)
+				var isFind = false
+				for _, device := range mods {
+					if device.Sn == v {
+						isFind = true
+					}
+				}
+				if isFind == false {
+					noDataKeywords = append(noDataKeywords, v)
+				}
+			}
+		}
+	}
+	result["NoDataKeyword"] = noDataKeywords
+
 	//总条数
 	count, err := repo.CountDevice(where)
 	if err != nil {

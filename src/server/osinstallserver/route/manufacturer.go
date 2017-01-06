@@ -115,6 +115,26 @@ func GetScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	result := make(map[string]interface{})
 	result["list"] = mods
 
+	var noDataKeywords []string
+	if info.Keyword != "" {
+		list := strings.Split(info.Keyword, ",")
+		if len(list) > 1 {
+			for _, v := range list {
+				v = strings.TrimSpace(v)
+				var isFind = false
+				for _, device := range mods {
+					if device.Sn == v {
+						isFind = true
+					}
+				}
+				if isFind == false {
+					noDataKeywords = append(noDataKeywords, v)
+				}
+			}
+		}
+	}
+	result["NoDataKeyword"] = noDataKeywords
+
 	//总条数
 	count, err := repo.CountManufacturerByWhere(where)
 	if err != nil {
@@ -666,31 +686,30 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 		return
 	}
+	//已经录入过的设备，不要再次显示到发现新设备列表 from chenli@20161117
 	if countDevice > 0 {
-		deviceId, err := repo.GetDeviceIdBySn(info.Sn)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备不存在!"})
-			return
-		}
-
-		device, err := repo.GetDeviceById(deviceId)
-		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-			return
-		}
-
-		info.DeviceID = device.ID
-		/*
-			count, err := repo.CountManufacturerByDeviceID(device.ID)
-			if err != nil {
-				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-				return
-			}
-		*/
-
+		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "The device has been entered!"})
+		return
 	} else {
 		info.DeviceID = uint(0)
 	}
+	// if countDevice > 0 {
+	// 	deviceId, err := repo.GetDeviceIdBySn(info.Sn)
+	// 	if err != nil {
+	// 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "该设备不存在!"})
+	// 		return
+	// 	}
+
+	// 	device, err := repo.GetDeviceById(deviceId)
+	// 	if err != nil {
+	// 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+	// 		return
+	// 	}
+
+	// 	info.DeviceID = device.ID
+	// } else {
+	// 	info.DeviceID = uint(0)
+	// }
 
 	count, err := repo.CountManufacturerBySn(info.Sn)
 	if err != nil {

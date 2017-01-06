@@ -687,9 +687,14 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 
 	var info struct {
 		Filename string
+		Sns      []string
 	}
 	if err := r.DecodeJSONPayload(&info); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+	if len(info.Sns) <= 0 {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请选中要导入的设备!"})
 		return
 	}
 
@@ -771,6 +776,9 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		row.ManageIp = strings.TrimSpace(ra[i][8])
 		row.IsSupportVm = strings.TrimSpace(ra[i][9])
 		row.UserID = session.ID
+		if !util.IsInArray(row.Sn, info.Sns) {
+			continue
+		}
 
 		if len(row.Sn) > 255 {
 			var br string

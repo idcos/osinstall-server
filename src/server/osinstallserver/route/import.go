@@ -158,9 +158,9 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		Content           string
 		UserID            uint
 		IsSupportVm       string
+		ImportStatus      string
 	}
-	var success []Device
-	var failure []Device
+	var data []Device
 	//var result []string
 	for i := 1; i < length; i++ {
 		//result = append(result, ra[i][0])
@@ -171,8 +171,6 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 				br = "<br />"
 			}
 			row.Content += br + "导入文件格式错误!"
-			failure = append(failure, row)
-			continue
 		}
 
 		row.Sn = strings.TrimSpace(ra[i][0])
@@ -630,18 +628,40 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		*/
 
 		if row.Content != "" {
-			failure = append(failure, row)
+			row.ImportStatus = "Error"
 		} else {
-			success = append(success, row)
+			row.ImportStatus = "Normal"
 		}
+		if countDevice > 0 {
+			device, err := repo.GetDeviceBySn(row.Sn)
+			if err != nil {
+				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+				return
+			}
+			if device.Status == "success" {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "该设备已安装完成，重装会覆盖数据，确定安装？"
+				if row.ImportStatus != "Error" {
+					row.ImportStatus = "Notice"
+				}
+			} else if device.Status == "installing" {
+				var br string
+				if row.Content != "" {
+					br = "<br />"
+				}
+				row.Content += br + "该设备正在安装中，重装会覆盖数据，确定安装？"
+				if row.ImportStatus != "Error" {
+					row.ImportStatus = "Notice"
+				}
+			}
+		}
+
+		data = append(data, row)
 	}
 
-	var data []Device
-	if len(failure) > 0 {
-		data = failure
-	} else {
-		data = success
-	}
 	var result []Device
 	for i := 0; i < len(data); i++ {
 		if uint(i) >= info.Offset && uint(i) < (info.Offset+info.Limit) {
@@ -649,11 +669,7 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		}
 	}
 
-	if len(failure) > 0 {
-		w.WriteJSON(map[string]interface{}{"Status": "failure", "Message": "设备信息不正确", "recordCount": len(data), "Content": result})
-	} else {
-		w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "recordCount": len(data), "Content": result})
-	}
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "recordCount": len(data), "Content": result})
 }
 
 func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {

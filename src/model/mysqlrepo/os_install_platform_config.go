@@ -23,6 +23,12 @@ func (repo *MySQLRepo) DeletePlatformConfigById(id uint) (*model.PlatformConfig,
 	return &mod, err
 }
 
+func (repo *MySQLRepo) DeletePlatformConfigByName(name string) (*model.PlatformConfig, error) {
+	mod := model.PlatformConfig{}
+	err := repo.db.Unscoped().Where("name = ?", name).Delete(&mod).Error
+	return &mod, err
+}
+
 func (repo *MySQLRepo) CountPlatformConfigByName(name string) (uint, error) {
 	mod := model.PlatformConfig{Name: name}
 	var count uint

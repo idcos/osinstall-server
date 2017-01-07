@@ -16,7 +16,6 @@ import (
 )
 
 func CloudBootCron(conf *config.Config, logger logger.Logger, repo model.Repo) {
-	//db version update(v1.2.1 to v1.3)
 	DBVersionUpdate(logger, repo)
 
 	c := cron.New()
@@ -37,13 +36,12 @@ func CloudBootCron(conf *config.Config, logger logger.Logger, repo model.Repo) {
 }
 
 func DBVersionUpdate(logger logger.Logger, repo model.Repo) {
-	_, err := repo.CountVmHost("")
-	if err == nil {
-		//logger.Info("db version has been upgraded to v1.3")
+	config, _ := repo.GetPlatformConfigByName("Version")
+	//logger.Debugf("current version:%s", config.Content)
+	if config.Content == "v1.4" {
 		return
 	}
-	var str string
-	str = `set names utf8;
+	var v131sql = `set names utf8;
 	use ~~cloudboot~~;
 	alter table cloudboot.system_configs modify column ~~content~~ LONGTEXT;
 alter table cloudboot.os_configs modify column ~~pxe~~ LONGTEXT;
@@ -205,8 +203,21 @@ where t2.id is null;
 
 drop table os_configs_new;
 drop table system_configs_new;`
+
+	var v14sql = `
+  use cloudboot;
+  ALTER TABLE manufacturers ADD bootos_last_active_time varchar(255) null default '';
+  delete from platform_configs where name = 'Version';
+  insert into platform_configs(~~created_at~~,~~updated_at~~,~~name~~,~~content~~) values('2017-01-08 13:32:47','2017-01-08 13:32:47','Version','v1.4');`
+
+	var str string
+	if config.Content == "v1.3.1" {
+		str = v14sql
+	} else {
+		str = v131sql + v14sql
+	}
 	str = strings.Replace(str, "~~", "`", -1)
-	file := "/tmp/cloudboot-v1.3-update.sql"
+	file := "/tmp/cloudboot-v1.4-update.sql"
 	bytes := []byte(str)
 	errWrite := ioutil.WriteFile(file, bytes, 0644)
 	if errWrite != nil {
@@ -219,10 +230,10 @@ drop table system_configs_new;`
 	logger.Debugf("result:%s", string(result))
 	if err != nil {
 		logger.Error(err.Error())
-		logger.Info("db version failed upgrade to v1.3")
+		logger.Info("db version failed upgrade")
 	} else {
 		defer os.Remove(file)
-		logger.Info("db version has been successfully upgraded to v1.3")
+		logger.Info("db version has been successfully upgraded")
 	}
 }
 

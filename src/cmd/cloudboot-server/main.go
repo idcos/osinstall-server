@@ -71,7 +71,6 @@ func runServer(conf *config.Config) (err error) {
 	}
 
 	log.Infof("The HTTP server is running at http://localhost:%d", port)
-
 	//cron
 	route.CloudBootCron(srvr.Conf, log, srvr.Repo)
 

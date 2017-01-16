@@ -8,7 +8,7 @@
             "value": "{{.Date}}"
         },
         {
-            "variable": "GitCommit",
+            "variable": "Commit",
             "value": "{{.GitCommit}}"
         }
     ]

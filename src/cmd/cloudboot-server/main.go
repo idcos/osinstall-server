@@ -16,8 +16,8 @@ import (
 	"github.com/urfave/cli"
 )
 
-var date = "2017.01.05"
-var version = "v1.4.1 (" + date + ")"
+var date = "2017-01-17"
+var version = "v1.4 (" + date + ")"
 var name = "cloudboot-server"
 var description = "cloudboot server"
 var usage = "CloudJ server install tool"
@@ -27,7 +27,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = name
 	app.Usage = usage
-	app.Version = build.Version("v1.3.1")
+	app.Version = build.Version("v1.4")
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{

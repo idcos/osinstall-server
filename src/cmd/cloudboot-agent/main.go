@@ -8,13 +8,8 @@ import (
 	"github.com/urfave/cli"
 )
 
-<<<<<<< HEAD
-var date = time.Now().Format("2006-01-02")
-var version = "v1.3.1 (" + date + ")"
-=======
-// var date = time.Now().Format("2006-01-02")
-// var version = "v1.3.1 (" + date + ")"
->>>>>>> 4b8fe28897ded5a6ddfdf308a826092b86433a52
+var date = "2017-01-17"
+var version = "v1.4 (" + date + ")"
 var name = "cloudboot-agent"
 var description = "cloudboot agent"
 
@@ -24,7 +19,7 @@ var description = "cloudboot agent"
 func main() {
 	app := cli.NewApp()
 	app.Name = name
-	app.Version = build.Version("v1.3.1")
+	app.Version = build.Version("v1.4")
 	// app.Commands = []cli.Command{
 	// 	{
 	// 		Name:  "start",

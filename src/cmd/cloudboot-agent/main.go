@@ -19,7 +19,7 @@ var description = "cloudboot agent"
 func main() {
 	app := cli.NewApp()
 	app.Name = name
-	app.Version = build.Version("v1.4")
+	app.Version = build.Version(version)
 	// app.Commands = []cli.Command{
 	// 	{
 	// 		Name:  "start",

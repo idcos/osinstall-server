@@ -27,7 +27,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = name
 	app.Usage = usage
-	app.Version = build.Version("v1.4")
+	app.Version = build.Version(version)
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{

@@ -25,7 +25,7 @@ var version = "v1.4 (" + date + ")"
 
 func main() {
 	app := cli.NewApp()
-	app.Version = build.Version("v1.4")
+	app.Version = build.Version(version)
 	app.Action = func(c *cli.Context) {
 		if err := run(c); err != nil {
 			utils.Logger.Error(err.Error())

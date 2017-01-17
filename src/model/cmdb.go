@@ -424,7 +424,6 @@ type Manufacturer struct {
 	IsVm                 string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
 	IsShowInScanList     string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
 	NicDevice            string
-	Status               string
 	BootosLastActiveTime string
 }
 

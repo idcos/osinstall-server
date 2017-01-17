@@ -15,7 +15,6 @@ import (
 	"utils"
 
 	"github.com/AlexanderChen1989/go-json-rest/rest"
-	"github.com/qiniu/iconv"
 	"golang.org/x/net/context"
 )
 
@@ -2956,16 +2955,16 @@ func ExportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	cd, err := iconv.Open("gbk", "utf-8") // convert utf-8 to gbk
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-		return
-	}
-	defer cd.Close()
+	// cd, err := iconv.Open("gbk", "utf-8") // convert utf-8 to gbk
+	// if err != nil {
+	// 	w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+	// 	return
+	// }
+	// defer cd.Close()
 
 	var str string
 	str = "SN,主机名,IP,操作系统,硬件配置模板,系统安装模板,位置,财编,管理IP,是否支持安装虚拟机,批次号,BootOS IP,带外IP,状态\n"
-	str = cd.ConvString(str)
+	str = utils.UTF82GBK(str)
 	for _, device := range mods {
 		var locationName string
 		if device.LocationID > uint(0) {
@@ -2998,19 +2997,19 @@ func ExportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 			device.IsSupportVm = "No"
 		}
 		str += device.Sn + ","
-		str += cd.ConvString(device.Hostname) + ","
+		str += utils.UTF82GBK(device.Hostname) + ","
 		str += device.Ip + ","
-		str += cd.ConvString(device.OsName) + ","
-		str += cd.ConvString(device.HardwareName) + ","
-		str += cd.ConvString(device.SystemName) + ","
-		str += cd.ConvString(locationName) + ","
+		str += utils.UTF82GBK(device.OsName) + ","
+		str += utils.UTF82GBK(device.HardwareName) + ","
+		str += utils.UTF82GBK(device.SystemName) + ","
+		str += utils.UTF82GBK(locationName) + ","
 		str += device.AssetNumber + ","
 		str += device.ManageIp + ","
 		str += device.IsSupportVm + ","
 		str += device.BatchNumber + ","
 		str += bootosIP + ","
 		str += device.OobIp + ","
-		str += cd.ConvString(statusName) + ","
+		str += utils.UTF82GBK(statusName) + ","
 		str += "\n"
 	}
 	bytes := []byte(str)

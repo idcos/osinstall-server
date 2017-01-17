@@ -10,7 +10,6 @@ import (
 	"utils"
 
 	"github.com/AlexanderChen1989/go-json-rest/rest"
-	"github.com/qiniu/iconv"
 	"golang.org/x/net/context"
 )
 
@@ -250,13 +249,13 @@ func ExportScanDeviceList(ctx context.Context, w rest.ResponseWriter, r *rest.Re
 		str += "\n"
 	}
 
-	cd, err := iconv.Open("gbk", "utf-8") // convert utf-8 to gbk
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
-		return
-	}
-	defer cd.Close()
-	gbkStr := cd.ConvString(strTitle)
+	// cd, err := iconv.Open("gbk", "utf-8") // convert utf-8 to gbk
+	// if err != nil {
+	// 	w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+	// 	return
+	// }
+	// defer cd.Close()
+	gbkStr := utils.UTF82GBK(strTitle)
 
 	bytes := []byte(gbkStr + str)
 

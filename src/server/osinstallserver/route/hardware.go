@@ -1,28 +1,24 @@
 package route
 
 import (
-	//"encoding/base64"
-	"fmt"
-	"github.com/AlexanderChen1989/go-json-rest/rest"
-	"golang.org/x/net/context"
-	//"json"
-	"encoding/json"
-	"middleware"
-	//"strconv"
-	"strings"
-	//"net/http"
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
-	"github.com/qiniu/iconv"
+	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"middleware"
 	"model"
 	"net/http"
 	"os"
 	"server/osinstallserver/util"
+	"strings"
 	"time"
 	"utils"
+
+	"github.com/AlexanderChen1989/go-json-rest/rest"
+	"golang.org/x/net/context"
 )
 
 func DeleteHardwareById(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
@@ -482,12 +478,12 @@ func UploadCompanyHardware(ctx context.Context, w rest.ResponseWriter, r *rest.R
 		return
 	}
 
-	cd, err := iconv.Open("UTF-8", "GBK")
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
-		return
-	}
-	defer cd.Close()
+	// cd, err := iconv.Open("UTF-8", "GBK")
+	// if err != nil {
+	// 	w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+	// 	return
+	// }
+	// defer cd.Close()
 
 	dir := "./upload/"
 	if !util.FileExist(dir) {
@@ -634,12 +630,12 @@ func UploadHardware(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 		return
 	}
 
-	cd, err := iconv.Open("UTF-8", "GBK")
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
-		return
-	}
-	defer cd.Close()
+	// cd, err := iconv.Open("UTF-8", "GBK")
+	// if err != nil {
+	// 	w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+	// 	return
+	// }
+	// defer cd.Close()
 
 	dir := "./upload/"
 	if !util.FileExist(dir) {

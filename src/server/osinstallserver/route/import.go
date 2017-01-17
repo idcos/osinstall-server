@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/AlexanderChen1989/go-json-rest/rest"
-	"github.com/qiniu/iconv"
+	"github.com/axgle/mahonia"
 	"golang.org/x/net/context"
 )
 
@@ -28,12 +28,12 @@ func UploadDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	cd, err := iconv.Open("UTF-8", "GBK")
-	if err != nil {
-		w.Write([]byte("{\"Message\":\"" + err.Error() + "\",\"Status\":\"error\"}"))
-		return
-	}
-	defer cd.Close()
+	// cd, err := iconv.Open("UTF-8", "GBK")
+	// if err != nil {
+	// 	w.Write([]byte("{\"Message\":\"" + err.Error() + "\",\"Status\":\"error\"}"))
+	// 	return
+	// }
+	// defer cd.Close()
 
 	dir := "/tmp/cloudboot-server/"
 	if !util.FileExist(dir) {
@@ -92,6 +92,8 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		return
 	}
 
+	log, _ := middleware.LoggerFromContext(ctx)
+
 	var info struct {
 		Filename string
 		Limit    uint
@@ -104,12 +106,12 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 
 	file := "/tmp/cloudboot-server/" + info.Filename
 
-	cd, err := iconv.Open("utf-8", "gbk") // convert gbk to utf8
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
-		return
-	}
-	defer cd.Close()
+	// cd, err := iconv.Open("utf-8", "gbk") // convert gbk to utf8
+	// if err != nil {
+	// 	w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+	// 	return
+	// }
+	// defer cd.Close()
 
 	input, err := os.Open(file)
 	if err != nil {
@@ -117,16 +119,19 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		return
 	}
 
-	bufSize := 1024 * 1024
-	read := iconv.NewReader(cd, input, bufSize)
-
-	r2 := csv.NewReader(read)
+	// bufSize := 1024 * 1024
+	// read := iconv.NewReader(cd, input, bufSize)
+	// r2 := csv.NewReader(read)
+	r2 := csv.NewReader(mahonia.NewDecoder("gbk").NewReader(input))
 
 	ra, err := r2.ReadAll()
 	if err != nil {
+		log.Errorf("csvReader.ReadAll err: %v", err)
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
 		return
 	}
+
+	log.Infof("csv: %v", ra)
 
 	length := len(ra)
 
@@ -166,11 +171,12 @@ func ImportPriview(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		//result = append(result, ra[i][0])
 		var row Device
 		if len(ra[i]) != 10 {
-			var br string
-			if row.Content != "" {
-				br = "<br />"
-			}
-			row.Content += br + "导入文件格式错误!"
+			// var br string
+			// if row.Content != "" {
+			// 	br = "<br />"
+			// }
+			// row.Content += br + "导入文件格式错误!"
+			continue
 		}
 
 		row.Sn = strings.TrimSpace(ra[i][0])
@@ -700,22 +706,22 @@ func ImportDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 
 	file := "/tmp/cloudboot-server/" + info.Filename
 
-	cd, err := iconv.Open("utf-8", "gbk") // convert gbk to utf8
-	if err != nil {
-		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
-		return
-	}
-	defer cd.Close()
+	// cd, err := iconv.Open("utf-8", "gbk")
+	// if err != nil {
+	// 	w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+	// 	return
+	// }
+	// defer cd.Close()
 
 	input, err := os.Open(file)
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
 		return
 	}
-	bufSize := 1024 * 1024
-	read := iconv.NewReader(cd, input, bufSize)
+	// bufSize := 1024 * 1024
+	// read := iconv.NewReader(cd, input, bufSize)
 
-	r2 := csv.NewReader(read)
+	r2 := csv.NewReader(mahonia.NewDecoder("gbk").NewReader(input)) // convert gbk to utf8
 	ra, err := r2.ReadAll()
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})

@@ -1,7 +1,7 @@
 {
-    "version": "0.3.0",
+    "version": "0.6.0",
     "tool": "gb build",
-    "package": "build",
+    "importpath": "build",
     "variables": [
         {
             "variable": "Date",
@@ -10,6 +10,10 @@
         {
             "variable": "Commit",
             "value": "{{.GitCommit}}"
+        },
+        {
+            "variable": "Branch",
+            "value": "$(git symbolic-ref --short -q HEAD)"
         }
     ]
 }

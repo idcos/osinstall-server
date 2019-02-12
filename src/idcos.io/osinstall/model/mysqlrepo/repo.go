@@ -71,7 +71,7 @@ func NewRepo(conf *config.Config, log logger.Logger) (*MySQLRepo, error) {
 	repo := &MySQLRepo{
 		conf: conf,
 		log:  log,
-		db:   &db,
+		db:   db,
 	}
 
 	return repo, nil

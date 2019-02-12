@@ -1,6 +1,6 @@
 {
     "version": "0.6.0",
-    "tool": "gb build",
+    "tool": "go install",
     "importpath": "build",
     "variables": [
         {

@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	var db gorm.DB
+	var db *gorm.DB
 	var err error
 
 	db, err = gorm.Open("mysql", "root:yunjikeji@tcp(10.0.1.31:3306)/osinstall?charset=utf8&parseTime=True&loc=Local")
@@ -22,8 +22,8 @@ func main() {
 	defer db.Close()
 
 	//db.SingularTable(true)
-	err = initdb.DropOsInstallTables(&db, nil)
-	err = initdb.InitOsInstallTables(&db, nil)
+	err = initdb.DropOsInstallTables(db, nil)
+	err = initdb.InitOsInstallTables(db, nil)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

@@ -11,7 +11,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
-	"utils/ping"
+	"idcos.io/osinstall/utils/ping"
 
 	"github.com/astaxie/beego/logs"
 )

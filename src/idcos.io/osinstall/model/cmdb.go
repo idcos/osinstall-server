@@ -41,19 +41,19 @@ type DeviceFull struct {
 
 type Device struct {
 	gorm.Model
-	BatchNumber     string  `sql:"not null;"`        //录入批次号
-	Sn              string  `sql:"not null;unique;"` //序列号
-	Hostname        string  `sql:"not null;"`        //主机名
-	Ip              string  `sql:"not null;unique;"` //IP
-	ManageIp        string  `sql:"unique;"`          //IP
-	NetworkID       uint    `sql:"not null;"`        //网段模板ID
-	ManageNetworkID uint    ``                       //管理网段模板ID
-	OsID            uint    `sql:"not null;"`        //操作系统ID
-	HardwareID      uint    ``                       //硬件配置模板ID
-	SystemID        uint    `sql:"not null;"`        //系统配置模板ID
-	Location        string  `sql:"not null;"`        //位置
-	LocationID      uint    `sql:"not null;"`
-	AssetNumber     string  //财编
+	BatchNumber     string `sql:"not null;"`        //录入批次号
+	Sn              string `sql:"not null;unique;"` //序列号
+	Hostname        string `sql:"not null;"`        //主机名
+	Ip              string `sql:"not null;unique;"` //IP
+	ManageIp        string `sql:"unique;"`          //IP
+	NetworkID       uint   `sql:"not null;"`        //网段模板ID
+	ManageNetworkID uint   ``                       //管理网段模板ID
+	OsID            uint   `sql:"not null;"`        //操作系统ID
+	HardwareID      uint   ``                       //硬件配置模板ID
+	SystemID        uint   `sql:"not null;"`        //系统配置模板ID
+	Location        string `sql:"not null;"`        //位置
+	LocationID      uint   `sql:"not null;"`
+	AssetNumber     string                                        //财编
 	Status          string  `sql:"not null;"`                     //状态 'pre_run' 待安装,'running' 安装中,'success' 安装成功,'failure' 安装失败
 	InstallProgress float64 `sql:"type:decimal(11,4);default:0;"` //安装进度
 	InstallLog      string  `sql:"type:text;"`                    //安装日志
@@ -95,19 +95,19 @@ type IDevice interface {
 
 type DeviceHistory struct {
 	gorm.Model
-	BatchNumber     string  `sql:"not null;"`        //录入批次号
-	Sn              string  `sql:"not null;unique;"` //序列号
-	Hostname        string  `sql:"not null;"`        //主机名
-	Ip              string  `sql:"not null;unique;"` //IP
-	ManageIp        string  `sql:"unique;"`          //ManageIP
-	NetworkID       uint    `sql:"not null;"`        //网段模板ID
-	ManageNetworkID uint    ``                       //管理网段模板ID
-	OsID            uint    `sql:"not null;"`        //操作系统ID
-	HardwareID      uint    ``                       //硬件配置模板ID
-	SystemID        uint    `sql:"not null;"`        //系统配置模板ID
-	Location        string  `sql:"not null;"`        //位置
-	LocationID      uint    `sql:"not null;"`
-	AssetNumber     string  //财编
+	BatchNumber     string `sql:"not null;"`        //录入批次号
+	Sn              string `sql:"not null;unique;"` //序列号
+	Hostname        string `sql:"not null;"`        //主机名
+	Ip              string `sql:"not null;unique;"` //IP
+	ManageIp        string `sql:"unique;"`          //ManageIP
+	NetworkID       uint   `sql:"not null;"`        //网段模板ID
+	ManageNetworkID uint   ``                       //管理网段模板ID
+	OsID            uint   `sql:"not null;"`        //操作系统ID
+	HardwareID      uint   ``                       //硬件配置模板ID
+	SystemID        uint   `sql:"not null;"`        //系统配置模板ID
+	Location        string `sql:"not null;"`        //位置
+	LocationID      uint   `sql:"not null;"`
+	AssetNumber     string                                        //财编
 	Status          string  `sql:"not null;"`                     //状态 'pre_run' 待安装,'running' 安装中,'success' 安装成功,'failure' 安装失败
 	InstallProgress float64 `sql:"type:decimal(11,4);default:0;"` //安装进度
 	InstallLog      string  `sql:"type:text;"`                    //安装日志
@@ -168,9 +168,9 @@ type Network struct {
 	Network string `sql:"not null;unique;"` //网段
 	Netmask string `sql:"not null;`         //掩码
 	Gateway string `sql:"not null;"`        //网关
-	Vlan    string //vlan
-	Trunk   string //trunk
-	Bonding string //bonding
+	Vlan    string                          //vlan
+	Trunk   string                          //trunk
+	Bonding string                          //bonding
 }
 
 // INetwork 网络操作接口
@@ -209,9 +209,9 @@ type ManageNetwork struct {
 	Network string `sql:"not null;unique;"` //网段
 	Netmask string `sql:"not null;`         //掩码
 	Gateway string `sql:"not null;"`        //网关
-	Vlan    string //vlan
-	Trunk   string //trunk
-	Bonding string //bonding
+	Vlan    string                          //vlan
+	Trunk   string                          //trunk
+	Bonding string                          //bonding
 }
 
 // INetwork 网络操作接口
@@ -322,10 +322,10 @@ type Hardware struct {
 	Oob         string `sql:"type:text;"` //oob配置
 	Bios        string `sql:"type:text;"` //bios配置
 	IsSystemAdd string `sql:"enum('Yes','No');NOT NULL;DEFAULT 'Yes'"`
-	Tpl         string //厂商提交的JSON信息
-	Data        string //最终要执行的脚本信息
-	Source      string //来源
-	Version     string //版本
+	Tpl         string                                                                        //厂商提交的JSON信息
+	Data        string                                                                        //最终要执行的脚本信息
+	Source      string                                                                        //来源
+	Version     string                                                                        //版本
 	Status      string `sql:"enum('Pending','Success','Failure');NOT NULL;DEFAULT 'Success'"` //状态
 }
 
@@ -842,4 +842,34 @@ type IVmDeviceLog interface {
 	DeleteVmDeviceLogByDeviceID(DeviceID uint) (*VmDeviceLog, error)
 	AddVmDeviceLog(DeviceID uint, Title string, Type string, Content string) (*VmDeviceLog, error)
 	UpdateVmDeviceLogTypeByDeviceIdAndType(deviceID uint, Type string, NewType string) ([]VmDeviceLog, error)
+}
+
+//TaskInfo 作业信息
+type TaskInfo struct {
+	gorm.Model
+	TaskNo      uint   `gorm:"column:task_no"`
+	TaskName    string `gorm:"column:task_name"`
+	TaskStatus  string `gorm:"column:task_status"`
+	TaskType    string `gorm:"column:task_type"`
+	TaskChannel string `gorm:"column:task_channel"`
+	ExecUser    string `gorm:"column:exec_user"`
+	ExpiredTime uint   `gorm:"column:expired_time"`
+	Extend      string `gorm:"column:extend"`
+	Creator     string `gorm:"column:creator"`
+	IsActive    bool   `gorm:"column:is_active"`
+}
+
+//TaskResult 作业执行结果
+type TaskResult struct {
+	gorm.Model
+	TaskID    uint   `gorm:"column:task_id"`
+	TaskNo    uint   `gorm:"column:task_no"`
+	SN        string `gorm:"column:sn"`
+	HostName  string `gorm:"column:hostname"`
+	IP        string `gorm:"column:ip"`
+	StartTime string `gorm:"column:start_time"`
+	EndTIme   string `gorm:"column:end_time"`
+	TotalTime uint   `gorm:"column:total_time"`
+	Status    string `gorm:"column:status"`
+	Content   string `gorm:"column:content"`
 }

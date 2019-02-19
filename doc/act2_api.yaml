@@ -1,0 +1,175 @@
+---
+swagger: "2.0"
+schemes:
+- "http"
+- "https"
+produces:
+- "application/json"
+- "text/plain"
+consumes:
+- "application/json"
+- "text/plain"
+basePath: "/api/v1"
+info:
+  title: "Cloud-Act2 API"
+  version: "0.6"
+  description: |
+    API is an HTTP API served by Cloud-Act2.
+
+paths:
+  /job/ip/exec:
+    post:
+      summary: "通过IP远程执行脚本或者下发文件"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "no error"
+          schema:
+            $ref: '#/definitions/AsyncJobRecordResult'
+        400:
+          description: "bad parameter"
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          $ref: "#/responses/500ErrorResponse"
+      parameters:
+      - name: "JobIPExecParam"
+        in: body
+        description: "params used for running job"
+        schema:
+          $ref: "#/definitions/JobIPExecParam"
+
+
+definitions:
+  Error:
+    type: "object"
+    properties:
+      message:
+        type: string
+
+
+  AsyncJobRecordResult:
+    description: "作业执行时返回的异步信息"
+    type: "object"
+    properties:
+      status:
+        type: "string"
+      content:
+        type: "string"
+        description: "job record id"
+      message:
+        type: "string"
+
+  JobIPExecParam:
+    description: |
+      通过给予IP进行远程执行
+    type: "object"
+    properties:
+      execHosts:
+        type: "array"
+        items:
+          $ref: "#/definitions/ExecHost"
+        description: "执行的主机列表"
+      execParam:
+        $ref: "#/definitions/ExecParam"
+      provider:
+        type: "string"
+        description: "提供者，可以是ssh|salt|puppet"
+      callback:
+        type: "string"
+        description: "http回调地址，任务执行结束后，会回调这个地址"
+      executeId:
+        type: "string"
+        description: "外部的执行id，可以通过这个id来进行调用之间的跟踪"
+
+  ExecHost:
+    type: "object"
+    properties:
+      hostIp:
+        type: "string"
+        description: "ssh登陆的IP地址"
+      hostPort:
+        type: "string"
+        description: "ssh的端口，如果为空，为22端口"
+      entityId:
+        type: "string"
+        description: "系统的唯一id"
+      hostId:
+        type: "string"
+        description: "act2-master系统中的主机表中的id"
+      idcName:
+        type: "string"
+        description: "逻辑idc的名称，ssh使用时必须提供"
+      osType:
+        type: "string"
+        description: "系统类型，可以为windows|linux|aix"
+      encoding:
+        type: "string"
+        description: "系统默认的编码，如果为空，则默认以utf-8值进行处理"
+
+  ExecParam:
+    description: 命令执行时携带的参数信息
+    type: "object"
+    properties:
+      pattern:
+        type: "string"
+        description: 匹配的方式，模块名称，支持 script：脚本执行, salt.state：状态应用, file：文件下发.
+      script:
+        type: "string"
+        description: |
+          依据模块名称进行解释
+          Pattern为script时，script为脚本内容
+          Pattern为salt.state时，script为salt的state内容
+          Pattern为file时，script为文件内容或url数组列表
+      scriptType:
+        type: "string"
+        description: |
+          依据pattern进行解释
+          pattern为script时，scriptType为shell, bash, bat, python
+          pattern为file时，scriptType为url或者text
+      params:
+        $ref: "#/definitions/ScriptParam"
+      runas:
+        type: "string"
+        description: "远程服务器上执行脚本的账户"
+      password:
+        type: "string"
+        description: "远程服务器上执行脚本的账户对应的密码，在通道为ssh的时候提供"
+      timeout:
+        type: "integer"
+        description: "脚本执行或者文件下发的超时时间，如果为0，则表示不超时"
+      env:
+        type: "object"
+        description: "脚本执行时的环境变量，保留"
+      extendData:
+        type: "object"
+        description:  "扩展数据，保留"
+
+  ScriptParam:
+    description: "脚本参数或者文件下发需要的参数"
+    type: "object"
+    properties:
+      args:
+        type: "string"
+        description: "脚本参数，如果是脚本的时候，需要提供"
+      target:
+        type: "string"
+        description: "文件下发的目标路径"
+
+
+responses:
+  401ErrorResponse:
+    description: An unexpected 401 error occurred.
+    schema:
+      $ref: "#/definitions/Error"
+  404ErrorResponse:
+    description: An unexpected 404 error occurred.
+    schema:
+      $ref: "#/definitions/Error"
+  500ErrorResponse:
+    description: An unexpected server error occurred.
+    schema:
+      $ref: "#/definitions/Error"

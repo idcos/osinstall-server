@@ -844,6 +844,30 @@ type IVmDeviceLog interface {
 	UpdateVmDeviceLogTypeByDeviceIdAndType(deviceID uint, Type string, NewType string) ([]VmDeviceLog, error)
 }
 
+const (
+	//Success 成功
+	Success = "success"
+	//Failure 失败
+	Failure = "failure"
+	//Unknown 未知
+	Unknown = "unknown"
+)
+
+const (
+	Shell  = "shell"
+	Python = "python"
+)
+
+const (
+	Script = "script"
+	File   = "file"
+)
+
+const (
+	SSH  = "ssh"
+	Salt = "salt"
+)
+
 //TaskInfo 作业信息
 type TaskInfo struct {
 	gorm.Model

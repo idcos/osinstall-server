@@ -883,6 +883,13 @@ type TaskInfo struct {
 	IsActive    bool   `gorm:"column:is_active"`
 }
 
+type ITaskInfo interface {
+	AddTaskInfo(info *TaskInfo) error
+	DeleteTaskInfo(id uint) error
+	GetTaskInfoPage(Limit uint, Offset uint, Where string) ([]TaskInfo, error)
+	CountTaskInfo(Where string) (int, error)
+}
+
 //TaskResult 作业执行结果
 type TaskResult struct {
 	gorm.Model
@@ -896,4 +903,9 @@ type TaskResult struct {
 	TotalTime uint   `gorm:"column:total_time"`
 	Status    string `gorm:"column:status"`
 	Content   string `gorm:"column:content"`
+}
+type ITaskResult interface {
+	AddTaskResult(info *TaskResult) error
+	GetTaskResultPage(Limit uint, Offset uint, Where string) ([]TaskResult, error)
+	CountTaskResult(Where string) (int, error)
 }

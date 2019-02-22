@@ -28,4 +28,6 @@ type Repo interface {
 	IPlatformConfig
 	IVmHost
 	IVmDeviceLog
+	ITaskInfo
+	ITaskResult
 }

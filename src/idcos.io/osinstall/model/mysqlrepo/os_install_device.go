@@ -189,6 +189,12 @@ func (repo *MySQLRepo) GetDeviceBySn(sn string) (*model.Device, error) {
 	return &mod, err
 }
 
+func (repo *MySQLRepo) GetDeviceBySns(sns []string) ([] *model.Device, error) {
+	var mod []*model.Device
+	err := repo.db.Unscoped().Where("sn in (?)", sns).Find(&mod).Error
+	return mod, err
+}
+
 func (repo *MySQLRepo) GetDeviceIdBySn(sn string) (uint, error) {
 	mod := model.Device{Sn: sn}
 	err := repo.db.Unscoped().Where("sn = ?", sn).Find(&mod).Error

@@ -25,7 +25,8 @@ type Config struct {
 		Addr                string
 	}
 	OsInstall struct {
-		PxeConfigDir string `ini:"pxeConfigDir"`
+		PxeConfigDir string
+		LocalServer  string
 	}
 	Vm struct {
 		Storage string `ini:"storage"`
@@ -39,6 +40,9 @@ type Config struct {
 	}
 	ActiveMQ struct {
 		Server string `ini:"server"`
+	}
+	Act2 struct {
+		URL string
 	}
 }
 
@@ -74,4 +78,8 @@ type Cron struct {
 
 type ActiveMQ struct {
 	Server string `ini:"server"`
+}
+
+type Act2 struct {
+	URL string
 }

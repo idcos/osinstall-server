@@ -155,4 +155,10 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchReStart", route.BatchReStart))
 	routes = append(routes, rest.Post("/api/osinstall/v1/device/batchStartFromPxe", route.BatchStartFromPxe))
 
+	//task info
+	routes = append(routes, rest.Get("/api/osinstall/v1/task/info/list", route.GetTaskInfoPage))
+	routes = append(routes, rest.Delete("/api/osinstall/v1/task/info/delete", route.DeleteTaskInfoByID))
+	routes = append(routes, rest.Post("/api/osinstall/v1/task/info/add", route.AddTaskInfo))
+	routes = append(routes, rest.Post("/api/osinstall/v1/task/callback", route.ReceiveCallback))
+
 }

@@ -73,6 +73,7 @@ type IDevice interface {
 	CountDeviceByManageIpAndId(ManageIp string, id uint) (uint, error)
 	GetDeviceIdBySn(sn string) (uint, error)
 	GetDeviceBySn(sn string) (*Device, error)
+	GetDeviceBySns(sns []string) ([]*Device, error)
 	CountDevice(where string) (int, error)
 	GetDeviceListWithPage(Limit uint, Offset uint, where string) ([]DeviceFull, error)
 	GetDeviceById(Id uint) (*Device, error)
@@ -851,6 +852,7 @@ const (
 	Failure = "failure"
 	//Unknown 未知
 	Unknown = "unknown"
+	Init    = "init"
 )
 
 const (
@@ -870,42 +872,53 @@ const (
 
 //TaskInfo 作业信息
 type TaskInfo struct {
-	gorm.Model
-	TaskNo      uint   `gorm:"column:task_no"`
+	ID          uint `gorm:"primary_key"`
+	CreatedAt   time.Time
+	TaskNo      string `gorm:"column:task_no"`
 	TaskName    string `gorm:"column:task_name"`
 	TaskStatus  string `gorm:"column:task_status"`
 	TaskType    string `gorm:"column:task_type"`
 	TaskChannel string `gorm:"column:task_channel"`
-	ExecUser    string `gorm:"column:exec_user"`
-	ExpiredTime uint   `gorm:"column:expired_time"`
+	RunAs       string `gorm:"column:run_as"`
+	Timeout     uint   `gorm:"column:timeout"`
 	Extend      string `gorm:"column:extend"`
 	Creator     string `gorm:"column:creator"`
 	IsActive    bool   `gorm:"column:is_active"`
 }
 
+func (TaskInfo) TableName() string {
+	return "task_info"
+}
+
 type ITaskInfo interface {
-	AddTaskInfo(info *TaskInfo) error
-	DeleteTaskInfo(id uint) error
-	GetTaskInfoPage(Limit uint, Offset uint, Where string) ([]TaskInfo, error)
-	CountTaskInfo(Where string) (int, error)
+	AddTaskInfo(info *TaskInfo) (res *TaskInfo, err error)
+	AddTaskInfoAndResult(info *TaskInfo, sns []string, password string) (conf *ConfJobIPExecParam, err error)
+	DeleteTaskInfo(id uint) (err error)
+	GetTaskInfoPage(Limit uint, Offset uint, Where string) (tasks []TaskInfo, err error)
+	CountTaskInfo(Where string) (count int, err error)
 }
 
 //TaskResult 作业执行结果
 type TaskResult struct {
-	gorm.Model
-	TaskID    uint   `gorm:"column:task_id"`
-	TaskNo    uint   `gorm:"column:task_no"`
-	SN        string `gorm:"column:sn"`
-	HostName  string `gorm:"column:hostname"`
-	IP        string `gorm:"column:ip"`
-	StartTime string `gorm:"column:start_time"`
-	EndTIme   string `gorm:"column:end_time"`
-	TotalTime uint   `gorm:"column:total_time"`
-	Status    string `gorm:"column:status"`
-	Content   string `gorm:"column:content"`
+	ID        uint `gorm:"primary_key"`
+	CreatedAt time.Time
+	TaskNo    string    `gorm:"column:task_no"`
+	TaskID    uint      `gorm:"column:task_id"`
+	SN        string    `gorm:"column:sn"`
+	HostName  string    `gorm:"column:hostname"`
+	IP        string    `gorm:"column:ip"`
+	StartTime time.Time `gorm:"column:start_time"`
+	EndTIme   time.Time `gorm:"column:end_time"`
+	TotalTime uint      `gorm:"column:total_time"`
+	Status    string    `gorm:"column:status"`
+	Content   string    `gorm:"column:content"`
 }
 type ITaskResult interface {
 	AddTaskResult(info *TaskResult) error
 	GetTaskResultPage(Limit uint, Offset uint, Where string) ([]TaskResult, error)
 	CountTaskResult(Where string) (int, error)
+}
+
+func (TaskResult) TableName() string {
+	return "task_result"
 }

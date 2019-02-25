@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-func (repo *MySQLRepo) GetTaskInfoByNo(taskNo string) (res *model.TaskInfo, err error) {
-	err = repo.db.Model(model.TaskInfo{}).Where("taskNo = ?", taskNo).Find(res).Error
+func (repo *MySQLRepo) GetTaskInfoByNo(taskNo string) (res []model.TaskInfo, err error) {
+	err = repo.db.Model(model.TaskInfo{}).Where("task_no = ?", taskNo).Find(&res).Error
 	return
 }
 

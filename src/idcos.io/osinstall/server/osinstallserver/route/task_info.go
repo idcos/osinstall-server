@@ -2,12 +2,14 @@ package route
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/AlexanderChen1989/go-json-rest/rest"
 	"idcos.com/cloudboot/src/idcos.io/cloudboot/utils"
 	"idcos.io/osinstall/middleware"
 	"idcos.io/osinstall/model"
 	"idcos.io/osinstall/server/osinstallserver/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -71,9 +73,7 @@ func AddTaskInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 
 	taskConf.Callback = config.OsInstall.LocalServer + "/callback"
 	taskConf.ExecParam.ScriptType = stConvert(req)
-	taskConf.ExecParam.Params = map[string]interface{}{
-		"args": "",
-	}
+	taskConf.ExecParam.Params = paramConvert(req)
 	taskConf.ExecParam.Script = scConvert(req, config.OsInstall.LocalServer)
 	taskConf.Callback = config.OsInstall.LocalServer + model.CallbackURL
 
@@ -89,9 +89,23 @@ func stConvert(req TaskInfoReq) string {
 	return req.Extend.ScriptType
 }
 
+func paramConvert(req TaskInfoReq) map[string]interface{} {
+	var param = make(map[string]interface{})
+
+	param["args"] = ""
+
+	if req.TaskType == model.File {
+		param["target"] = filepath.Dir(req.Extend.DestFile)
+		param["fileName"] = filepath.Base(req.Extend.DestFile)
+	}
+
+	return param
+}
+
 func scConvert(req TaskInfoReq, url string) string {
 	if req.TaskType == model.File {
-		return url + strings.TrimRight(req.Extend.SrcFile, model.Root)
+		v, _ := json.Marshal([]string{fmt.Sprintf("%s/%s",url,strings.TrimLeft(req.Extend.SrcFile, model.Root))})
+		return string(v)
 	}
 
 	return req.Extend.Script

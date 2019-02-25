@@ -73,7 +73,7 @@ func ReceiveCallback(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 	logger.Debugf("[ReceiveCallback] receive callback info, %s", utils.ToJsonString(req))
 
 	taskInfo, err := repo.GetTaskInfoByNo(req.ExecuteID)
-	if err != nil || taskInfo == nil {
+	if err != nil || len(taskInfo) == 0 {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "查询结果错误" + err.Error()})
 		return
 	}
@@ -83,7 +83,9 @@ func ReceiveCallback(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 		return
 	}
 
-	taskInfo.TaskStatus = req.ExecuteStatus
+	task := &taskInfo[0]
+
+	task.TaskStatus = req.ExecuteStatus
 
 	for _, result := range taskResults {
 		for _, host := range req.HostResults {
@@ -102,7 +104,7 @@ func ReceiveCallback(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 		}
 	}
 
-	if err := repo.AddTasks(taskInfo, taskResults); err != nil {
+	if err := repo.AddTasks(task, taskResults); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "保存结果信息异常" + err.Error()})
 		return
 	}

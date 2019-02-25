@@ -35,6 +35,7 @@ func (repo *MySQLRepo) AddTasks(info *model.TaskInfo, results []*model.TaskResul
 	tx := repo.db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
+			fmt.Println(r)
 			tx.Rollback()
 		}
 	}()
@@ -43,9 +44,16 @@ func (repo *MySQLRepo) AddTasks(info *model.TaskInfo, results []*model.TaskResul
 		return err
 	}
 
-	if err := tx.Create(info).Error; err != nil {
+	if err := tx.Save(info).Error; err != nil {
 		tx.Rollback()
 		return err
+	}
+
+	for _, result := range results {
+		if err := tx.Save(result).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	return tx.Commit().Error

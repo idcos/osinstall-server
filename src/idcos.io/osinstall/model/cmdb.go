@@ -896,7 +896,7 @@ type ITaskInfo interface {
 	DeleteTaskInfo(id uint) (err error)
 	GetTaskInfoPage(Limit uint, Offset uint, Where string) (tasks []TaskInfo, err error)
 	CountTaskInfo(Where string) (count int, err error)
-	GetTaskInfoByNo(Where string) (res *TaskInfo, err error)
+	GetTaskInfoByNo(Where string) (res []TaskInfo, err error)
 }
 
 //TaskResult 作业执行结果

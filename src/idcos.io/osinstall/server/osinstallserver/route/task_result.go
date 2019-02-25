@@ -2,12 +2,59 @@ package route
 
 import (
 	"context"
+	"fmt"
 	"github.com/AlexanderChen1989/go-json-rest/rest"
 	"idcos.com/cloudboot/src/idcos.io/cloudboot/utils"
 	"idcos.io/osinstall/middleware"
 	"idcos.io/osinstall/model"
+	"strings"
 	"time"
 )
+
+func GetTaskResultPage(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	repo, ok := middleware.RepoFromContext(ctx)
+	if !ok {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "内部服务器错误"})
+		return
+	}
+
+	var req TaskInfoPageReq
+
+	if err := r.DecodeJSONPayload(&req); err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
+		return
+	}
+
+	mods, err := repo.GetTaskResultPage(req.Limit, req.Offset, getResultsConditions(req))
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	result := make(map[string]interface{})
+	result["list"] = mods
+
+	//总条数
+	count, err := repo.CountTaskInfo(getResultsConditions(req))
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+	result["recordCount"] = count
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
+}
+
+func getResultsConditions(req TaskInfoPageReq) string {
+	var where []string
+	if req.ID > 0 {
+		where = append(where, fmt.Sprintf("task_result.id = %d", req.ID))
+	}
+	if req.TaskNo > 0 {
+		where = append(where, fmt.Sprintf("task_result.task_no like %s", "%"+string(req.TaskNo)+"%"))
+	}
+
+	return strings.Join(where, " and ")
+}
 
 func ReceiveCallback(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	repo, ok := middleware.RepoFromContext(ctx)

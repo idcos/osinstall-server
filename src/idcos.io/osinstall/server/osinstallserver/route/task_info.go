@@ -91,7 +91,7 @@ func stConvert(req TaskInfoReq) string {
 
 func scConvert(req TaskInfoReq, url string) string {
 	if req.TaskType == model.File {
-		return url + strings.TrimRight(req.Extend.SrcFile, model.NginxRoot)
+		return url + strings.TrimRight(req.Extend.SrcFile, model.Root)
 	}
 
 	return req.Extend.Script
@@ -151,7 +151,7 @@ func GetTaskInfoPage(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 		return
 	}
 
-	mods, err := repo.GetTaskInfoPage(req.Limit, req.Offset, GetCondition(req))
+	mods, err := repo.GetTaskInfoPage(req.Limit, req.Offset, getInfoConditions(req))
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 		return
@@ -160,7 +160,7 @@ func GetTaskInfoPage(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 	result["list"] = mods
 
 	//总条数
-	count, err := repo.CountTaskInfo(GetCondition(req))
+	count, err := repo.CountTaskResult(getInfoConditions(req))
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 		return
@@ -170,7 +170,7 @@ func GetTaskInfoPage(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
 }
 
-func GetCondition(req TaskInfoPageReq) string {
+func getInfoConditions(req TaskInfoPageReq) string {
 	var where []string
 	if req.ID > 0 {
 		where = append(where, fmt.Sprintf("task_info.id = %d", req.ID))

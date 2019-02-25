@@ -8,7 +8,7 @@ const (
 	Linux = "linux"
 	Aix   = "aix"
 
-	NginxRoot = "/home/www"
+	Root = "/home/www"
 
 	CallbackURL = "/api/osinstall/v1/task/callback"
 )

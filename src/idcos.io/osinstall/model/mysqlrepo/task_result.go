@@ -1,6 +1,7 @@
 package mysqlrepo
 
 import (
+	"fmt"
 	"idcos.io/osinstall/model"
 )
 
@@ -8,10 +9,21 @@ func (repo *MySQLRepo) AddTaskResult(info *model.TaskResult) (err error) {
 	return
 }
 func (repo *MySQLRepo) GetTaskResultPage(limit uint, offset uint, where string) (results []model.TaskResult, err error) {
-	return
+	sql := "SELECT * FROM task_result " + where + " order by t1.id DESC"
+	if offset > 0 {
+		sql += " limit " + fmt.Sprintf("%d", offset) + "," + fmt.Sprintf("%d", limit)
+	} else {
+		sql += " limit " + fmt.Sprintf("%d", limit)
+	}
+	err = repo.db.Raw(sql).Scan(&results).Error
+	return results, err
 }
 func (repo *MySQLRepo) CountTaskResult(where string) (count int, err error) {
-	return
+	row := repo.db.DB().QueryRow("SELECT count(1) FROM task_result" + where)
+	if err := row.Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (repo *MySQLRepo) GetTaskResultByTaskNo(taskNo string) (results []*model.TaskResult, err error) {

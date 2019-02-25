@@ -1,7 +1,7 @@
 package model
 
 const (
-	DefaultIDC      = "default"
+	DefaultIDC      = ""
 	DefaultEncoding = "utf-8"
 
 	Win   = "windows"

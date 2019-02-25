@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+func (repo *MySQLRepo) GetTaskInfoByNo(taskNo string) (res *model.TaskInfo, err error) {
+	err = repo.db.Model(model.TaskInfo{}).Where("taskNo = ?", taskNo).Find(res).Error
+	return
+}
+
 func (repo *MySQLRepo) AddTaskInfo(info *model.TaskInfo) (res *model.TaskInfo, err error) {
 	err = repo.db.Create(info).Error
 	return info, err
@@ -37,7 +42,6 @@ func (repo *MySQLRepo) AddTaskInfoAndResult(info *model.TaskInfo, sns []string, 
 	tx := repo.db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println(r)
 			tx.Rollback()
 		}
 	}()

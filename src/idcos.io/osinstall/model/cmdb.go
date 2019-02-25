@@ -896,6 +896,7 @@ type ITaskInfo interface {
 	DeleteTaskInfo(id uint) (err error)
 	GetTaskInfoPage(Limit uint, Offset uint, Where string) (tasks []TaskInfo, err error)
 	CountTaskInfo(Where string) (count int, err error)
+	GetTaskInfoByNo(Where string) (res *TaskInfo, err error)
 }
 
 //TaskResult 作业执行结果
@@ -917,6 +918,8 @@ type ITaskResult interface {
 	AddTaskResult(info *TaskResult) error
 	GetTaskResultPage(Limit uint, Offset uint, Where string) ([]TaskResult, error)
 	CountTaskResult(Where string) (int, error)
+	GetTaskResultByTaskNo(taskNo string) (results []*TaskResult, err error)
+	AddTasks(info *TaskInfo, results []*TaskResult) (err error)
 }
 
 func (TaskResult) TableName() string {

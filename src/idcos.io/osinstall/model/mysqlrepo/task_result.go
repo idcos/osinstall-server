@@ -9,7 +9,7 @@ func (repo *MySQLRepo) AddTaskResult(info *model.TaskResult) (err error) {
 	return
 }
 func (repo *MySQLRepo) GetTaskResultPage(limit uint, offset uint, where string) (results []model.TaskResult, err error) {
-	sql := "SELECT * FROM task_result " + where + " order by t1.id DESC"
+	sql := "SELECT * FROM task_result " + where + " order by task_result.id DESC"
 	if offset > 0 {
 		sql += " limit " + fmt.Sprintf("%d", offset) + "," + fmt.Sprintf("%d", limit)
 	} else {

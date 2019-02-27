@@ -9,6 +9,11 @@ import (
 	"idcos.io/osinstall/middleware"
 	"idcos.io/osinstall/model"
 	"idcos.io/osinstall/server/osinstallserver/exec"
+	"idcos.io/osinstall/server/osinstallserver/util"
+	"io"
+	"io/ioutil"
+	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -104,7 +109,7 @@ func paramConvert(req TaskInfoReq) map[string]interface{} {
 
 func scConvert(req TaskInfoReq, url string) string {
 	if req.TaskType == model.File {
-		v, _ := json.Marshal([]string{fmt.Sprintf("%s/%s",url,strings.TrimLeft(req.Extend.SrcFile, model.Root))})
+		v, _ := json.Marshal([]string{fmt.Sprintf("%s/%s", url, strings.TrimLeft(req.Extend.SrcFile, model.Root))})
 		return string(v)
 	}
 
@@ -182,6 +187,69 @@ func GetTaskInfoPage(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 	result["recordCount"] = count
 
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
+}
+
+func UploadScript(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	w.Header().Add("Content-type", "text/html; charset=utf-8")
+	r.ParseForm()
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	b, err := ioutil.ReadAll(file)
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": fmt.Sprintf("读取文件内容异常，%s" + err.Error())})
+		return
+	}
+
+	defer file.Close()
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": string(b)})
+	return
+}
+
+func UploadFile(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
+	w.Header().Add("Content-type", "text/html; charset=utf-8")
+	r.ParseForm()
+	file, handle, err := r.FormFile("file")
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	rootDir := model.Root
+	if !util.FileExist(rootDir) {
+		err := os.MkdirAll(rootDir, 0777)
+		if err != nil {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+			return
+		}
+	}
+
+	filename := path.Join(rootDir, handle.Filename)
+
+	result := make(map[string]interface{})
+	result["result"] = filename
+
+	if util.FileExist(filename) {
+		os.Remove(filename)
+	}
+
+	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0666)
+	io.Copy(f, file)
+
+	if err != nil {
+		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
+		return
+	}
+
+	defer f.Close()
+	defer file.Close()
+
+	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
+	return
 }
 
 func getInfoConditions(req TaskInfoPageReq) string {

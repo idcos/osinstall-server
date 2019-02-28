@@ -150,8 +150,9 @@ func DeleteTaskInfoByID(ctx context.Context, w rest.ResponseWriter, r *rest.Requ
 
 type TaskInfoPageReq struct {
 	ID          uint   `json:"id"`
-	TaskNo      uint   `json:"TaskNo"`
+	TaskNo      string `json:"TaskNo"`
 	AccessToken string `json:"AccessToken"`
+	Keyword     string `json:"keyword"`
 	Limit       uint
 	Offset      uint
 }
@@ -179,7 +180,7 @@ func GetTaskInfoPage(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 	result["list"] = mods
 
 	//总条数
-	count, err := repo.CountTaskResult(getInfoConditions(req))
+	count, err := repo.CountTaskInfo(getInfoConditions(req))
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 		return
@@ -257,9 +258,15 @@ func getInfoConditions(req TaskInfoPageReq) string {
 	if req.ID > 0 {
 		where = append(where, fmt.Sprintf("task_info.id = %d", req.ID))
 	}
-	if req.TaskNo > 0 {
-		where = append(where, fmt.Sprintf("task_info.task_no like %s", "%"+string(req.TaskNo)+"%"))
+	if req.TaskNo != "" {
+		where = append(where, fmt.Sprintf("task_info.task_no like %s", "'%"+req.TaskNo+"%'"))
 	}
 
-	return strings.Join(where, " and ")
+	if req.Keyword != "" {
+		where = append(where, fmt.Sprintf("task_info.task_no like %s or task_info.task_name like %s", "'%"+req.Keyword+"%'", "'%"+req.Keyword+"%'"))
+	}
+
+	where = append(where, "task_info.is_active= 1")
+
+	return " where " + strings.Join(where, " and ")
 }

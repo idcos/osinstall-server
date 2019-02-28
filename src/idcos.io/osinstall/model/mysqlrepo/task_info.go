@@ -17,12 +17,12 @@ func (repo *MySQLRepo) AddTaskInfo(info *model.TaskInfo) (res *model.TaskInfo, e
 	return info, err
 }
 func (repo *MySQLRepo) DeleteTaskInfo(id uint) (err error) {
-	return repo.db.Where("id =?", id).Update("is_active", "N").Error
+	return repo.db.Model(model.TaskInfo{}).Where("id =?", id).Update("is_active", "0").Error
 }
 func (repo *MySQLRepo) GetTaskInfoPage(limit uint, offset uint, where string) (result []model.TaskInfo, err error) {
-	sql := "SELECT * FROM task_info " + where + " order by task_info.id DESC"
+	sql := "SELECT * FROM task_info task_info " + where + " order by task_info.id DESC"
 	if offset > 0 {
-		sql += " limit " + fmt.Sprintf("%d", offset) + "," + fmt.Sprintf("%d", limit)
+		sql += " limit " + fmt.Sprintf("%d", limit) + "," + fmt.Sprintf("%d", offset)
 	} else {
 		sql += " limit " + fmt.Sprintf("%d", limit)
 	}
@@ -30,7 +30,7 @@ func (repo *MySQLRepo) GetTaskInfoPage(limit uint, offset uint, where string) (r
 	return result, err
 }
 func (repo *MySQLRepo) CountTaskInfo(where string) (count int, err error) {
-	row := repo.db.DB().QueryRow("SELECT count(1) FROM task_info" + where)
+	row := repo.db.DB().QueryRow("SELECT count(1) FROM task_info task_info " + where)
 	if err := row.Scan(&count); err != nil {
 		return 0, err
 	}

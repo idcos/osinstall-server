@@ -34,7 +34,7 @@ func GetTaskResultPage(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	result["list"] = mods
 
 	//总条数
-	count, err := repo.CountTaskInfo(getResultsConditions(req))
+	count, err := repo.CountTaskResult(getResultsConditions(req))
 	if err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": err.Error()})
 		return
@@ -49,11 +49,17 @@ func getResultsConditions(req TaskInfoPageReq) string {
 	if req.ID > 0 {
 		where = append(where, fmt.Sprintf("task_result.id = %d", req.ID))
 	}
-	if req.TaskNo > 0 {
-		where = append(where, fmt.Sprintf("task_result.task_no like %s", "%"+string(req.TaskNo)+"%"))
+	if req.TaskNo != "" {
+		where = append(where, fmt.Sprintf("task_result.task_no like %s", "'%"+req.TaskNo+"%'"))
 	}
 
-	return strings.Join(where, " and ")
+	whereStr := strings.Join(where, " and ")
+
+	if len(where) > 0 {
+		whereStr = " where " + whereStr
+	}
+
+	return whereStr
 }
 
 func ReceiveCallback(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {

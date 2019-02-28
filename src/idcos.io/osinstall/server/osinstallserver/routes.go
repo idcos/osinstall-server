@@ -163,7 +163,7 @@ func init() {
 	routes = append(routes, rest.Post("/api/osinstall/v1/task/file/upload", route.UploadFile))
 
 	//task result
-	routes = append(routes, rest.Post("/api/osinstall/v1/task/result/list", route.GetTaskInfoPage))
+	routes = append(routes, rest.Post("/api/osinstall/v1/task/result/list", route.GetTaskResultPage))
 	routes = append(routes, rest.Post("/api/osinstall/v1/task/callback", route.ReceiveCallback))
 
 }

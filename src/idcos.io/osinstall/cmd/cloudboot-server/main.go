@@ -2,6 +2,12 @@ package main
 
 import (
 	"fmt"
+	"net"
+	"net/http"
+	"os"
+
+	"github.com/urfave/cli"
+
 	"idcos.io/osinstall/build"
 	"idcos.io/osinstall/config"
 	"idcos.io/osinstall/config/jsonconf"
@@ -9,25 +15,16 @@ import (
 	"idcos.io/osinstall/server/osinstallserver"
 	"idcos.io/osinstall/server/osinstallserver/route"
 	"idcos.io/osinstall/server/osinstallserver/util"
-	"net"
-	"net/http"
-	"os"
-
-	"github.com/urfave/cli"
 )
 
-var date = "2017-01-17"
-var version = "v1.4 (" + date + ")"
-var name = "cloudboot-server"
-var description = "cloudboot server"
-var usage = "CloudJ server install tool"
 var configFile = "/etc/cloudboot-server/cloudboot-server.conf"
 
 func main() {
 	app := cli.NewApp()
-	app.Name = name
-	app.Usage = usage
-	app.Version = build.Version(version)
+	app.Name = "cloudboot-server"
+	app.Description = "cloudboot server"
+	app.Usage = "CloudJ server install tool"
+	app.Version = build.Version()
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{

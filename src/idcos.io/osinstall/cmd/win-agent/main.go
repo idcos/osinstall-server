@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"idcos.io/osinstall/build"
-	"idcos.io/osinstall/utils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -17,6 +15,9 @@ import (
 
 	"github.com/axgle/mahonia"
 	"github.com/urfave/cli"
+
+	"idcos.io/osinstall/build"
+	"idcos.io/osinstall/utils"
 )
 
 type RestInfo struct {
@@ -30,13 +31,9 @@ type RestInfo struct {
 	HWADDR   string
 }
 
-var date = "2017-01-17"
-var version = "v1.4 (" + date + ")"
-
 func main() {
-
 	app := cli.NewApp()
-	app.Version = build.Version(version)
+	app.Version = build.Version()
 	app.Action = func(c *cli.Context) {
 		run(c)
 	}

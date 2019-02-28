@@ -3,8 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"idcos.io/osinstall/build"
-	"idcos.io/osinstall/utils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -13,6 +11,9 @@ import (
 	"strings"
 
 	"github.com/urfave/cli"
+
+	"idcos.io/osinstall/build"
+	"idcos.io/osinstall/utils"
 )
 
 var xmlPath = "X:\\Windows\\System32\\unattended.xml"
@@ -20,12 +21,9 @@ var rootPath = "X:\\Windows\\System32"
 var scriptFile = path.Join(rootPath, "temp-script.cmd")
 var serverHost = "osinstall" //cloudboot server host
 
-var date = "2017-01-17"
-var version = "v1.4 (" + date + ")"
-
 func main() {
 	app := cli.NewApp()
-	app.Version = build.Version(version)
+	app.Version = build.Version()
 	app.Action = func(c *cli.Context) {
 		if err := run(c); err != nil {
 			utils.Logger.Error(err.Error())

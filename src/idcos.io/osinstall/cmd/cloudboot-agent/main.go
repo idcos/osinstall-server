@@ -1,69 +1,19 @@
 package main
 
 import (
-	"idcos.io/osinstall/build"
-	"idcos.io/osinstall/osinstall/agent"
 	"os"
 
 	"github.com/urfave/cli"
+
+	"idcos.io/osinstall/build"
+	"idcos.io/osinstall/osinstall/agent"
 )
-
-var date = "2017-01-17"
-var version = "v1.4 (" + date + ")"
-var name = "cloudboot-agent"
-var description = "cloudboot agent"
-
-//  dependencies that are NOT required by the service, but might be used
-// var dependencies = []string{"dummy.service"}
 
 func main() {
 	app := cli.NewApp()
-	app.Name = name
-	app.Version = build.Version(version)
-	// app.Commands = []cli.Command{
-	// 	{
-	// 		Name:  "start",
-	// 		Usage: "start agent asynchronous",
-	// 		Action: func(c *cli.Context) {
-	// 			srv, err := daemon.New(name, description, dependencies...)
-	// 			if err != nil {
-	// 				os.Exit(1)
-	// 			}
-	// 			service := &Service{srv}
-	// 			if err := service.StartDaemon(); err != nil {
-	// 				os.Exit(1)
-	// 			}
-	// 		},
-	// 	},
-	// 	{
-	// 		Name:  "stop",
-	// 		Usage: "stop agent asynchronous",
-	// 		Action: func(c *cli.Context) {
-	// 			srv, err := daemon.New(name, description, dependencies...)
-	// 			if err != nil {
-	// 				os.Exit(1)
-	// 			}
-	// 			service := &Service{srv}
-	// 			if err := service.StopDaemon(); err != nil {
-	// 				os.Exit(1)
-	// 			}
-	// 		},
-	// 	},
-	// 	{
-	// 		Name:  "status",
-	// 		Usage: "agent status",
-	// 		Action: func(c *cli.Context) {
-	// 			srv, err := daemon.New(name, description, dependencies...)
-	// 			if err != nil {
-	// 				os.Exit(1)
-	// 			}
-	// 			service := &Service{srv}
-	// 			if err := service.StatusDaemon(); err != nil {
-	// 				os.Exit(1)
-	// 			}
-	// 		},
-	// 	},
-	// }
+	app.Name = "cloudboot-agent"
+	app.Description = "cloudboot agent"
+	app.Version = build.Version()
 
 	app.Action = func(c *cli.Context) {
 		runAgent(c)

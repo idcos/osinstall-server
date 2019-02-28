@@ -1,7 +1,7 @@
 {
     "version": "0.6.0",
     "tool": "go install",
-    "importpath": "build",
+    "importpath": "idcos.io/osinstall/build",
     "variables": [
         {
             "variable": "Date",

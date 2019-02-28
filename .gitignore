@@ -4,6 +4,7 @@
 *.so
 *.db
 *.idea
+*.cache
 
 # Folders
 _obj

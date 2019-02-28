@@ -1,9 +1,9 @@
 package exec
 
 import (
-	"idcos.com/cloudboot/src/idcos.io/cloudboot/utils"
 	"idcos.io/osinstall/logger"
 	"idcos.io/osinstall/model"
+	"idcos.io/osinstall/utils"
 	"io/ioutil"
 	"net/http"
 	"strings"

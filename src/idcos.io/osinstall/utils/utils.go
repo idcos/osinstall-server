@@ -197,3 +197,8 @@ func ListFiles(dirPth string, suffix string, onlyReturnFileName bool) (files []s
 	}
 	return files, nil
 }
+
+func ToJsonString(v interface{}) string {
+	bytes, _ := json.Marshal(v)
+	return string(bytes)
+}

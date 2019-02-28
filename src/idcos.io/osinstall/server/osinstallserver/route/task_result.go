@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/AlexanderChen1989/go-json-rest/rest"
-	"idcos.com/cloudboot/src/idcos.io/cloudboot/utils"
 	"idcos.io/osinstall/middleware"
 	"idcos.io/osinstall/model"
+	"idcos.io/osinstall/utils"
 	"strings"
 	"time"
 )

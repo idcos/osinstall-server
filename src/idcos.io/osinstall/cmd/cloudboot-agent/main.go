@@ -5,8 +5,8 @@ import (
 
 	"github.com/urfave/cli"
 
+	"idcos.io/osinstall/agent"
 	"idcos.io/osinstall/build"
-	"idcos.io/osinstall/osinstall/agent"
 )
 
 func main() {

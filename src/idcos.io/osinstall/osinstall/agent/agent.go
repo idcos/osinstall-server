@@ -2,14 +2,11 @@ package agent
 
 import (
 	"bytes"
-	"idcos.io/osinstall/config"
-	"idcos.io/osinstall/config/iniconf"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"idcos.io/osinstall/logger"
 	"net/http"
 	"os"
 	"os/exec"
@@ -17,6 +14,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"idcos.io/osinstall/config"
+	"idcos.io/osinstall/config/iniconf"
+	"idcos.io/osinstall/logger"
 )
 
 const (
@@ -28,7 +29,6 @@ const (
 	RegexpDeveloper    = `DEVELOPER=([^ ]+)`
 	RebootScript       = `ipmitool chassis bootdev pxe; ipmitool power reset`
 	RebootScript2      = `fdisk -lu | awk '/^Disk.*bytes/ { gsub(/:/, ""); system("dd if=/dev/zero of="$2" bs=512 count=1") }'; reboot -f`
-	InstallHWTools     = `rpm --quiet -q %s-hw-tools || yum -y install %s-hw-tools`
 	PingIp             = `ping -c 4 -w 3 %s`
 
 	APIVersion = "v1"
@@ -550,14 +550,6 @@ func (agent *OSInstallAgent) GetHardWareConf() error {
 
 // ImplementHardConf 实施硬件配置
 func (agent *OSInstallAgent) ImplementHardConf() error {
-
-	// 安装硬件配置工具包
-	installHWScript := fmt.Sprintf(InstallHWTools, agent.Company, agent.Company)
-	agent.Logger.Debugf("installScript: %s\n", installHWScript)
-	if output, err := execScript(installHWScript); err != nil {
-		return fmt.Errorf("ImplementHardConf error: \n#%s\n%v\n%s", installHWScript, err, string(output))
-	}
-
 	// 开始硬件配置
 	agent.ReportProgress(0.3, "开始硬件配置", "")
 

@@ -60,7 +60,7 @@ func AddTaskInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	taskInfo := model.TaskInfo{
-		TaskNo:      time.Now().Format("20060102150304"),
+		TaskNo:      time.Now().Format("20060102150304000"),
 		TaskName:    req.TaskName,
 		TaskType:    req.TaskType,
 		TaskChannel: req.TaskChannel,

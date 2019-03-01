@@ -855,6 +855,11 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 			session.Role = accessTokenUser.Role
 		}
 
+		if info.NetworkID == uint(0) {
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "无匹配的网络信息，请确认!"})
+			return
+		}
+
 		if info.Sn == "" || info.Hostname == "" || info.Ip == "" || info.NetworkID == uint(0) || info.OsID == uint(0) {
 			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "请将信息填写完整!"})
 			return

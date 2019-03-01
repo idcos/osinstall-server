@@ -25,12 +25,19 @@ func TaskExec(logger logger.Logger, reqParam *model.ConfJobIPExecParam, URL stri
 
 	resp, err := client.Do(req)
 
+	if resp == nil {
+		logger.Errorf("[TaskExec]调用act2接口结束,返回值为nil")
+		return
+	}
+
+	defer resp.Body.Close()
+
+	logger.Debugf("do done")
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		logger.Errorf("解析response body error: %s, body: %s", err.Error(), body)
 	}
 	logger.Debugf("[TaskExec]调用act2接口结束,返回值为 %s", body)
-
-	defer resp.Body.Close()
 
 }

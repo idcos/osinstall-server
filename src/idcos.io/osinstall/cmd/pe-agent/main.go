@@ -6,9 +6,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli"
 
@@ -33,12 +36,12 @@ func main() {
 	app.Run(os.Args)
 }
 
-func run(c *cli.Context) error {
+func run(c *cli.Context) (err error) {
 	utils.InitConsoleLog()
 
 	var sn = getSN()
-	isVm := isVirtualMachine()
-	if isVm {
+	isVM := isVirtualMachine()
+	if isVM {
 		sn = getMacAddress()
 	}
 
@@ -47,9 +50,9 @@ func run(c *cli.Context) error {
 	}
 
 	//init cloudboot server host
-	serverIp := getDomainLookupIP(serverHost)
-	if serverIp != "" {
-		serverHost = serverIp
+	serverIP := getDomainLookupIP(serverHost)
+	if serverIP != "" {
+		serverHost = serverIP
 	}
 
 	if !utils.PingLoop(serverHost, 30, 2) {
@@ -62,7 +65,16 @@ func run(c *cli.Context) error {
 	}
 
 	// mount samba
-	if err := mountSamba(); err != nil {
+	retries := 3 // Samba挂载失败时重试次数
+	for i := 0; i < retries; i++ {
+		if err = mountSamba(serverHost); err != nil {
+			time.Sleep(time.Duration((i+1)*5) * time.Second)
+			continue
+		}
+		break
+	}
+	if err != nil {
+		utils.Logger.Error(err.Error())
 		return err
 	}
 
@@ -82,6 +94,45 @@ func run(c *cli.Context) error {
 
 	// reboot
 	return reboot()
+}
+
+// mountSamba 挂载Samba目录
+func mountSamba(host string) (err error) {
+	if sambaMounted() {
+		return nil
+	}
+	cmdAndArgs := fmt.Sprintf(`net use Z: \\%s\image`, host)
+	_, err = execOutput(cmdAndArgs)
+	return err
+}
+
+// sambaMounted 判断Samba是否已经挂载
+func sambaMounted() (mounted bool) {
+	_, err := execOutput(`net use Z:`)
+	return err == nil
+}
+
+// execOutput windows系统下，执行命令字符串cmdAndArgs，并将命令执行的标准输出和标准错误输出都通过字节切片output返回。
+func execOutput(cmdAndArgs string) (output []byte, err error) {
+	scriptFile, err := genTempScript([]byte(cmdAndArgs))
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(scriptFile)
+
+	output, err = exec.Command("cmd", "/c", scriptFile).Output()
+	utils.Logger.Debug("%s ==>\n%s\n", cmdAndArgs, output)
+
+	return output, err
+}
+
+// genTempScript 在系统临时目录生成bat脚本文件
+func genTempScript(content []byte) (scriptFile string, err error) {
+	scriptFile = filepath.Join(os.TempDir(), fmt.Sprintf("%d.bat", time.Now().UnixNano()))
+	if err = ioutil.WriteFile(scriptFile, content, 0744); err != nil {
+		return "", err
+	}
+	return scriptFile, nil
 }
 
 // 查看本机 SN
@@ -263,25 +314,6 @@ func getXmlFile(sn string, host string) error {
 	}
 
 	return ioutil.WriteFile(xmlPath, body, 0666)
-}
-
-func mountSamba() error {
-	var cmd = `net use Z:`
-	utils.Logger.Debug(cmd)
-	if _, err := utils.ExecCmd(scriptFile, cmd); err == nil {
-		return nil
-	} else {
-		utils.Logger.Debug(err.Error())
-	}
-
-	cmd = `net use Z: \\osinstall\image`
-	utils.Logger.Debug(cmd)
-	if _, err := utils.ExecCmd(scriptFile, cmd); err != nil {
-		utils.Logger.Error(err.Error())
-		return err
-	}
-
-	return nil
 }
 
 func installWindows() error {

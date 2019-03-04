@@ -273,8 +273,7 @@ type DeviceLog struct {
 	Title     string `sql:"not null;"`
 	Type      string `sql:"not null;default:'install';"`
 	Content   string `sql:"type:text;"` //pxe信息
-	CreatedAt time.Time
-	UpdatedAt time.Time
+
 }
 
 type IDeviceLog interface {
@@ -826,8 +825,6 @@ type VmDeviceLog struct {
 	Title     string `sql:"not null;"`
 	Type      string `sql:"not null;default:'install';"`
 	Content   string `sql:"type:text;"` //pxe信息
-	CreatedAt time.Time
-	UpdatedAt time.Time
 }
 
 type IVmDeviceLog interface {

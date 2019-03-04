@@ -915,10 +915,10 @@ type TaskResult struct {
 	Content   string    `gorm:"column:content"`
 }
 type ITaskResult interface {
-	AddTaskResult(info *TaskResult) error
 	GetTaskResultPage(Limit uint, Offset uint, Where string) ([]TaskResult, error)
 	CountTaskResult(Where string) (int, error)
 	GetTaskResultByTaskNo(taskNo string) (results []*TaskResult, err error)
+	GetTaskResultByTaskID(taskID uint) (results []*TaskResult, err error)
 	AddTasks(info *TaskInfo, results []*TaskResult) (err error)
 }
 

@@ -82,8 +82,18 @@ func AddTaskInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	taskConf.ExecParam.Script = scConvert(req, config.OsInstall.LocalServer)
 	taskConf.Callback = config.OsInstall.LocalServer + model.CallbackURL
 
-	go exec.TaskExec(logger, taskConf, config.Act2.URL)
+	act2Resp := exec.TaskExec(logger, taskConf, config.Act2.URL)
+	if act2Resp.Status != "success" {
+		taskInfo.TaskStatus = "done"
 
+		taskResuls, _ := repo.GetTaskResultByTaskID(taskInfo.ID)
+		for _, res := range taskResuls {
+			res.Status = act2Resp.Status
+			res.Content = act2Resp.Message
+		}
+
+		repo.AddTasks(&taskInfo, taskResuls)
+	}
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": ""})
 }
 

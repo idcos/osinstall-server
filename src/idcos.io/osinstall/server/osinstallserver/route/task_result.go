@@ -114,6 +114,11 @@ func ReceiveCallback(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 				if host.Stderr != "" {
 					result.Content = host.Stderr
 				}
+
+				if host.Status == "fail" {
+					result.Content = host.Message
+				}
+
 			}
 		}
 	}

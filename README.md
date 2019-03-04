@@ -121,3 +121,10 @@ commit: 3483d3a0a659510ba3fa63c440a92513c7aa2348
 ``` shell
 $ cd $YOUR_WORK_SPACE/osinstall_server && ./bin/cloudboot-server -c /etc/cloudboot-server/cloudboot-server.conf
 ```
+
+
+
+## 版权
+
+Copyright 2019 Cloud J Tech, Inc and other contributors
+Licensed under the GPLv3

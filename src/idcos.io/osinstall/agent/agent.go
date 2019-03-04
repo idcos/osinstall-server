@@ -329,49 +329,6 @@ LOOP:
 	}
 }
 
-// IsIPInUse 判断IP是否在使用中
-func (agent *OSInstallAgent) IsIpInUse() error {
-	var url = fmt.Sprintf("%s?sn=%s&type=json", agent.ServerAddr+netInfoURL, agent.Sn)
-	agent.Logger.Debugf("IsIPInUse url:%s\n", url)
-	var body []byte
-	var err error
-	var resp *http.Response
-	var jsonResp struct {
-		Status  string
-		Message string
-		Content struct {
-			Ip string
-		}
-	}
-
-	resp, err = http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	body, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	agent.Logger.Debug(string(body))
-
-	if err = json.Unmarshal(body, &jsonResp); err != nil {
-		return err
-	}
-
-	if jsonResp.Status != "success" {
-		return fmt.Errorf("Status: %s, Message: %s", jsonResp.Status, jsonResp.Message)
-	}
-
-	var pingScript = fmt.Sprintf(PingIp, jsonResp.Content.Ip)
-	if output, err := execScript(pingScript); err == nil {
-		return fmt.Errorf("IsIpInUse error: \n#%s\n%v\n%s", pingScript, err, string(output))
-	}
-
-	return nil
-}
-
 //
 func (agent *OSInstallAgent) ReportProductInfo() error {
 	var url = agent.ServerAddr + productInfoURL

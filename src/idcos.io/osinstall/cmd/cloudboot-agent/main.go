@@ -47,12 +47,6 @@ func runAgent(c *cli.Context) {
 		agent.IsInInstallQueue()
 		agent.Logger.Debug("into install queue")
 
-		// 判断IP地址是否在使用
-		if err = agent.IsIpInUse(); err != nil {
-			agent.ReportProgress(-1, "IP查询错误", err.Error())
-			continue
-		}
-
 		// 配置查询（15%）
 		var isSkip = false
 		isSkip, err = agent.IsHaveHardWareConf()

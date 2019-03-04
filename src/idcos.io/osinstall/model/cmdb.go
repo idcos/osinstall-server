@@ -253,7 +253,7 @@ type OsConfig struct {
 
 // IOS 操作系统操作接口
 type IOsConfig interface {
-	//GetOSByID(ID uint) (*OsConfig, error)
+	//GetOSByID(TaskID uint) (*OsConfig, error)
 	CountOsConfigByName(Name string) (uint, error)
 	CountOsConfigByNameAndId(Name string, ID uint) (uint, error)
 	CountOsConfig() (uint, error)
@@ -301,7 +301,7 @@ type SystemConfig struct {
 
 // ISystemConfg 操作系统操作接口
 type ISystemConfig interface {
-	//GetSystemByID(ID uint) (*SystemConfig, error)
+	//GetSystemByID(TaskID uint) (*SystemConfig, error)
 	CountSystemConfigByName(Name string) (uint, error)
 	CountSystemConfigByNameAndId(Name string, ID uint) (uint, error)
 	GetSystemConfigIdByName(Name string) (uint, error)

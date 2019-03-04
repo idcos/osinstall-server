@@ -60,7 +60,7 @@ func AddTaskInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	taskInfo := model.TaskInfo{
-		TaskNo:      time.Now().Format("20060102150304000"),
+		TaskNo:      time.Now().Format("20060102150304"),
 		TaskName:    req.TaskName,
 		TaskType:    req.TaskType,
 		TaskChannel: req.TaskChannel,
@@ -263,7 +263,7 @@ func getInfoConditions(req TaskInfoPageReq) string {
 	}
 
 	if req.Keyword != "" {
-		where = append(where, fmt.Sprintf("task_info.task_no like %s or task_info.task_name like %s", "'%"+req.Keyword+"%'", "'%"+req.Keyword+"%'"))
+		where = append(where, fmt.Sprintf("( task_info.task_no like %s or task_info.task_name like %s )", "'%"+req.Keyword+"%'", "'%"+req.Keyword+"%'"))
 	}
 
 	where = append(where, "task_info.is_active= 1")

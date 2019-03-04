@@ -23,8 +23,8 @@ func GetSession(w rest.ResponseWriter, r *rest.Request) (model.UserWithToken, er
 	if err != nil {
 		return user, err
 	}
-	if session.Values["ID"] != nil {
-		user.ID = session.Values["ID"].(uint)
+	if session.Values["TaskID"] != nil {
+		user.ID = session.Values["TaskID"].(uint)
 		user.Username = session.Values["Username"].(string)
 		user.Name = session.Values["Name"].(string)
 		user.Role = session.Values["Role"].(string)
@@ -177,7 +177,7 @@ func Login(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	session.Values["ID"] = user.ID
+	session.Values["TaskID"] = user.ID
 	session.Values["Username"] = user.Username
 	session.Values["Name"] = user.Name
 	session.Values["Role"] = user.Role
@@ -240,7 +240,7 @@ func LoginOut(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	delete(session.Values, "ID")
+	delete(session.Values, "TaskID")
 	delete(session.Values, "Username")
 	delete(session.Values, "Name")
 	delete(session.Values, "Role")

@@ -22,7 +22,7 @@ func (repo *MySQLRepo) DeleteTaskInfo(id uint) (err error) {
 func (repo *MySQLRepo) GetTaskInfoPage(limit uint, offset uint, where string) (result []model.TaskInfo, err error) {
 	sql := "SELECT * FROM task_info task_info " + where + " order by task_info.id DESC"
 	if offset > 0 {
-		sql += " limit " + fmt.Sprintf("%d", limit) + "," + fmt.Sprintf("%d", offset)
+		sql += " limit " + fmt.Sprintf("%d", offset) + "," + fmt.Sprintf("%d", limit)
 	} else {
 		sql += " limit " + fmt.Sprintf("%d", limit)
 	}

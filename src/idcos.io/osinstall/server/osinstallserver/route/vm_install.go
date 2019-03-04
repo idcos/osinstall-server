@@ -1067,7 +1067,7 @@ func BatchDeleteVm(ctx context.Context, w rest.ResponseWriter, r *rest.Request) 
 		//get host device info
 		device, err := repo.GetDeviceById(vmDevice.DeviceID)
 		if err != nil {
-			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "宿主机不存在!(ID:" + fmt.Sprintf("%d", vmDevice.DeviceID) + ")"})
+			w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "宿主机不存在!(TaskID:" + fmt.Sprintf("%d", vmDevice.DeviceID) + ")"})
 			return
 		}
 

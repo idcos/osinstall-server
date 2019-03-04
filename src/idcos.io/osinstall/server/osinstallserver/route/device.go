@@ -341,7 +341,7 @@ func BatchDelete(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 
 		/*
 			//删除LOG
-			_, errLog := repo.DeleteDeviceLogByDeviceID(info.ID)
+			_, errLog := repo.DeleteDeviceLogByDeviceID(info.TaskID)
 			if errLog != nil {
 				w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errLog.Error()})
 				return
@@ -953,7 +953,7 @@ func BatchAddDevice(ctx context.Context, w rest.ResponseWriter, r *rest.Request)
 
 			/*
 				//validate host server info
-				countVm, errVm := repo.CountVmDeviceByDeviceId(device.ID)
+				countVm, errVm := repo.CountVmDeviceByDeviceId(device.TaskID)
 				if errVm != nil {
 					w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errVm.Error()})
 					return

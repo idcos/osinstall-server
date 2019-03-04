@@ -11,6 +11,14 @@ import (
 	"time"
 )
 
+type TaskResultPageReq struct {
+	TaskID      uint   `json:"TaskID"`
+	TaskNo      string `json:"TaskNo"`
+	AccessToken string `json:"AccessToken"`
+	Limit       uint
+	Offset      uint
+}
+
 func GetTaskResultPage(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	repo, ok := middleware.RepoFromContext(ctx)
 	if !ok {
@@ -18,7 +26,7 @@ func GetTaskResultPage(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 		return
 	}
 
-	var req TaskInfoPageReq
+	var req TaskResultPageReq
 
 	if err := r.DecodeJSONPayload(&req); err != nil {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "参数错误" + err.Error()})
@@ -44,10 +52,10 @@ func GetTaskResultPage(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": result})
 }
 
-func getResultsConditions(req TaskInfoPageReq) string {
+func getResultsConditions(req TaskResultPageReq) string {
 	var where []string
-	if req.ID > 0 {
-		where = append(where, fmt.Sprintf("task_result.id = %d", req.ID))
+	if req.TaskID > 0 {
+		where = append(where, fmt.Sprintf("task_result.task_id = %d", req.TaskID))
 	}
 	if req.TaskNo != "" {
 		where = append(where, fmt.Sprintf("task_result.task_no like %s", "'%"+req.TaskNo+"%'"))

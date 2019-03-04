@@ -8,7 +8,7 @@ const (
 	Linux = "linux"
 	Aix   = "aix"
 
-	Root = "/tmp/root/"
+	Root = "/home/www"
 
 	CallbackURL = "/api/osinstall/v1/task/callback"
 )

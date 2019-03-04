@@ -56,7 +56,7 @@ func (repo *MySQLRepo) FormatLocationToTreeByPid(pid uint, content []map[string]
 	//result[pid] = mods
 	for _, v := range mods {
 		data := make(map[string]interface{})
-		data["ID"] = v.ID
+		data["TaskID"] = v.ID
 		data["Pid"] = v.Pid
 		data["Name"] = v.Name
 		//var strSelect string
@@ -165,7 +165,7 @@ func (repo *MySQLRepo) FormatChildLocationIdById(id uint, content string, separa
 	}
 
 	for _, v := range mods {
-		//content += fmt.Sprintf("%d", v.ID) + ","
+		//content += fmt.Sprintf("%d", v.TaskID) + ","
 		childContent, _ := repo.FormatChildLocationIdById(v.ID, "", ",")
 		if childContent != "" {
 			if content != "" {

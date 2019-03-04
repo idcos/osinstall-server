@@ -705,7 +705,7 @@ func ReportProductInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Reque
 	// 		return
 	// 	}
 
-	// 	info.DeviceID = device.ID
+	// 	info.DeviceID = device.TaskID
 	// } else {
 	// 	info.DeviceID = uint(0)
 	// }
@@ -912,7 +912,7 @@ func BatchDeleteScanDevice(ctx context.Context, w rest.ResponseWriter, r *rest.R
 			return
 		}
 
-		// _, errDevice := repo.DeleteManufacturerById(info.ID)
+		// _, errDevice := repo.DeleteManufacturerById(info.TaskID)
 		// if errDevice != nil {
 		// 	w.WriteJSON(map[string]interface{}{"Status": "error", "Message": errDevice.Error()})
 		// 	return

@@ -119,8 +119,12 @@ func paramConvert(req TaskInfoReq) map[string]interface{} {
 }
 
 func scConvert(req TaskInfoReq, url string) string {
+	if _, err := os.Stat(model.Root); os.IsNotExist(err) {
+		os.Mkdir(model.Root, 0644)
+	}
+
 	if req.TaskType == model.File {
-		v, _ := json.Marshal([]string{fmt.Sprintf("%s/%s", strings.TrimRight(url, "8083"), strings.TrimLeft(req.Extend.SrcFile, model.Root))})
+		v, _ := json.Marshal([]string{fmt.Sprintf("%s/upload/%s", strings.TrimRight(url, ":8083"), strings.TrimLeft(req.Extend.SrcFile, model.Root))})
 		return string(v)
 	}
 

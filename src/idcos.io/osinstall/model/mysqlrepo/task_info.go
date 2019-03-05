@@ -12,6 +12,11 @@ func (repo *MySQLRepo) GetTaskInfoByNo(taskNo string) (res []model.TaskInfo, err
 	return
 }
 
+func (repo *MySQLRepo) GetTaskInfoByID(taskID uint) (info []model.TaskInfo, err error) {
+	err = repo.db.Model(model.TaskInfo{}).Where("id = ?", taskID).Find(&info).Error
+	return
+}
+
 func (repo *MySQLRepo) AddTaskInfo(info *model.TaskInfo) (res *model.TaskInfo, err error) {
 	err = repo.db.Create(info).Error
 	return info, err
@@ -95,8 +100,10 @@ func (repo *MySQLRepo) AddTaskInfoAndResult(info *model.TaskInfo, sns []string, 
 		})
 	}
 
+
+
 	param = &model.ConfJobIPExecParam{
-		ExecuteID:   string(info.TaskNo),
+		ExecuteID:   fmt.Sprintf("%d",info.ID),
 		ExecHosts:   hosts,
 		Provider:    info.TaskChannel,
 		Callback:    "",

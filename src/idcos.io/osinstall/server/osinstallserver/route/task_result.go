@@ -7,6 +7,7 @@ import (
 	"idcos.io/osinstall/middleware"
 	"idcos.io/osinstall/model"
 	"idcos.io/osinstall/utils"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -86,12 +87,14 @@ func ReceiveCallback(ctx context.Context, w rest.ResponseWriter, r *rest.Request
 
 	logger.Debugf("[ReceiveCallback] receive callback info, %s", utils.ToJsonString(req))
 
-	taskInfo, err := repo.GetTaskInfoByNo(req.ExecuteID)
+	taskID, _ := strconv.Atoi(req.ExecuteID)
+
+	taskInfo, err := repo.GetTaskInfoByID(uint(taskID))
 	if err != nil || len(taskInfo) == 0 {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "查询结果错误" + err.Error()})
 		return
 	}
-	taskResults, err := repo.GetTaskResultByTaskNo(req.ExecuteID)
+	taskResults, err := repo.GetTaskResultByTaskID(uint(taskID))
 	if err != nil || len(taskResults) == 0 {
 		w.WriteJSON(map[string]interface{}{"Status": "error", "Message": "查询结果错误" + err.Error()})
 		return

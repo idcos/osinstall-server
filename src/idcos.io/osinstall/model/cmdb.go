@@ -269,11 +269,10 @@ type IOsConfig interface {
 // OS 操作系统
 type DeviceLog struct {
 	gorm.Model
-	DeviceID  uint   `sql:"not null;"`
-	Title     string `sql:"not null;"`
-	Type      string `sql:"not null;default:'install';"`
-	Content   string `sql:"type:text;"` //pxe信息
-
+	DeviceID uint   `sql:"not null;"`
+	Title    string `sql:"not null;"`
+	Type     string `sql:"not null;default:'install';"`
+	Content  string `sql:"type:text;"` //pxe信息
 }
 
 type IDeviceLog interface {
@@ -821,10 +820,10 @@ type IVmHost interface {
 
 type VmDeviceLog struct {
 	gorm.Model
-	DeviceID  uint   `sql:"not null;"`
-	Title     string `sql:"not null;"`
-	Type      string `sql:"not null;default:'install';"`
-	Content   string `sql:"type:text;"` //pxe信息
+	DeviceID uint   `sql:"not null;"`
+	Title    string `sql:"not null;"`
+	Type     string `sql:"not null;default:'install';"`
+	Content  string `sql:"type:text;"` //pxe信息
 }
 
 type IVmDeviceLog interface {
@@ -893,7 +892,8 @@ type ITaskInfo interface {
 	DeleteTaskInfo(id uint) (err error)
 	GetTaskInfoPage(Limit uint, Offset uint, Where string) (tasks []TaskInfo, err error)
 	CountTaskInfo(Where string) (count int, err error)
-	GetTaskInfoByNo(Where string) (res []TaskInfo, err error)
+	GetTaskInfoByNo(taskNo string) (res []TaskInfo, err error)
+	GetTaskInfoByID(taskID uint) (info []TaskInfo, err error)
 }
 
 //TaskResult 作业执行结果

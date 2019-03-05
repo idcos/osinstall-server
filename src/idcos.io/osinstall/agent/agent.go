@@ -290,11 +290,15 @@ func (agent *OSInstallAgent) IsInInstallQueue() {
 	// 轮询是否在装机队列中
 	var t = time.NewTicker(time.Duration(agent.LoopInterval) * time.Second)
 	var url = agent.ServerAddr + installListURL
+
 	agent.Logger.Debugf("IsInPreInstallQueue url:%s\n", url)
 	var jsonReq struct {
 		Sn string
 	}
 	jsonReq.Sn = agent.Sn
+
+	agent.Logger.Debugf("IsInPreInstallQueue request body: %v", jsonReq)
+	go callRestAPI(url, jsonReq)
 
 	var jsonResp struct {
 		Status  string

@@ -20,10 +20,11 @@ import (
 )
 
 type Extend struct {
-	SrcFile    string `json:"SrcFile"`
-	DestFile   string `json:"DestFile"`
-	ScriptType string `json:"ScriptType"`
-	Script     string `json:"Script"`
+	SrcFile     string `json:"SrcFile"`
+	DestFile    string `json:"DestFile"`
+	Script      string `json:"Script"`
+	ScriptType  string `json:"ScriptType"`
+	ScriptParam string `json:"ScriptParam"`
 }
 type TaskInfoReq struct {
 	TaskName    string   `json:"TaskName"`
@@ -86,13 +87,13 @@ func AddTaskInfo(ctx context.Context, w rest.ResponseWriter, r *rest.Request) {
 	if act2Resp.Status != "success" {
 		taskInfo.TaskStatus = "done"
 
-		taskResuls, _ := repo.GetTaskResultByTaskID(taskInfo.ID)
-		for _, res := range taskResuls {
+		taskResults, _ := repo.GetTaskResultByTaskID(taskInfo.ID)
+		for _, res := range taskResults {
 			res.Status = act2Resp.Status
 			res.Content = act2Resp.Message
 		}
 
-		repo.AddTasks(&taskInfo, taskResuls)
+		repo.AddTasks(&taskInfo, taskResults)
 	}
 	w.WriteJSON(map[string]interface{}{"Status": "success", "Message": "操作成功", "Content": ""})
 }
@@ -107,7 +108,7 @@ func stConvert(req TaskInfoReq) string {
 func paramConvert(req TaskInfoReq) map[string]interface{} {
 	var param = make(map[string]interface{})
 
-	param["args"] = ""
+	param["args"] = req.Extend.ScriptParam
 
 	if req.TaskType == model.File {
 		param["target"] = filepath.Dir(req.Extend.DestFile)
@@ -119,7 +120,7 @@ func paramConvert(req TaskInfoReq) map[string]interface{} {
 
 func scConvert(req TaskInfoReq, url string) string {
 	if req.TaskType == model.File {
-		v, _ := json.Marshal([]string{fmt.Sprintf("%s/%s", url, strings.TrimLeft(req.Extend.SrcFile, model.Root))})
+		v, _ := json.Marshal([]string{fmt.Sprintf("%s/%s", strings.TrimRight(url, "8083"), strings.TrimLeft(req.Extend.SrcFile, model.Root))})
 		return string(v)
 	}
 

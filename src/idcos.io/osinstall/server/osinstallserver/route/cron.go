@@ -37,7 +37,7 @@ func CloudBootCron(conf *config.Config, logger logger.Logger, repo model.Repo) {
 
 func DBVersionUpdate(conf *config.Config, logger logger.Logger, repo model.Repo) {
 	config, _ := repo.GetPlatformConfigByName("Version")
-	//logger.Debugf("current version:%s", config.Content)
+	logger.Debugf("current version:%s", config.Content)
 	if config.Content == "v1.5" {
 		return
 	}

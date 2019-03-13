@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"idcos.io/osinstall/server/osinstallserver/route"
 	"net"
 	"net/http"
 	"os"
@@ -67,8 +68,8 @@ func runServer(conf *config.Config) (err error) {
 	}
 
 	log.Infof("The HTTP server is running at http://localhost:%d", port)
-	// remove sql upgrade
-	//route.CloudBootCron(srvr.Conf, log, srvr.Repo)
+	//  sql upgrade
+	route.CloudBootCron(srvr.Conf, log, srvr.Repo)
 
 	if err := http.Serve(l4, srvr); err != nil {
 		log.Error(err)

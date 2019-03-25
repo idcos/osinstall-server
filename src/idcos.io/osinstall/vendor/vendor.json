@@ -105,18 +105,6 @@
 			"revisionTime": "2019-01-06T20:08:28Z"
 		},
 		{
-			"checksumSHA1": "RuiPx0vgHFrwFvFiX+rYwuNkkJ0=",
-			"path": "github.com/jinzhu/gorm",
-			"revision": "409121d9e394922787885b001d148a05e3a42b6c",
-			"revisionTime": "2018-07-26T23:43:49Z"
-		},
-		{
-			"checksumSHA1": "a9OGllyRQRDhWbU2eCKl480H8bY=",
-			"path": "github.com/jinzhu/inflection",
-			"revision": "04140366298a54a039076d798123ffa108fff46c",
-			"revisionTime": "2018-03-08T03:36:59Z"
-		},
-		{
 			"checksumSHA1": "BrYBe2DRifxETY14JmGBwL+m+mA=",
 			"path": "github.com/jtolds/gls",
 			"revision": "b4936e06046bbecbb94cae9c18127ebe510a2cb9",
@@ -295,5 +283,5 @@
 			"revisionTime": "2019-01-03T01:53:35Z"
 		}
 	],
-	"rootPath": "idcos.io/osinstall"
+	"rootPath": "github.com/osinstall-server/src/idcos.io/osinstall"
 }

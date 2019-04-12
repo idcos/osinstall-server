@@ -120,7 +120,7 @@ func paramConvert(req TaskInfoReq) map[string]interface{} {
 
 func scConvert(req TaskInfoReq, url string) string {
 	if _, err := os.Stat(model.Root); os.IsNotExist(err) {
-		os.Mkdir(model.Root, 0644)
+		os.Mkdir(model.Root, 0755)
 	}
 
 	if req.TaskType == model.File {

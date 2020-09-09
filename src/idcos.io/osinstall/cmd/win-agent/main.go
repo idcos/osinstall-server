@@ -45,7 +45,7 @@ var rootPath = "c:/firstboot"
 var scriptFile = path.Join(rootPath, "temp-script.cmd")
 var preInstallScript = path.Join(rootPath, "preInstall.cmd")
 var postInstallScript = path.Join(rootPath, "postInstall.cmd")
-var serverHost = "osinstall.idcos.com" //cloudboot server host
+var serverHost = "osinstall" //cloudboot server host
 
 func run(c *cli.Context) error {
 	// init log
